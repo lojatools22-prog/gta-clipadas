@@ -150,11 +150,45 @@ def _disk_guard(min_free=int(float(os.getenv("MIN_FREE_GB", "3")) * 1e9), report
     log.warning("Disco quase cheio: apaguei %.2f GB de temporários; livre agora %.1f GB", freed / 1e9, _free(SCRATCH) / 1e9)
 
 
+def _data_guard(min_free=int(float(os.getenv("MIN_DATA_FREE_MB", "120")) * 1e6)):
+    """O volume (/data) guarda os cortes prontos. Cheio, nada mais funciona (nem salvar estado). Se faltar espaço, apaga
+    primeiro os vídeos-fonte de análises antigas e depois os cortes mais velhos (mais de 1 dia), até liberar."""
+    if _free(DATA) >= min_free:
+        return
+    cands = []
+    an = DATA / "analises"
+    if an.is_dir():
+        for d in an.iterdir():
+            cands += [f for f in d.glob("*") if f.is_file() and f.suffix.lower() in (".mp4", ".mkv", ".webm", ".ts", ".mov", ".mp3", ".m4a")]
+    old = time.time() - 86400
+    cands = sorted(cands, key=lambda f: f.stat().st_mtime)
+    cands += sorted([d for d in JOBS_DIR.iterdir() if d.is_dir() and d.stat().st_mtime < old], key=lambda d: d.stat().st_mtime)
+    freed = 0
+    for x in cands:
+        if _free(DATA) >= min_free * 2:
+            break
+        freed += _du(x)
+        shutil.rmtree(x, ignore_errors=True) if x.is_dir() else x.unlink(missing_ok=True)
+        if x.parent == JOBS_DIR:
+            JOBS.pop(x.name, None)
+    log.warning("Volume quase cheio: liberei %.0f MB; livre agora %.0f MB", freed / 1e6, _free(DATA) / 1e6)
+
+
 def _guard_loop():
+    try:
+        out = subprocess.run("df -h /tmp /data 2>&1; du -sh /tmp/* /data/* 2>/dev/null | sort -h | tail -12", shell=True, capture_output=True, text=True, timeout=60).stdout
+        log.info("Disco (df/du): %s", out.replace("\n", " | "))
+    except Exception:
+        pass
     _disk_guard(report=True)
+    try:
+        _data_guard()
+    except Exception as e:
+        log.warning("Volume: limpeza falhou: %s", e)
     while True:
         time.sleep(600)
         try:
+            _data_guard()
             _disk_guard()
         except Exception as e:
             log.warning("Disco: limpeza falhou: %s", e)
