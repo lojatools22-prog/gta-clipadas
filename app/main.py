@@ -616,7 +616,7 @@ def video_batch(aid: str, b: VidOpIn, request: Request):
     raw.pop("n", None)
     base = _opts(raw, P)
     lp = accounts.logo_path(u["id"])
-    if P.get("own_logo") and lp.exists():
+    if P.get("own_logo") and lp.exists() and base.get("logo", True) not in (False, "false", "0"):
         base["_logo"] = str(lp)
     src = moments.source_of(aid)
     if not src and not st.get("url"):
@@ -840,7 +840,8 @@ def get_job(jid: str):
 @app.post("/api/moments")
 async def new_moments(request: Request, file: UploadFile | None = File(None), url: str = Form(""), upload_id: str = Form(""),
                       auto: str = Form(""), template: str = Form("basico-legenda"), caption: str = Form("pesada-karaoke"),
-                      caption_color: str = Form("auto"), captions: str = Form("true"), cover: str = Form("true"), n: int = Form(10)):
+                      caption_color: str = Form("auto"), captions: str = Form("true"), cover: str = Form("true"), n: int = Form(10),
+                      logo: str = Form("true")):
     u = current_user(request)
     P = accounts.plan_info(u)
     ao = None
@@ -848,7 +849,8 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
         if accounts.public(u)["left"] <= 0:
             raise HTTPException(402, "Seus cortes do plano acabaram. Renove pra gerar mais.")
         ao = _opts({"template": template, "caption": caption, "caption_color": caption_color,
-                    "captions": captions not in ("false", "0"), "cover": cover not in ("false", "0")}, P)
+                    "captions": captions not in ("false", "0"), "cover": cover not in ("false", "0"),
+                    "logo": logo not in ("false", "0")}, P)
         ao["n"] = max(1, min(int(n or 10), AUTO_MAX))
     if not P.get("auto_moments"):
         raise HTTPException(402, "O corte automático com IA é dos planos Clipador e Pro.")

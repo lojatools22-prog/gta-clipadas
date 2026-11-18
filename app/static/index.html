@@ -166,7 +166,11 @@ input:disabled{opacity:.7}
 .opt:hover{box-shadow:0 0 0 2px rgba(255,255,255,.35)}
 .opt:active{transform:scale(.97)}
 .opt img{display:block;width:100%;height:100%;object-fit:cover}
-.seg2{display:flex;gap:4px;padding:4px;background:var(--card,#16161c);border-radius:12px;box-shadow:0 0 0 1px var(--line);margin:4px 0 8px}.seg2 button{flex:1;border:0;background:none;color:var(--mute);font:600 15px Inter,sans-serif;padding:11px;border-radius:9px;cursor:pointer}.seg2 button.on{background:#fff;color:#000}.famHint{color:var(--mute);font-size:13px;margin:0 0 10px}.tdesc{margin-top:12px;padding:12px 14px;border-radius:12px;box-shadow:0 0 0 1px var(--line);display:grid;gap:2px}.tdesc small{color:var(--mute);font-size:12px}.tdesc b{font-size:15px}.tdesc span{font-size:13px;color:var(--mute)}.opt.v{aspect-ratio:9/16}.opt.h{aspect-ratio:18/7}
+.seg2{display:flex;gap:4px;padding:4px;background:var(--card,#16161c);border-radius:12px;box-shadow:0 0 0 1px var(--line);margin:4px 0 8px}.seg2 button{flex:1;border:0;background:none;color:var(--mute);font:600 15px Inter,sans-serif;padding:11px;border-radius:9px;cursor:pointer}.seg2 button.on{background:#fff;color:#000}.famHint{color:var(--mute);font-size:13px;margin:0 0 10px}.tdesc{margin-top:12px;padding:12px 14px;border-radius:12px;box-shadow:0 0 0 1px var(--line);display:grid;gap:2px}.tdesc small{color:var(--mute);font-size:12px}.tdesc b{font-size:15px}.tdesc span{font-size:13px;color:var(--mute)}.opt.v{aspect-ratio:9/16}svg.i{width:1.05em;height:1.05em;vertical-align:-.17em;flex:none}.wm{display:flex;align-items:center;gap:14px;margin:14px 0 4px;padding:14px;border-radius:14px;background:var(--s1);box-shadow:0 0 0 1px var(--line)}
+.wm .th{flex:none;width:52px;height:52px;border-radius:10px;display:grid;place-items:center;background:var(--s2,#1c1c22);color:var(--dim);overflow:hidden}.wm .th img{width:100%;height:100%;object-fit:contain;padding:4px}
+.wm .tx{flex:1;min-width:0}.wm b{display:block;font-size:15px}.wm small{display:block;color:var(--mute);font-size:12.5px;line-height:1.35;margin-top:2px}
+.wm .sm{flex:none}.wm input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--pink);padding:0;margin:0}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff3b3b;margin-right:6px;vertical-align:1px}.opt.h{aspect-ratio:18/7}
 .opt.on{box-shadow:0 0 0 3px var(--pink),0 10px 30px -10px rgba(255,31,168,.6)}
 .opt.on::after{content:"✓";position:absolute;top:7px;left:7px;width:24px;height:24px;border-radius:50%;background:var(--pink);color:#fff;font-weight:800;display:grid;place-items:center;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .opt .p{position:absolute;top:7px;right:7px;background:rgba(9,9,11,.85);color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;letter-spacing:.03em;border:1px solid var(--line2)}
@@ -451,7 +455,7 @@ input,select,textarea{font-size:16px!important}
         <div class="card"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></div><b>Capa automática</b><p>Cada corte vem com uma capa 9:16 pra usar de thumbnail.</p></div>
         <div class="card"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg></div><b>Corte em lote</b><p>No Pro, marque vários trechos da mesma live e gere todos de uma vez.</p></div>
         <div class="card"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div><b>Rápido de verdade</b><p>O corte fica pronto em cerca de 1 minuto. No Pro, sua fila tem prioridade.</p></div>
-        <div class="card"><div class="n">✨</div><b>Corte automático com IA</b><p>Suba a live inteira: a IA ouve tudo, acha os melhores momentos e já sugere o título. Você só escolhe e gera.</p></div>
+        <div class="card"><div class="n"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 10.5l-6.1 1.7L12 18l-1.9-5.8L4 10.5l6.1-1.7z"/><path d="M19 3v4M21 5h-4"/></svg></div><b>Corte automático com IA</b><p>Suba a live inteira: a IA ouve tudo, acha os melhores momentos e já sugere o título. Você só escolhe e gera.</p></div>
       </div>
     </div>
 
@@ -477,7 +481,7 @@ input,select,textarea{font-size:16px!important}
   <section id="v-virais" hidden>
     <h2 class="disp" style="margin:6px 0 6px;font-size:30px">Cortes virais</h2>
     <p class="lead">Os momentos de GTA que mais bombaram. Escolha um e corte em 1 minuto.</p>
-    <div class="tabs" id="vtabs"><button class="tab on" data-v="24">🔥 Hoje</button><button class="tab" data-v="168">Semana</button><button class="tab" data-v="live">🔴 Ao vivo agora</button></div>
+    <div class="tabs" id="vtabs"><button class="tab on" data-v="24">Hoje</button><button class="tab" data-v="168">Semana</button><button class="tab" data-v="live"><span class="live-dot"></span>Ao vivo agora</button></div>
     <div class="vgrid" id="vlist"></div>
     <div id="demo" class="note" hidden></div>
   </section>
@@ -501,7 +505,7 @@ input,select,textarea{font-size:16px!important}
       <label class="field"><span>WhatsApp</span><input id="wlZap" required maxlength="20" inputmode="tel" placeholder="(11) 99999-9999"></label>
       <button class="go" type="submit">Quero contratar</button>
     </form>
-    <p class="lead" id="wlOk" hidden style="margin-top:14px">✅ Recebemos! A nossa equipe vai te chamar no WhatsApp pra ativar o seu Automático.</p>
+    <p class="lead" id="wlOk" hidden style="margin-top:14px">Recebemos! A nossa equipe vai te chamar no WhatsApp pra ativar o seu Automático.</p>
   </section>
 
   <!-- WIZARD -->
@@ -512,7 +516,7 @@ input,select,textarea{font-size:16px!important}
       <div class="wh"><button class="back" onclick="home()">←</button><h2 class="disp">Qual trecho?</h2></div>
       <p class="lead src" id="srcLabel"></p>
       <div class="ai" id="aiBox">
-        <div class="ai-h"><span class="ai-ic">✨</span><div><b>Corte automático com IA</b><small>A IA ouve a live inteira e acha os melhores momentos pra você</small></div><span class="pill" id="aiPill" hidden>Clipador e Pro</span></div>
+        <div class="ai-h"><span class="ai-ic"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 10.5l-6.1 1.7L12 18l-1.9-5.8L4 10.5l6.1-1.7z"/><path d="M19 3v4M21 5h-4"/></svg></span><div><b>Corte automático com IA</b><small>A IA ouve a live inteira e acha os melhores momentos pra você</small></div><span class="pill" id="aiPill" hidden>Clipador e Pro</span></div>
         <button class="go" type="button" id="aiGo" onclick="startAI()">Achar os melhores momentos</button>
         <div id="aiRun" hidden><div class="ai-st"><span class="spin"></span><span id="aiTxt">Preparando…</span><b id="aiPct"></b></div><div class="meter"><i id="aiBar" style="width:2%"></i></div><small style="color:var(--dim)">Deixe essa página aberta. Uma live de 1 hora leva uns 2 a 4 minutos.</small></div>
         <div id="aiErr" hidden></div>
@@ -569,7 +573,7 @@ input,select,textarea{font-size:16px!important}
       <div class="tdesc" id="tdesc"></div>
       <div class="box react" id="reactBox" style="margin-top:16px">
         <div class="pl-row" style="margin:0"><span><b style="font-size:15px">Seu react</b><br><small style="color:var(--mute);font-size:13px">Grave você reagindo ao corte e coloque por cima</small></span><span class="pill">opcional</span></div>
-        <button type="button" class="go ghost" style="margin-top:12px" onclick="$('#camFile').click()" id="camBtn">📷 Adicionar meu react</button>
+        <button type="button" class="go ghost" style="margin-top:12px" onclick="$('#camFile').click()" id="camBtn">Adicionar meu react</button>
         <input id="camFile" type="file" accept="video/*" hidden>
         <div id="reactOpts" hidden>
           <div class="tabs" id="reactPos" style="margin:12px 0 6px"><button type="button" class="tab on" data-p="float">Janela no canto</button><button type="button" class="tab" data-p="slot" id="slotBtn">No lugar da facecam</button></div>
@@ -593,9 +597,9 @@ input,select,textarea{font-size:16px!important}
         <label class="tg">Legenda automática<input id="captions" type="checkbox" checked></label>
         <label class="tg"><span>Revisar a legenda antes de gerar<small style="display:block;color:var(--dim);font-size:12px">Você corrige as palavras em Meus cortes e o vídeo é montado depois</small></span><input id="review" type="checkbox"></label>
         <label class="tg">Gerar capa<input id="cover" type="checkbox" checked></label>
-        <label class="tg"><span>Minha logo no vídeo<small id="wmNote" style="display:block;color:var(--dim);font-size:12px"></small></span><input id="logo" type="checkbox" checked></label>
       </details>
-      <div class="bar"><button class="go" id="go">✂️ Gerar meu corte</button></div>
+      <div class="wm" id="wmBox"></div>
+      <div class="bar"><button class="go" id="go">Gerar meu corte</button></div>
     </div>
   </section>
 
@@ -616,8 +620,8 @@ input,select,textarea{font-size:16px!important}
     <div class="plans">
     <div class="plan pass"><h3>PASSE GTA 6 <small style="font:700 11px Inter;color:var(--pink);margin-left:6px">LANÇAMENTO</small></h3><div class="pr">R$ 9,90 <small>/7 dias</small></div><ul><li><b>10 cortes</b> em 7 dias</li><li>Todos os visuais e legendas</li><li>Legenda automática</li><li>Pagamento único no Pix</li></ul><button class="go ghost" onclick="buy('passe')">Quero o Passe</button></div>
     <div class="plan"><h3>INICIANTE</h3><div class="pr">R$ 19,90 <small>/mês</small></div><ul><li><b>30 cortes</b> por mês</li><li>18 visuais e 12 legendas</li><li>Legenda automática</li></ul><button class="go ghost" onclick="buy('iniciante')">Assinar Iniciante</button></div>
-    <div class="plan hot"><span class="best">MAIS ESCOLHIDO</span><h3>CLIPADOR</h3><div class="pr">R$ 39,90 <small>/mês</small></div><ul><li><b>150 cortes</b> por mês (uns 5 por dia)</li><li><b>✨ Corte automático com IA</b>: ela acha os melhores momentos da live</li><li>Todos os 36 visuais e 36 legendas</li><li><b>Sua logo automática</b> em todos os cortes</li><li>Capa automática</li></ul><button class="go" onclick="buy('clipador')">Assinar Clipador</button></div>
-    <div class="plan"><h3>PRO</h3><div class="pr">R$ 79,90 <small>/mês</small></div><ul><li><b>300 cortes</b> por mês</li><li><b>✨ Corte automático com IA</b></li><li>Corte em lote: vários trechos de uma vez</li><li>Sua logo automática em todos os cortes</li><li>Fila prioritária e vídeos até <span class="gbPro">3 GB</span></li><li>Suporte no WhatsApp</li></ul><button class="go ghost" onclick="buy('pro')">Assinar Pro</button></div>
+    <div class="plan hot"><span class="best">MAIS ESCOLHIDO</span><h3>CLIPADOR</h3><div class="pr">R$ 39,90 <small>/mês</small></div><ul><li><b>150 cortes</b> por mês (uns 5 por dia)</li><li><b>Corte automático com IA</b>: ela acha os melhores momentos da live</li><li>Todos os 36 visuais e 36 legendas</li><li><b>Sua logo automática</b> em todos os cortes</li><li>Capa automática</li></ul><button class="go" onclick="buy('clipador')">Assinar Clipador</button></div>
+    <div class="plan"><h3>PRO</h3><div class="pr">R$ 79,90 <small>/mês</small></div><ul><li><b>300 cortes</b> por mês</li><li><b>Corte automático com IA</b></li><li>Corte em lote: vários trechos de uma vez</li><li>Sua logo automática em todos os cortes</li><li>Fila prioritária e vídeos até <span class="gbPro">3 GB</span></li><li>Suporte no WhatsApp</li></ul><button class="go ghost" onclick="buy('pro')">Assinar Pro</button></div>
     </div>
     <p class="lead" style="font-size:13px;text-align:center;margin-top:20px">Pagamento por Pix, cartão ou boleto. Cada compra libera 30 dias (7 no Passe). Os cortes ficam disponíveis por 30 dias pra baixar.</p>
     <details style="margin:6px auto 0;max-width:480px"><summary>Tenho um código</summary>
@@ -638,6 +642,14 @@ input,select,textarea{font-size:16px!important}
 <footer><div class="wrap"><span>© GTA6 Clips · Projeto de fãs, sem afiliação com a Rockstar Games ou a Twitch. Corte só quem libera cortes e dê os créditos.</span><span><a href="/termos" target="_blank">Termos de uso</a> &nbsp;·&nbsp; <a href="/privacidade" target="_blank">Privacidade</a></span></div></footer>
 
 <script>
+const ICO={check:'<path d="M20 6 9 17l-5-5"/>',sparkles:'<path d="M12 3l1.9 5.8L20 10.5l-6.1 1.7L12 18l-1.9-5.8L4 10.5l6.1-1.7z"/><path d="M19 3v4M21 5h-4"/>',
+ flame:'<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+ alert:'<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+ upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/>',bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+ pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
+ lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+ scissors:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>'};
+const I=n=>`<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICO[n]}</svg>`;
 const $=s=>document.querySelector(s);
 const TOK=()=>LS.get('cgta_token',null);
 const api=(p,o={})=>{const t=TOK();if(t)o.headers={...(o.headers||{}),Authorization:'Bearer '+t};return fetch(p,o).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(j.detail||'Algo deu errado');e.status=r.status;throw e}return j})};
@@ -654,7 +666,7 @@ let ME=null,WIZ=false;const isPro=()=>!!(ME&&ME.pro);const myTier=()=>ME?ME.tier
 function view(v){document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===v||(v==='make'&&b.dataset.go==='home')));if(v==='mine'){renderJobs();renderVids()}if(v==='video'&&VID){VID.readyPill=0;renderVid()}if(v==='gen')renderGen();if(typeof updPill==='function')setTimeout(updPill);$('#backWiz').hidden=!(v==='planos'&&WIZ);if(v!=='planos'&&v!=='make')WIZ=false;if(v==='conta')renderConta();if(v==='virais')loadVirais();scrollTo(0,0)}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>view(b.dataset.go));
 function home(){view('home')}
-function step(n){view('make');[1,2,3].forEach(i=>$('#s'+i).hidden=i!==n);document.querySelectorAll('.steps i').forEach((e,i)=>e.classList.toggle('on',i<n));if(n===3)$('#go').textContent=(AN&&AN.status==='pronto'&&SELM.size)?`✂️ Gerar ${SELM.size} corte${SELM.size>1?'s':''}`:'✂️ Gerar meu corte';if(n===2)renderTpls();if(n===3)renderCaps();scrollTo(0,0)}
+function step(n){view('make');[1,2,3].forEach(i=>$('#s'+i).hidden=i!==n);document.querySelectorAll('.steps i').forEach((e,i)=>e.classList.toggle('on',i<n));if(n===3)$('#go').textContent=(AN&&AN.status==='pronto'&&SELM.size)?`Gerar ${SELM.size} corte${SELM.size>1?'s':''}`:'Gerar meu corte';if(n===2)renderTpls();if(n===3)renderCaps();scrollTo(0,0)}
 
 function needAcc(fn,msg){if(ME)return false;openAuth('signup',msg||('Crie sua conta grátis pra fazer seu corte. Você ganha '+(STATUS.free_clips||3)+' cortes grátis.'),fn);return true}
 function toggleLink(){if(needAcc(()=>{$('#linkBox').hidden=false;$('#url').focus()}))return;$('#linkBox').hidden=!$('#linkBox').hidden;if(!$('#linkBox').hidden)$('#url').focus()}
@@ -664,11 +676,11 @@ function updLen(){const a=secs($('#start').value),b=secs($('#end').value),el=$('
   const d=b-a;el.textContent=d<=0?'O fim precisa ser depois do início.':d>MAXLEN()?`Corte de ${d}s: o máximo é ${MAXLEN()}s.`:`Corte de ${d} segundos ✓`}
 ['#start','#end'].forEach(id=>document.addEventListener('input',e=>{if(e.target.matches(id))updLen()}));
 function startFromLink(){if(needAcc(startFromLink))return;const u=$('#url').value.trim();if(!u)return toast('Cole o link do momento');if(!/^https?:\/\//.test(u))return toast('Esse link não parece certo');resetMedia();src={kind:'link',url:u};$('#srcLabel').textContent=u;step(1);probeLink(u)}
-function pickFile(){if(needAcc(()=>sheet(`<h2 class="disp" style="margin:0 0 6px">Conta pronta ✅</h2><p class="lead">Agora é só escolher o vídeo da live ou do clipe.</p><button class="go" onclick="closeSheet();$('#file').click()">⬆️ Escolher vídeo</button>`)))return;$('#file').click()}
+function pickFile(){if(needAcc(()=>sheet(`<h2 class="disp" style="margin:0 0 6px">Conta pronta</h2><p class="lead">Agora é só escolher o vídeo da live ou do clipe.</p><button class="go" onclick="closeSheet();$('#file').click()">Escolher vídeo</button>`)))return;$('#file').click()}
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const mb=f.size/1048576,max=(ME&&ME.max_mb)||STATUS.mb_base||1024;
   if(mb>max){e.target.value='';$('#linkBox').hidden=false;$('#url').focus();return toast(`Esse vídeo tem ${(mb/1024).toFixed(1)} GB e o limite do seu plano é ${Math.round(max/1024)} GB${max<(STATUS.mb_pro||3072)?' ('+Math.round((STATUS.mb_pro||3072)/1024)+' GB no Pro)':''}. Cole o link da live aqui embaixo e marque o tempo do corte.`)}
   if(ME&&ME.auto_moments&&!e.manual){e.target.value='';sheet(`<h2 class="disp" style="margin:0 0 6px">Como você quer cortar?</h2><p class="lead" style="font-size:14px">${esc(f.name)}</p>
-    <button class="go" id="fAuto">✨ A IA acha os 10 melhores cortes</button><button class="alt" id="fMan">Eu escolho o trecho</button>`);
+    <button class="go" id="fAuto">A IA acha os 10 melhores cortes</button><button class="alt" id="fMan">Eu escolho o trecho</button>`);
     $('#fAuto').onclick=()=>{closeSheet();startAuto({file:f})};$('#fMan').onclick=()=>{closeSheet();const dt=new DataTransfer();dt.items.add(f);$('#file').files=dt.files;$('#file').onchange({target:$('#file'),manual:true})};return}
   resetMedia();src={kind:'file',file:f};$('#srcLabel').textContent=f.name;const pl=$('#player');try{URL.revokeObjectURL(pl.src)}catch{}pl.src=URL.createObjectURL(f);$('#playerBox').hidden=false;$('#markRow').hidden=false;
   pl.onloadedmetadata=()=>initTrim(pl.duration);step(1);e.target.value=''};
@@ -722,7 +734,7 @@ async function probeLink(url,s,e){const seq=++probeSeq;$('#probeLoad').hidden=fa
 /* corte automático com IA */
 let AN=null,SELM=new Set(),aiPoll=null;
 const AISTEP={'na fila':'Na fila…','preparando':'Preparando o vídeo…','baixando':'Baixando a live…','ouvindo':'Ouvindo a live…','escolhendo':'Escolhendo os melhores momentos…'};
-function aiReset(){clearTimeout(aiPoll);AN=null;SELM=new Set();$('#aiGo').hidden=false;['#aiRun','#aiErr','#aiList'].forEach(x=>$(x).hidden=true);$('#aiPill').hidden=!!(ME&&ME.auto_moments);$('#aiGo').textContent=(ME&&ME.auto_moments)?'Achar os melhores momentos':'🔒 Achar os melhores momentos';$('#aiOr').textContent='ou escolha o trecho você mesmo'}
+function aiReset(){clearTimeout(aiPoll);AN=null;SELM=new Set();$('#aiGo').hidden=false;['#aiRun','#aiErr','#aiList'].forEach(x=>$(x).hidden=true);$('#aiPill').hidden=!!(ME&&ME.auto_moments);$('#aiGo').textContent=(ME&&ME.auto_moments)?'Achar os melhores momentos':'Achar os melhores momentos (Clipador)';$('#aiOr').textContent='ou escolha o trecho você mesmo'}
 async function startAI(){if(!(ME&&ME.auto_moments)){sheet(`<h2 class="disp" style="margin:0 0 6px">Corte automático com IA</h2><p class="lead">A IA ouve a live inteira e entrega os melhores momentos com título, prontos pra cortar de uma vez. Está nos planos <b style="color:#fff">Clipador</b> e <b style="color:#fff">Pro</b>.</p><button class="go" onclick="closeSheet();WIZ=true;view('planos')">Ver planos</button><button class="alt" onclick="closeSheet()">Agora não, escolho o trecho</button>`);return}
   $('#aiGo').hidden=true;$('#aiErr').hidden=true;$('#aiRun').hidden=false;$('#aiTxt').textContent=src.kind==='file'?'Enviando o vídeo…':'Preparando…';$('#aiPct').textContent='';$('#aiBar').style.width='2%';
   try{let r;if(src.kind==='file'){const id=await upFile(src.file,(p,m)=>{$('#aiTxt').textContent=m||'Enviando o vídeo…';$('#aiPct').textContent=p+'%';$('#aiBar').style.width=Math.max(2,p*0.08)+'%'});const fd=new FormData();fd.append('upload_id',id);r=await api('/api/moments',{method:'POST',body:fd})}
@@ -804,14 +816,14 @@ async function generate(){const go=$('#go');go.disabled=true;go.textContent='Env
   if(CAMF)o.react_pos=reactPos;
   const useAI=AN&&AN.status==='pronto'&&SELM.size>0;
   if(useAI){o.analysis=AN.id;o.segments=JSON.stringify(aiSegs());o.start='';o.end='';o.title=''}
-  let upId=null;if(src.kind==='file'&&!useAI){GEN.phase='up';renderGen();try{upId=await upFile(src.file,p=>{GEN.up=p;renderGen()})}catch(e){toast(e.message);step(3);go.disabled=false;go.textContent='✂️ Gerar meu corte';return}GEN.phase='send';GEN.up=100;renderGen()}
+  let upId=null;if(src.kind==='file'&&!useAI){GEN.phase='up';renderGen();try{upId=await upFile(src.file,p=>{GEN.up=p;renderGen()})}catch(e){toast(e.message);step(3);go.disabled=false;go.textContent='Gerar meu corte';return}GEN.phase='send';GEN.up=100;renderGen()}
   try{let j;if(useAI&&!CAMF){j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,start:null,end:null,segments:aiSegs()})})}
   else if(useAI&&CAMF){const fd=new FormData();fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
   else if(src.kind==='file'||CAMF){const fd=new FormData();if(src.kind==='file')fd.append('upload_id',upId);else fd.append('url',src.url);if(CAMF)fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
   else{j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,url:src.url,start:o.start||null,end:o.end||null,segments:segs.length>1?segs:[]})})}
   if(j.user){ME=j.user;refreshAcct()}{const p=PREFS();p.tpl=sel.tpl;p.cap=sel.cap;LS.set('cgta_prefs',p)}SEGS=[];CAMF=null;renderSegs();
   GEN.ids=j.jobs||[j.id];GEN.phase='job';addPending(GEN.ids);renderGen();watchJobs()}
-  catch(err){toast(err.message);if(!$('#v-gen').hidden)step(3);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)WIZ=true,setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='✂️ Gerar meu corte'}}
+  catch(err){toast(err.message);if(!$('#v-gen').hidden)step(3);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)WIZ=true,setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='Gerar meu corte'}}
 
 
 /* ===== fluxo principal (igual Cut.Pro): cola o link → a IA gera os cortes sozinha → página do vídeo ===== */
@@ -822,7 +834,7 @@ function goLink(){if(needAcc(goLink))return;const u=$('#url').value.trim();if(!u
   autoUpsell(()=>startFromLink())}
 function autoUpsell(manual){sheet(`<h2 class="disp" style="margin:0 0 6px">Quer que a IA faça os cortes?</h2><p class="lead">No <b style="color:#fff">Clipador</b> a IA assiste o vídeo inteiro e entrega os <b style="color:#fff">10 melhores cortes</b> prontos, com nota de viral. No seu plano você escolhe o trecho na mão.</p>
   <button class="go" onclick="closeSheet();WIZ=false;view('planos')">Ver o Clipador</button><button class="alt" onclick="closeSheet();(${manual.toString()})()">Escolher o trecho na mão</button>`)}
-function autoOpts(){const p=PREFS();return {template:p.tpl||'basico-legenda',caption:p.cap||'pesada-karaoke',caption_color:'auto',captions:p.captions!==false,cover:p.cover!==false}}
+function autoOpts(){const p=PREFS();return {template:p.tpl||'basico-legenda',caption:p.cap||'pesada-karaoke',caption_color:'auto',captions:p.captions!==false,cover:p.cover!==false,logo:p.logo!==false}}
 async function startAuto({url,file}){VID={id:null,status:'enviando',up:0,name:url||file.name,moments:[]};VSEL.clear();view('video');renderVid();
   try{const fd=new FormData();const o=autoOpts();for(const k in o)fd.append(k,o[k]);fd.append('auto','1');fd.append('n','10');
     if(file){const id=await upFile(file,p=>{VID.up=p;renderVid()});fd.append('upload_id',id)}else fd.append('url',url);
@@ -835,14 +847,14 @@ async function watchVid(){clearTimeout(VT);if(!VID||!VID.id)return;
   const busy=!['pronto','erro'].includes(VID.status)||VID.moments.some(m=>m.clip&&!['pronto','erro','expirado'].includes(m.clip.status));
   if(busy)VT=setTimeout(watchVid,document.hidden?7000:3000);else if(LS.get('cgta_vid')===VID.id&&VID.status!=='erro'){LS.set('cgta_vid',null);if($('#v-video').hidden)vidReady()}}
 function vidReady(){const n=VID.moments.filter(m=>m.clip&&m.clip.status==='pronto').length;if(!n)return;
-  try{if(document.hidden&&'Notification' in window&&Notification.permission==='granted')new Notification(`${n} cortes prontos! 🎬`,{body:'Toque pra ver e baixar.'})}catch(e){}
+  try{if(document.hidden&&'Notification' in window&&Notification.permission==='granted')new Notification(`${n} cortes prontos`,{body:'Toque pra ver e baixar.'})}catch(e){}
   VID.readyPill=n;updVidPill()}
 function updVidPill(){const p=$('#genPill');if(!VID||!$('#v-video').hidden)return;const busy=!['pronto','erro'].includes(VID.status);
-  if(!busy&&!VID.readyPill)return;p.hidden=false;p.innerHTML=busy?'<i></i>A IA está cortando seu vídeo… ver':`✅ ${VID.readyPill} cortes prontos · ver`;p.onclick=()=>{p.hidden=true;p.onclick=()=>view('gen');view('video')}}
+  if(!busy&&!VID.readyPill)return;p.hidden=false;p.innerHTML=busy?'<i></i>A IA está cortando seu vídeo… ver':`${I('check')} ${VID.readyPill} cortes prontos · ver`;p.onclick=()=>{p.hidden=true;p.onclick=()=>view('gen');view('video')}}
 const VSTEPS=[['enviando','Enviando o vídeo'],['baixando','Baixando o vídeo'],['ouvindo','Ouvindo tudo'],['escolhendo','Achando os melhores momentos'],['cortando','Montando os cortes']];
 function renderVid(){const el=$('#vid');if(!VID){el.innerHTML='<div class="empty">Esse vídeo não está mais disponível.<br><br><button class="go" onclick="home()">Gerar novos cortes</button></div>';return}
   const head=`<div class="vhead"><button class="back" onclick="view('mine')">←</button><span style="min-width:0"><h2 class="disp">${esc(VID.name||'Seu vídeo')}</h2><small>${VID.duration?'Vídeo de '+mmss(VID.duration)+' · ':''}${VID.moments.length?VID.moments.length+' momentos achados':'Analisando'}</small></span></div>`;
-  if(VID.status==='erro'){el.innerHTML=head+`<div class="box anl"><div style="font-size:34px">⚠️</div><h3>Não deu pra cortar esse vídeo</h3><p class="lead" style="font-size:14px">${esc(VID.error||'Tente de novo.')}</p><button class="go" onclick="home()">Tentar outro link</button></div>`;return}
+  if(VID.status==='erro'){el.innerHTML=head+`<div class="box anl"><div style="font-size:30px;color:var(--pink)">${I('alert')}</div><h3>Não deu pra cortar esse vídeo</h3><p class="lead" style="font-size:14px">${esc(VID.error||'Tente de novo.')}</p><button class="go" onclick="home()">Tentar outro link</button></div>`;return}
   const clips=VID.moments.filter(m=>m.clip);
   if(VID.status!=='pronto'&&!clips.length){
     let st=VID.status==='na fila'||VID.status==='preparando'||VID.status==='carregando'?(VID.url?'baixando':'ouvindo'):VID.status;if(VID.status==='enviando')st='enviando';
@@ -850,20 +862,20 @@ function renderVid(){const el=$('#vid');if(!VID){el.innerHTML='<div class="empty
     const idx=Math.max(0,steps.findIndex(([k])=>k===st));const pct=VID.status==='enviando'?Math.round((VID.up||0)*0.2):Math.max(3,VID.progress||3);
     el.innerHTML=head+`<div class="gen anl"><div class="gen-vis"><img src="/previews/tpl-${esc(autoOpts().template)}.jpg" alt=""><div class="ring"><b>${pct}%</b></div></div>
      <h2 class="disp">A IA está assistindo seu vídeo</h2><p class="lead">Ela acha os melhores momentos e já monta os cortes. Lives longas levam alguns minutos.</p>
-     ${VID.status==='enviando'?`<div class="gen-note warn">📤 <b>Mantenha esta página aberta</b> só até o envio terminar (${VID.up||0}%).</div>`:`<div class="gen-note free">✅ <b>Pode fechar a página.</b> Os cortes continuam sendo feitos e ficam aqui, em Meus cortes.</div>`}
+     ${VID.status==='enviando'?`<div class="gen-note warn">${I('upload')} <b>Mantenha esta página aberta</b> só até o envio terminar (${VID.up||0}%).</div>`:`<div class="gen-note free">${I('check')} <b>Pode fechar a página.</b> Os cortes continuam sendo feitos e ficam aqui, em Meus cortes.</div>`}
      <div class="gen-bar"><i style="width:${pct}%"></i></div><ul class="gen-steps">${steps.map(([k,l],i)=>`<li class="${i<idx?'ok':i===idx?'now':''}"><i>${i<idx?'✓':''}</i>${l}${i===idx&&k==='enviando'?`<small>${VID.up||0}%</small>`:''}</li>`).join('')}</ul>
-     <div class="gen-btns">${'Notification' in window&&Notification.permission==='default'&&VID.status!=='enviando'?`<button class="go ghost" onclick="Notification.requestPermission().then(renderVid)">🔔 Me avisar quando ficar pronto</button>`:''}<button class="alt" onclick="home()">Voltar pro início</button></div></div>`;return}
+     <div class="gen-btns">${'Notification' in window&&Notification.permission==='default'&&VID.status!=='enviando'?`<button class="go ghost" onclick="Notification.requestPermission().then(renderVid)">${I('bell')} Me avisar quando ficar pronto</button>`:''}<button class="alt" onclick="home()">Voltar pro início</button></div></div>`;return}
   const all=clips.length&&clips.every(m=>VSEL.has(m.clip.id));const nsel=clips.filter(m=>VSEL.has(m.clip.id)).length;
   const bar=`<div class="vbar"><label><input type="checkbox" ${all?'checked':''} onchange="vSelAll(this.checked)"> ${nsel?nsel+' selecionado'+(nsel>1?'s':''):clips.length+' cortes'}</label><span class="sp"></span>
     ${nsel?`<button class="sm" onclick="vDownload()">Baixar</button><button class="sm g" onclick="vVisual()">Trocar visual</button><button class="sm g" onclick="vDelete()">Apagar</button>`:`<button class="sm g" onclick="vSelAll(true)">Selecionar todos</button>`}</div>`;
   const note=VID.note?`<div class="gen-note warn" style="max-width:none">${esc(VID.note)} <a href="#" onclick="view('planos');return false" style="color:#fff;font-weight:700">Ver planos</a></div>`:'';
   const cards=clips.map(m=>{const c=m.clip,ok=c.status==='pronto',err=c.status==='erro'||c.status==='expirado',sel=VSEL.has(c.id);
-    const media=ok?`<video src="${c.video}" poster="${c.cover||c.thumb}" controls playsinline preload="none"></video>`:`<img src="/previews/tpl-${esc(autoOpts().template)}.jpg" alt="" style="filter:blur(3px) brightness(.5)"><div class="wait">${err?'⚠️ Não deu certo':`<i></i>${LBL[c.status]||'Na fila…'}`}</div>`;
-    return `<div class="clip ${sel?'sel':''}"><div class="m">${media}${ok?`<span class="ck" onclick="vToggle('${c.id}')">${sel?'✓':''}</span>`:''}<span class="score ${m.score>=80?'hot':''}">🔥 ${m.score}</span></div>
+    const media=ok?`<video src="${c.video}" poster="${c.cover||c.thumb}" controls playsinline preload="none"></video>`:`<img src="/previews/tpl-${esc(autoOpts().template)}.jpg" alt="" style="filter:blur(3px) brightness(.5)"><div class="wait">${err?'Não deu certo':`<i></i>${LBL[c.status]||'Na fila…'}`}</div>`;
+    return `<div class="clip ${sel?'sel':''}"><div class="m">${media}${ok?`<span class="ck" onclick="vToggle('${c.id}')">${sel?'✓':''}</span>`:''}<span class="score ${m.score>=80?'hot':''}">${I('flame')} ${m.score}</span></div>
       <div class="b"><h4>${esc(m.title||'Corte')}</h4><p>${esc(m.reason||'')}</p><span class="t">${mmss(m.start)} – ${mmss(m.end)} · ${m.end-m.start}s</span>
       ${ok?`<div class="acts"><a class="sm" href="${c.video}" download="gta6clips-${c.id}.mp4">Baixar</a>${navigator.share?`<button class="sm g" onclick="shareCut('${c.video}','${c.id}')">Postar</button>`:''}</div>`:''}</div></div>`}).join('');
   const rest=VID.moments.filter(m=>!m.clip);
-  const more=rest.length?`<div class="more"><h3>Mais ${rest.length} momento${rest.length>1?'s':''} que a IA achou</h3><p class="lead" style="font-size:13px;margin:0 0 10px">Cada um gasta 1 corte do seu plano.</p>${rest.map(m=>`<div class="mrow"><span class="pill">🔥 ${m.score}</span><b>${esc(m.title||'Momento')}</b><small style="color:var(--mute)">${mmss(m.start)}</small><button class="sm" onclick="vGen(${m.start})">Gerar</button></div>`).join('')}</div>`:'';
+  const more=rest.length?`<div class="more"><h3>Mais ${rest.length} momento${rest.length>1?'s':''} que a IA achou</h3><p class="lead" style="font-size:13px;margin:0 0 10px">Cada um gasta 1 corte do seu plano.</p>${rest.map(m=>`<div class="mrow"><span class="pill">${I('flame')} ${m.score}</span><b>${esc(m.title||'Momento')}</b><small style="color:var(--mute)">${mmss(m.start)}</small><button class="sm" onclick="vGen(${m.start})">Gerar</button></div>`).join('')}</div>`:'';
   el.innerHTML=head+note+bar+`<div class="cgrid">${cards}</div>`+more}
 function vToggle(id){VSEL.has(id)?VSEL.delete(id):VSEL.add(id);renderVid()}
 function vSelAll(on){VSEL.clear();if(on)VID.moments.forEach(m=>m.clip&&m.clip.status==='pronto'&&VSEL.add(m.clip.id));renderVid()}
@@ -903,43 +915,43 @@ function renderGen(){const el=$('#gen');if(!GEN){el.innerHTML='<div class="empty
   const pct=GEN.phase==='up'?Math.round(GEN.up*0.3):GEN.phase==='send'?32:done?100:Math.round(32+avg*0.68);
   const pos=list.map(x=>x.position).filter(Boolean).sort((a,b)=>a-b)[0];
   const vis=done&&ready.length===1&&n===1?`<div class="gen-vis done"><video src="${ready[0].video}" poster="${ready[0].cover||ready[0].thumb}" controls playsinline autoplay muted></video></div>`
-    :`<div class="gen-vis${done?' done':''}"><img src="/previews/tpl-${GEN.tpl}.jpg" alt=""><div class="ring"><b>${allErr?'⚠️':done?'✓':pct+'%'}</b></div></div>`;
+    :`<div class="gen-vis${done?' done':''}"><img src="/previews/tpl-${GEN.tpl}.jpg" alt=""><div class="ring"><b>${allErr?'!':done?'✓':pct+'%'}</b></div></div>`;
   const title=allErr?'Não deu certo':done?(n>1?`${ready.length} cortes prontos!`:'Seu corte está pronto!'):rev?'Revise a legenda':(n>1?`Estamos gerando seus ${n} cortes`:'Estamos gerando seu corte');
   const sub=allErr?'O corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.':done?'Baixe e poste no TikTok, Reels e Shorts.':rev?'A legenda saiu. Dá uma olhada antes de montar o vídeo.':'Leva em média 1 a 3 minutos.';
-  const note=done?'':GEN.phase==='up'?`<div class="gen-note warn">📤 <b>Mantenha esta página aberta</b> só até o envio terminar (${GEN.up}%). Depois disso pode sair.</div>`
-    :`<div class="gen-note free">✅ <b>Pode sair do site.</b> Seu corte continua sendo feito e aparece pronto quando você voltar, em Meus cortes.</div>`;
-  const bell=!done&&GEN.phase==='job'&&'Notification' in window&&Notification.permission==='default'?`<button class="go ghost" onclick="Notification.requestPermission().then(()=>renderGen())">🔔 Me avisar quando ficar pronto</button>`:'';
+  const note=done?'':GEN.phase==='up'?`<div class="gen-note warn">${I('upload')} <b>Mantenha esta página aberta</b> só até o envio terminar (${GEN.up}%). Depois disso pode sair.</div>`
+    :`<div class="gen-note free">${I('check')} <b>Pode sair do site.</b> Seu corte continua sendo feito e aparece pronto quando você voltar, em Meus cortes.</div>`;
+  const bell=!done&&GEN.phase==='job'&&'Notification' in window&&Notification.permission==='default'?`<button class="go ghost" onclick="Notification.requestPermission().then(()=>renderGen())">${I('bell')} Me avisar quando ficar pronto</button>`:'';
   const btns=done?(ready.length===1&&n===1?`<a class="go" href="${ready[0].video}" download="gta6clips-${GEN.ids[0]}.mp4" style="text-decoration:none">Baixar vídeo</a>${navigator.share?`<button class="go ghost" onclick="shareCut('${ready[0].video}','${GEN.ids[0]}')">Compartilhar</button>`:''}${ready[0].cover?`<a class="go ghost" href="${ready[0].cover}" download="capa-${GEN.ids[0]}.jpg" style="text-decoration:none">Baixar capa</a>`:''}`:`<button class="go" onclick="view('mine')">Ver meus cortes</button>`)+`<button class="go ghost" onclick="GEN=null;home()">Fazer outro corte</button>`
-    :rev?`<button class="go" onclick="openReview('${rev}')">✏️ Revisar legenda</button>`:`${bell}<button class="go ghost" onclick="home()">Fazer outro corte enquanto isso</button><button class="alt" onclick="view('mine')">Ver meus cortes</button>`;
+    :rev?`<button class="go" onclick="openReview('${rev}')">${I('pen')} Revisar legenda</button>`:`${bell}<button class="go ghost" onclick="home()">Fazer outro corte enquanto isso</button><button class="alt" onclick="view('mine')">Ver meus cortes</button>`;
   el.innerHTML=`<div class="gen">${vis}<h2 class="disp">${title}</h2><p class="lead">${sub}</p>
    ${note}${done?'':`<div class="gen-bar"><i style="width:${pct}%"></i></div><ul class="gen-steps">${steps.map(([k,l],i)=>`<li class="${i<idx?'ok':i===idx?'now':''}"><i>${i<idx?'✓':''}</i>${l}${i===idx&&k==='up'?`<small>${GEN.up}%</small>`:i===idx&&k==='fila'&&pos>1?`<small>${pos}º da fila</small>`:''}</li>`).join('')}</ul>`}
    <div class="gen-btns">${btns}</div></div>`;
   updPill()}
 function updPill(){const p=$('#genPill');if(!GEN||GEN.phase!=='job'){p.hidden=true;return updVidPill()}if(GEN&&!$('#v-gen').hidden&&genStage()==='pronto')GEN.seen=true;
   const show=GEN&&GEN.phase==='job'&&!GEN.seen&&$('#v-gen').hidden;p.hidden=!show;if(!show)return;
-  p.innerHTML=genStage()==='pronto'?'✅ Seu corte ficou pronto · ver':`<i></i>Gerando ${GEN.ids.length>1?GEN.ids.length+' cortes':'seu corte'}… ver`}
+  p.innerHTML=genStage()==='pronto'?I('check')+' Seu corte ficou pronto · ver':`<i></i>Gerando ${GEN.ids.length>1?GEN.ids.length+' cortes':'seu corte'}… ver`}
 async function watchJobs(){clearTimeout(WT);const ids=PEND();if(!ids.length||!TOK())return;let left=0;
   for(const id of ids){let j;try{j=await api('/api/jobs/'+id)}catch(e){if(e.status===404)dropPending(id);continue}
     if(GEN&&GEN.ids.includes(id))GEN.st[id]=j;
     if(['pronto','erro','expirado'].includes(j.status)){dropPending(id);if(j.status==='pronto')cutReady(id,j)}else left++}
   if(GEN&&!$('#v-gen').hidden)renderGen();else updPill();
   if(!$('#v-mine').hidden)renderJobs();
-  document.title=left?'⏳ Gerando corte… · GTA6 Clips':document.title.startsWith('⏳')?T0:document.title;
+  document.title=left?'Gerando corte… · GTA6 Clips':document.title.startsWith('Gerando')?T0:document.title;
   if(GEN&&GEN.boot){GEN.boot=false;if(genStage()==='pronto')view('gen')}
   if(left)WT=setTimeout(watchJobs,document.hidden?6000:2500)}
-function cutReady(id,j){if(!document.title.startsWith('✅'))document.title='✅ Corte pronto · GTA6 Clips';
-  try{if(document.hidden&&'Notification' in window&&Notification.permission==='granted')new Notification('Seu corte ficou pronto! 🎬',{body:'Toque pra baixar e postar.',icon:j.thumb})}catch(e){}
+function cutReady(id,j){if(!document.title.startsWith('Pronto'))document.title='Pronto: seu corte · GTA6 Clips';
+  try{if(document.hidden&&'Notification' in window&&Notification.permission==='granted')new Notification('Seu corte ficou pronto',{body:'Toque pra baixar e postar.',icon:j.thumb})}catch(e){}
   if(GEN&&GEN.ids.includes(id))return;  // a tela de geração já mostra
   sheet(`<div style="text-align:center"><div class="gen-vis done" style="width:170px;margin:0 auto 16px"><video src="${j.video}" poster="${j.cover||j.thumb}" controls playsinline muted></video></div><h2 class="disp" style="margin:0 0 6px">Seu corte ficou pronto!</h2><p class="lead">Ele foi gerado enquanto você estava fora.</p>
   <a class="go" href="${j.video}" download="gta6clips-${id}.mp4" style="text-decoration:none">Baixar vídeo</a><button class="alt" onclick="closeSheet();view('mine')">Ver meus cortes</button></div>`)}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(document.title.startsWith('✅'))document.title=T0;if(PEND().length)watchJobs()}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(document.title.startsWith('Pronto'))document.title=T0;if(PEND().length)watchJobs()}});
 
 /* virais */
 let vmode='24';
 async function loadVirais(){const el=$('#vlist');el.innerHTML='<div class="skel" style="grid-column:1/-1;aspect-ratio:auto;height:160px;border-radius:14px"><span class="spin"></span>Carregando…</div>';
   if(STATUS.demo){$('#vtabs').hidden=true;el.innerHTML=`<div class="box" style="grid-column:1/-1;text-align:center;padding:30px 20px"><div class="n" style="margin:0 auto 14px;width:46px;height:46px;border-radius:12px;background:var(--pinkbg);color:var(--pink);display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div><b style="font-size:17px">Ache o momento que bombou</b><p class="lead" style="margin:8px auto 18px;max-width:420px;font-size:14px">Abra os clipes de GTA mais vistos nas últimas 24h na Twitch, copie o link do que você quer e cole aqui embaixo.</p><a class="go ghost" style="text-decoration:none;margin-bottom:12px" href="https://www.twitch.tv/directory/category/grand-theft-auto-v/clips?range=24hr" target="_blank" rel="noopener">Ver clipes mais vistos de GTA ↗</a><div class="lrow"><input id="vUrl" placeholder="Cole o link do clipe" inputmode="url"><button class="go" onclick="$('#url').value=$('#vUrl').value;startFromLink()">Cortar</button></div></div>`;return}
   try{if(vmode==='live'){const d=await api('/api/live');el.innerHTML=d.length?d.map(s=>`<button class="vc" onclick="openStreamer('${esc(s.login)}','${esc(s.name)}')"><div class="th" style="background-image:url('${esc(s.thumb)}')"><i class="live">AO VIVO</i><i>${fmt(s.viewers)} assistindo</i></div><div class="tx"><b>${esc(s.name)}</b>${esc(s.title)}</div></button>`).join(''):'<p class="lead">Ninguém em live de GTA agora.</p>';return}
-  const d=await api('/api/clips?hours='+vmode);el.innerHTML=d.length?d.map(c=>`<button class="vc" onclick='useMoment(${JSON.stringify({url:c.url,title:c.title})})'><div class="th" style="background-image:url('${esc(c.thumb)}')"><i>👁 ${fmt(c.views)} · ${Math.round(c.duration)}s</i></div><div class="tx"><b>${esc(c.title)}</b>${esc(c.creator)}</div></button>`).join(''):'<p class="lead">Nada por aqui ainda.</p>'}
+  const d=await api('/api/clips?hours='+vmode);el.innerHTML=d.length?d.map(c=>`<button class="vc" onclick='useMoment(${JSON.stringify({url:c.url,title:c.title})})'><div class="th" style="background-image:url('${esc(c.thumb)}')"><i>${I('eye')} ${fmt(c.views)} · ${Math.round(c.duration)}s</i></div><div class="tx"><b>${esc(c.title)}</b>${esc(c.creator)}</div></button>`).join(''):'<p class="lead">Nada por aqui ainda.</p>'}
   catch(e){el.innerHTML=`<p class="lead">${esc(e.message)}</p>`}}
 $('#vtabs').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;vmode=b.dataset.v;document.querySelectorAll('#vtabs .tab').forEach(x=>x.classList.toggle('on',x===b));loadVirais()};
 async function openStreamer(login,name){if(needAcc(()=>openStreamer(login,name)))return;$('#sheet').classList.add('on');const s=$('#sheetIn');s.innerHTML=`<h2 class="disp" style="margin:0 0 6px">${esc(name)}</h2><p class="lead">Carregando…</p>`;
@@ -970,8 +982,8 @@ let poll;async function renderJobs(){clearTimeout(poll);const el=$('#jobs');
   if(!rs.length){el.innerHTML='<div class="empty">Você ainda não fez nenhum corte.<br><br><button class="go" onclick="home()">Fazer meu primeiro corte</button></div>';return}
   let pending=false;const ids=rs;
   el.innerHTML=rs.map((j,i)=>{if(!['pronto','erro','expirado','revisar'].includes(j.status))pending=true;
-   const media=j.status==='pronto'?`<video src="${j.video}" poster="${j.cover||j.thumb}" controls playsinline preload="none"></video>`:`<div class="ph">${j.status==='erro'?'⚠️':'⏳'}</div>`;
-   const body=j.status==='revisar'?`<button class="sm" onclick="openReview('${j.id}')">✏️ Revisar legenda</button>`:j.status==='pronto'?`<a class="sm" href="${j.video}" download="gta6clips-${j.id}.mp4">Baixar vídeo</a>${j.cover?`<a class="sm g" href="${j.cover}" download="capa-${j.id}.jpg">Capa</a>`:''}`:j.status==='erro'?'<span style="color:var(--mute);font-size:13px">Não deu certo e o corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.</span>':j.status==='expirado'?'':`<div class="prog"><i style="width:${j.progress||5}%"></i></div>`;
+   const media=j.status==='pronto'?`<video src="${j.video}" poster="${j.cover||j.thumb}" controls playsinline preload="none"></video>`:`<div class="ph">${j.status==='erro'?I('alert'):'<span class="spin"></span>'}</div>`;
+   const body=j.status==='revisar'?`<button class="sm" onclick="openReview('${j.id}')">${I('pen')} Revisar legenda</button>`:j.status==='pronto'?`<a class="sm" href="${j.video}" download="gta6clips-${j.id}.mp4">Baixar vídeo</a>${j.cover?`<a class="sm g" href="${j.cover}" download="capa-${j.id}.jpg">Capa</a>`:''}`:j.status==='erro'?'<span style="color:var(--mute);font-size:13px">Não deu certo e o corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.</span>':j.status==='expirado'?'':`<div class="prog"><i style="width:${j.progress||5}%"></i></div>`;
    const tt=ids[i].title&&ids[i].title!=='Corte GTA'?ids[i].title:'Corte',dt=ids[i].created?new Date(ids[i].created*1000).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
    const sh=j.status==='pronto'&&navigator.share?`<button class="sm g" onclick="shareCut('${j.video}','${j.id}')">Compartilhar</button>`:'';
    return `<div class="job">${media}<div><h3>${esc(tt)}</h3><p style="margin:0 0 2px;font-size:12px;color:var(--dim)">${dt}</p><p>${j.status==='na fila'&&j.position>1?`Na fila: ${j.position}º · já já começa`:(LBL[j.status]||'Expirou')}</p>${body}${sh}</div></div>`}).join('');
@@ -981,7 +993,7 @@ let poll;async function renderJobs(){clearTimeout(poll);const el=$('#jobs');
 const DEV=(()=>{let d=LS.get('cgta_dev',null);if(!d){d=Math.random().toString(36).slice(2)+Date.now().toString(36);LS.set('cgta_dev',d)}return d})();
 const post=(p,b)=>api(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
 async function activatePro(){const code=$('#proCode').value.trim();if(!code)return;if(!ME)return openAuth('login','Entre na sua conta pra ativar o código.',activatePro);
-  try{ME=await post('/api/pro/redeem',{code});$('#proStatus').textContent=`✅ Plano ${ME.plan_name} ativo até ${new Date(ME.plan_until*1000).toLocaleDateString('pt-BR')}.`;refreshAcct()}catch(e){$('#proStatus').textContent=e.message}}
+  try{ME=await post('/api/pro/redeem',{code});$('#proStatus').textContent=`Plano ${ME.plan_name} ativo até ${new Date(ME.plan_until*1000).toLocaleDateString('pt-BR')}.`;refreshAcct()}catch(e){$('#proStatus').textContent=e.message}}
 /* checkout próprio: Pix na nossa tela, o Asaas só processa por trás */
 const PERKS={passe:['10 cortes em 7 dias','Todos os visuais e legendas','Legenda automática','Pagamento único, sem renovação'],
   iniciante:['30 cortes por mês','18 visuais e 12 legendas','Legenda automática','Sem fidelidade'],
@@ -999,7 +1011,7 @@ function buy(plan){if(!ME)return openAuth('signup','Crie sua conta pra assinar.'
   <div class="ck-m"><button type="button" data-m="pix" class="on"><b>Pix</b><small>Libera na hora</small></button><button type="button" data-m="card"><b>Cartão</b><small>Crédito</small></button></div>
   <form id="ckF">${ME.has_billing?'':`<div class="ck-lbl">CPF <small>(obrigatório na nota, pedimos só uma vez)</small></div><label class="field"><input id="cpf" inputmode="numeric" maxlength="14" required placeholder="000.000.000-00"></label>`}
   <button class="go" type="submit" id="ckGo">Gerar Pix de ${brl(P.price)}</button></form>
-  <p class="ck-safe">🔒 Pagamento seguro processado pelo Asaas.</p></div>`);
+  <p class="ck-safe">${I('lock')} Pagamento seguro processado pelo Asaas.</p></div>`);
   PAYM='pix';
   const cpf=$('#cpf');if(cpf)cpf.oninput=()=>{let d=cpf.value.replace(/\D/g,'').slice(0,11);cpf.value=d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')};
   document.querySelector('.ck-m').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;PAYM=b.dataset.m;document.querySelectorAll('.ck-m button').forEach(x=>x.classList.toggle('on',x===b));$('#ckGo').textContent=PAYM==='pix'?`Gerar Pix de ${brl(P.price)}`:`Pagar ${brl(P.price)} no cartão`};
@@ -1013,7 +1025,7 @@ function showPix(plan,P,r){
   <div class="ck-qr"><img src="data:image/png;base64,${r.qr}" alt="QR Code Pix"></div>
   <button class="go" id="ckCopy">Copiar código Pix</button>
   <div class="ck-wait"><i></i><span>Aguardando o pagamento… o plano libera sozinho assim que o Pix cair.</span></div>
-  <p class="ck-safe">🔒 Processado pelo Asaas. O código vale até ${r.expires?new Date(r.expires.replace(' ','T')).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'amanhã'}.</p></div>`;
+  <p class="ck-safe">${I('lock')} Processado pelo Asaas. O código vale até ${r.expires?new Date(r.expires.replace(' ','T')).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'amanhã'}.</p></div>`;
   $('#ckCopy').onclick=async()=>{try{await navigator.clipboard.writeText(r.code);$('#ckCopy').textContent='Código copiado ✓';toast('Código Pix copiado. Cole no app do banco.')}catch(e){prompt('Copie o código Pix:',r.code)}};
   stopPay();const t0=Date.now();
   PAYT=setInterval(async()=>{if(!$('#sheet').classList.contains('on')||Date.now()-t0>30*60e3)return stopPay();
@@ -1024,9 +1036,9 @@ function paidOk(P){$('#sheetIn').innerHTML=`<div class="ck ck-ok"><div class="ck
   <button class="go" onclick="closeSheet();home()">Começar a cortar</button></div>`}
 function refreshAcct(){const b=$('#acctBtn');$('#mineBtn').hidden=!ME;
   if(!ME){b.textContent='Entrar';b.classList.remove('on');$('#gift').hidden=false;$('#maxMb').textContent=Math.round((STATUS.mb_base||1024)/1024)+' GB';return}
-  b.textContent=ME.plan==='gratis'?`${ME.left} grátis`:`✂️ ${ME.left}`;b.classList.toggle('on',ME.plan!=='gratis');$('#gift').hidden=true;
+  b.textContent=ME.plan==='gratis'?`${ME.left} grátis`:`${ME.left} cortes`;b.classList.toggle('on',ME.plan!=='gratis');$('#gift').hidden=true;
   $('#maxMb').textContent=Math.round(ME.max_mb/1024)+' GB';
-  const lok=!!(ME&&ME.own_logo&&ME.has_logo);$('#logo').disabled=!lok;$('#logo').checked=lok;$('#wmNote').innerHTML=!(ME&&ME.own_logo)?'Disponível no Clipador e no Pro':!ME.has_logo?'Envie sua logo na <a href="#" onclick="view(\'conta\');return false">aba Conta</a>':'Pequena, no canto do vídeo';
+  wmRender();
   if(!$('#v-make').hidden){renderTpls();renderCaps()}}
 function acctClick(){if(!ME)return openAuth('login');view('conta')}
 function logoutLocal(){LS.set('cgta_token',null);ME=null;refreshAcct()}
@@ -1084,15 +1096,21 @@ let CAMF=null,reactPos='float';
 $('#camFile').onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>1073741824){e.target.value='';return toast('O vídeo do react pode ter até 1 GB')}CAMF=f;$('#camBtn').textContent='✓ '+f.name.slice(0,30)+' · trocar';$('#reactOpts').hidden=false;slotAvail()};
 $('#reactPos').onclick=e=>{const b=e.target.closest('[data-p]');if(!b||b.disabled)return;reactPos=b.dataset.p;document.querySelectorAll('#reactPos .tab').forEach(x=>x.classList.toggle('on',x===b))};
 function slotAvail(){const t=CAT&&CAT.templates.find(x=>x.id===sel.tpl),ok=!!(t&&t.cam);$('#slotBtn').disabled=!ok;$('#slotBtn').style.opacity=ok?1:.4;if(!ok&&reactPos==='slot'){reactPos='float';document.querySelectorAll('#reactPos .tab').forEach((x,i)=>x.classList.toggle('on',i===0))}}
-function clearReact(){CAMF=null;$('#camFile').value='';$('#camBtn').textContent='📷 Adicionar meu react';$('#reactOpts').hidden=true}
+function clearReact(){CAMF=null;$('#camFile').value='';$('#camBtn').textContent='Adicionar meu react';$('#reactOpts').hidden=true}
 /* conta */
 const PREFS=()=>LS.get('cgta_prefs',{captions:true,cover:true});
+function wmRender(){const el=$('#wmBox');if(!el)return;const can=!!(ME&&ME.own_logo),has=!!(ME&&ME.has_logo),on=PREFS().logo!==false;
+  if(has&&!ME.logo_url&&!wmRender.busy){wmRender.busy=1;api('/api/my/stats').then(d=>{ME.logo_url=d.logo;wmRender.busy=0;wmRender()}).catch(()=>{})}
+  const th=has&&ME.logo_url?`<img src="${ME.logo_url}" alt="">`:I(can?'image':'lock');
+  el.innerHTML=!can?`<div class="th">${th}</div><div class="tx"><b>Sua marca d'água</b><small>Coloque a sua logo em todos os cortes. Disponível no Clipador e no Pro.</small></div><button class="sm g" onclick="WIZ=true;view('planos')">Ver planos</button><input id="logo" type="checkbox" hidden>`
+   :!has?`<div class="th">${th}</div><div class="tx"><b>Sua marca d'água</b><small>Envie a sua logo (PNG sem fundo fica melhor). Ela entra pequena no canto de todos os cortes.</small></div><button class="sm" onclick="$('#logoFile').click()">Enviar logo</button><input id="logo" type="checkbox" hidden>`
+   :`<div class="th">${th}</div><div class="tx"><b>Sua marca d'água</b><small>Pequena, no canto do vídeo. <a href="#" onclick="$('#logoFile').click();return false" style="color:#fff">Trocar logo</a></small></div><input id="logo" type="checkbox" ${on?'checked':''} onchange="const p=PREFS();p.logo=this.checked;LS.set('cgta_prefs',p)" aria-label="Usar minha marca d'água">`}
 function applyPrefs(){const p=PREFS();$('#captions').checked=p.captions!==false;$('#cover').checked=p.cover!==false;if(p.tpl)sel.tpl=p.tpl;if(p.cap)sel.cap=p.cap}
 function setPref(k,v){const p=PREFS();p[k]=v;LS.set('cgta_prefs',p);applyPrefs();toast('Preferência salva')}
 async function renderConta(){const el=$('#conta');
   if(!ME){el.innerHTML='<div class="empty" style="margin-top:20px">Entre na sua conta pra ver seus cortes, seu plano e seus pagamentos.<br><br><button class="go" onclick="openAuth(\'login\')">Entrar</button></div>';return}
   el.innerHTML='<div class="skel" style="aspect-ratio:auto;height:220px;border-radius:16px;margin-top:20px"><span class="spin"></span>Carregando sua conta…</div>';
-  let d;try{d=await api('/api/my/stats');ME={...ME,...d};refreshAcct()}catch(e){el.innerHTML='<div class="empty">'+esc(e.message)+'</div>';return}
+  let d;try{d=await api('/api/my/stats');ME={...ME,...d,logo_url:d.logo};refreshAcct()}catch(e){el.innerHTML='<div class="empty">'+esc(e.message)+'</div>';return}
   const paid=d.plan!=='gratis',pct=Math.max(0,Math.min(100,d.quota?d.left/d.quota*100:0)),p=PREFS();
   const tN=CAT&&CAT.templates.find(x=>x.id===(p.tpl||sel.tpl)),cN=CAT&&CAT.captions.find(x=>x.id===(p.cap||sel.cap));
   el.innerHTML=`<div class="acc-h" style="margin-top:20px"><div class="av">${esc((d.name||'?').trim()[0].toUpperCase())}</div><div><b>${esc(d.name)}</b><span>${esc(d.email)} · ${esc(d.phone||'')}</span></div></div>
@@ -1102,7 +1120,7 @@ async function renderConta(){const el=$('#conta');
   <div class="stats"><div><b>${d.total}</b><span>cortes feitos</span></div><div><b>${d.month}</b><span>últimos 30 dias</span></div><div><b>${d.left}</b><span>restantes</span></div></div>
   <div class="box"><h3>Pagamentos</h3>${d.payments.length?d.payments.map(x=>`<div class="pay"><span>${esc(x.plan_name)}<br><small>${new Date(x.created*1000).toLocaleDateString('pt-BR')}</small></span><span style="text-align:right">R$ ${Number(x.amount).toFixed(2).replace('.',',')}<br><small class="${/approved|received|confirmed/i.test(x.status)?'st-ok':'st-wait'}">${/approved|received|confirmed/i.test(x.status)?'Pago':'Pendente'}</small></span></div>`).join(''):'<p class="lead" style="margin:0;font-size:14px">Nenhum pagamento ainda.</p>'}</div>
   <div class="box"><h3>Forma de pagamento</h3><p class="lead" style="margin:0;font-size:14px">Você escolhe <b style="color:#fff">Pix ou cartão</b> na hora de cada pagamento. A gente não guarda os dados do seu cartão: pra trocar de cartão, é só usar outro no próximo pagamento.</p></div>
-  <div class="box"><h3>Sua logo nos cortes</h3>${d.own_logo?`<div class="set" style="border:0;padding-top:0"><span style="display:flex;align-items:center;gap:12px">${d.logo?`<img src="${d.logo}" alt="" style="width:56px;height:56px;object-fit:contain;background:var(--s2);border-radius:10px;padding:4px">`:'<span style="width:56px;height:56px;border-radius:10px;border:1px dashed var(--line2);display:grid;place-items:center;color:var(--dim)">logo</span>'}<span>${d.logo?'Entra pequena no canto de todos os cortes':'PNG com fundo transparente fica melhor'}</span></span></div><div class="row2"><button class="go ghost" onclick="$('#logoFile').click()">${d.logo?'Trocar logo':'Enviar logo'}</button>${d.logo?`<button class="go ghost" onclick="delLogo()">Remover</button>`:''}</div>`:`<p class="lead" style="margin:0 0 12px;font-size:14px">Coloque a sua logo automaticamente em todos os cortes. Disponível no Clipador e no Pro.</p><button class="go ghost" onclick="view('planos')">Ver planos</button>`}</div>
+  <div class="box"><h3>Sua marca d'água</h3>${d.own_logo?`<div class="set" style="border:0;padding-top:0"><span style="display:flex;align-items:center;gap:12px">${d.logo?`<img src="${d.logo}" alt="" style="width:56px;height:56px;object-fit:contain;background:var(--s2);border-radius:10px;padding:4px">`:'<span style="width:56px;height:56px;border-radius:10px;border:1px dashed var(--line2);display:grid;place-items:center;color:var(--dim)">logo</span>'}<span>${d.logo?'Entra pequena no canto de todos os cortes':'PNG com fundo transparente fica melhor'}</span></span></div><div class="row2"><button class="go ghost" onclick="$('#logoFile').click()">${d.logo?'Trocar logo':'Enviar logo'}</button>${d.logo?`<button class="go ghost" onclick="delLogo()">Remover</button>`:''}</div>`:`<p class="lead" style="margin:0 0 12px;font-size:14px">Coloque a sua logo automaticamente em todos os cortes. Disponível no Clipador e no Pro.</p><button class="go ghost" onclick="view('planos')">Ver planos</button>`}</div>
   <div class="box"><h3>Preferências</h3>
     <label class="set"><span>Legenda automática<small>Já vem ligada nos novos cortes</small></span><input type="checkbox" ${p.captions!==false?'checked':''} onchange="setPref('captions',this.checked)"></label>
     <label class="set"><span>Gerar capa<small>Thumbnail 9:16 junto com o corte</small></span><input type="checkbox" ${p.cover!==false?'checked':''} onchange="setPref('cover',this.checked)"></label>
@@ -1113,8 +1131,8 @@ async function renderConta(){const el=$('#conta');
     ${d.admin?'<div class="set"><span>Administração</span><a class="sm g" href="/admin">Painel de admin</a></div>':''}
     <div class="set"><span>Sessão</span><button class="sm g" onclick="api('/api/auth/logout',{method:'POST'}).catch(()=>{});logoutLocal();home();toast('Você saiu')">Sair da conta</button></div></div>`}
 
-$('#logoFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const fd=new FormData();fd.append('file',f);try{await api('/api/my/logo',{method:'POST',body:fd});toast('Logo salva! Ela entra nos próximos cortes.');renderConta()}catch(err){toast(err.message)}};
-async function delLogo(){try{await api('/api/my/logo',{method:'DELETE'});toast('Logo removida');renderConta()}catch(err){toast(err.message)}}
+$('#logoFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const fd=new FormData();fd.append('file',f);try{const r=await api('/api/my/logo',{method:'POST',body:fd});if(ME){ME.has_logo=true;ME.logo_url=r.logo}const p=PREFS();p.logo=true;LS.set('cgta_prefs',p);wmRender();toast('Logo salva. Ela entra nos próximos cortes.');if(!$('#v-conta').hidden)renderConta()}catch(err){toast(err.message)}};
+async function delLogo(){try{await api('/api/my/logo',{method:'DELETE'});if(ME){ME.has_logo=false;ME.logo_url=null}wmRender();toast('Logo removida');renderConta()}catch(err){toast(err.message)}}
 
 const GAL=['basico-legenda','basico-desfocado','vice-cam-cima','neon-rosa','procurado-3','celular-chat'];
 function renderGal(){const el=$('#gal');if(!el)return;el.innerHTML=GAL.map(id=>{const t=CAT&&CAT.templates.find(x=>x.id===id);return `<button data-t="${id}"><img loading="lazy" src="/previews/tpl-${id}.jpg" alt=""><span>${esc(t?t.name:'')}</span></button>`}).join('')}
