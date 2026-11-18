@@ -1,7 +1,7 @@
-import json, logging, os, tempfile, time
+import json, logging, os, shutil, tempfile, time
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import httpx
@@ -107,7 +107,7 @@ def status():
     return {"demo": twitch.demo_mode(), "captions": bool(video.GROQ_KEY or video.OPENAI_KEY),
             "corners": video.CAM_CORNERS, "max_len": video.MAX_LEN, "free_clips": plans.PLANS["gratis"]["quota"],
             "plans": plans.public(), "checkout": payments.ready(), "provider": payments.PROVIDER, "sms": accounts.sms_on(),
-            "max_upload_mb": max(p["max_mb"] for p in plans.PLANS.values())}
+            "max_upload_mb": max(p["max_mb"] for p in plans.PLANS.values()), "mb_base": plans.MB_BASE, "mb_pro": plans.MB_PRO}
 
 
 @app.get("/api/catalog")
@@ -487,8 +487,11 @@ _boot_asaas()
 def _job_state(jid: str) -> dict:
     j = video.JOBS.get(jid)
     if j:
-        return {k: v for k, v in video.public(j).items() if k in ("status", "progress", "video", "thumb", "cover")
-                or (k == "words" and j.get("status") == "revisar")}
+        out = {k: v for k, v in video.public(j).items() if k in ("status", "progress", "video", "thumb", "cover")
+               or (k == "words" and j.get("status") == "revisar")}
+        if j.get("status") == "na fila":
+            out["position"] = video.queue_position(jid)
+        return out
     d = video.JOBS_DIR / jid
     if (d / "corte.mp4").exists():
         return {"status": "pronto", "progress": 100, "video": f"/files/{jid}/corte.mp4", "thumb": f"/files/{jid}/thumb.jpg",
@@ -509,22 +512,118 @@ def new_job(j: JobIn, request: Request):
     return _start(request, j.model_dump())
 
 
+# ---------------- envio em partes (vídeos grandes, retoma se a conexão cair) ----------------
+UPLOADS = video.DATA / "envios"
+UPLOADS.mkdir(parents=True, exist_ok=True)
+
+
+class UpStartIn(BaseModel):
+    name: str
+    size: int
+
+
+@app.post("/api/upload/start")
+def upload_start(b: UpStartIn, request: Request):
+    import secrets as _s
+    u = current_user(request)
+    lim = accounts.plan_info(u)["max_mb"]
+    if b.size <= 0:
+        raise HTTPException(400, "Arquivo vazio")
+    if b.size > lim * 1048576:
+        raise HTTPException(413, f"Vídeo acima de {lim // 1024} GB no seu plano. Cole o link da live e marque o trecho.")
+    free = shutil.disk_usage(UPLOADS).free
+    if b.size > free - 2 * 1073741824:
+        log.error("Disco quase cheio: %s livres, envio de %s", free, b.size)
+        raise HTTPException(507, "Estamos com muitos vídeos sendo processados agora. Tente em alguns minutos ou cole o link.")
+    uid = _s.token_hex(10)
+    ext = (Path(b.name).suffix or ".mp4")[:6].lower()
+    (UPLOADS / f"{uid}.json").write_text(json.dumps({"user": u["id"], "size": b.size, "ext": ext, "created": time.time()}))
+    (UPLOADS / f"{uid}.part").touch()
+    return {"id": uid, "received": 0}
+
+
+def _up_meta(uid: str, u) -> dict:
+    if not uid.isalnum():
+        raise HTTPException(400, "Envio inválido")
+    f = UPLOADS / f"{uid}.json"
+    if not f.exists():
+        raise HTTPException(404, "Envio não encontrado. Comece de novo.")
+    m = json.loads(f.read_text())
+    if m["user"] != u["id"]:
+        raise HTTPException(404, "Envio não encontrado")
+    return m
+
+
+@app.get("/api/upload/{uid}")
+def upload_status(uid: str, request: Request):
+    m = _up_meta(uid, current_user(request))
+    return {"id": uid, "received": (UPLOADS / f"{uid}.part").stat().st_size, "size": m["size"]}
+
+
+@app.put("/api/upload/{uid}")
+async def upload_chunk(uid: str, request: Request, offset: int = 0):
+    m = _up_meta(uid, current_user(request))
+    part = UPLOADS / f"{uid}.part"
+    have = part.stat().st_size
+    if offset != have:
+        async for _ in request.stream():  # descarta o pedaço repetido sem derrubar a conexão
+            pass
+        return JSONResponse({"received": have}, status_code=409)
+    n = 0
+    with open(part, "ab") as f:
+        async for chunk in request.stream():
+            n += len(chunk)
+            if have + n > m["size"] or n > 64 * 1048576:
+                f.truncate(have)
+                raise HTTPException(400, "Pedaço inválido")
+            f.write(chunk)
+    return {"received": have + n, "size": m["size"]}
+
+
+def take_upload(uid: str, u) -> Path:
+    """Entrega o arquivo completo de um envio em partes para virar corte ou análise."""
+    m = _up_meta(uid, u)
+    part = UPLOADS / f"{uid}.part"
+    if part.stat().st_size != m["size"]:
+        raise HTTPException(409, "O envio do vídeo não terminou. Tente de novo.")
+    dst = UPLOADS / f"{uid}{m['ext']}"
+    part.rename(dst)
+    (UPLOADS / f"{uid}.json").unlink(missing_ok=True)
+    return dst
+
+
+def _upload_cleanup():
+    while True:
+        lim = time.time() - 86400
+        for f in UPLOADS.iterdir():
+            try:
+                if f.stat().st_mtime < lim:
+                    f.unlink(missing_ok=True)
+            except Exception:
+                pass
+        time.sleep(3 * 3600)
+
+
+import threading as _th
+_th.Thread(target=_upload_cleanup, daemon=True).start()
+
+
 @app.post("/api/jobs/upload")
-async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), analysis: str = Form(""), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
+async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), analysis: str = Form(""), upload_id: str = Form(""), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
                      template: str = Form("vice-cam-cima"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
                      corner: str = Form("top-left"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
                      watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None), logo: bool = Form(True), review: bool = Form(False)):
     u = current_user(request)
     max_mb = accounts.plan_info(u)["max_mb"]
-    if (file is None or not file.filename) and not analysis:
+    if (file is None or not file.filename) and not analysis and not upload_id:
         if not url.startswith(ALLOWED):
             raise HTTPException(400, "Envie um vídeo ou um link da Twitch, YouTube ou Kick")
         if cam is None or not cam.filename:
             raise HTTPException(400, "Use este envio só com o vídeo do react")
-    tmp = None if file is None or not file.filename else Path(tempfile.mkstemp(suffix=Path(file.filename or "v.mp4").suffix or ".mp4", dir=video.DATA)[1])
+    tmp = take_upload(upload_id, u) if upload_id else None if file is None or not file.filename else Path(tempfile.mkstemp(suffix=Path(file.filename or "v.mp4").suffix or ".mp4", dir=video.DATA)[1])
     size = 0
-    with open(tmp or os.devnull, "wb") as f:
-        while tmp and (chunk := await file.read(1 << 20)):
+    with open(os.devnull if (tmp is None or upload_id) else tmp, "wb") as f:
+        while tmp and not upload_id and (chunk := await file.read(1 << 20)):
             size += len(chunk)
             if size > max_mb * 1048576:
                 f.close(); tmp.unlink(missing_ok=True)
@@ -565,7 +664,7 @@ def get_job(jid: str):
 
 
 @app.post("/api/moments")
-async def new_moments(request: Request, file: UploadFile | None = File(None), url: str = Form("")):
+async def new_moments(request: Request, file: UploadFile | None = File(None), url: str = Form(""), upload_id: str = Form("")):
     u = current_user(request)
     P = accounts.plan_info(u)
     if not P.get("auto_moments"):
@@ -575,6 +674,8 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
     busy = [s for s in moments.STATE.values() if s.get("user_id") == u["id"] and s.get("status") not in ("pronto", "erro")]
     if busy:
         return moments.public(busy[0])
+    if upload_id:
+        return moments.create(u["id"], upload=take_upload(upload_id, u))
     if file is not None and file.filename:
         tmp = Path(tempfile.mkstemp(suffix=Path(file.filename).suffix or ".mp4", dir=video.DATA)[1])
         size = 0

@@ -334,7 +334,7 @@ input,select,textarea{font-size:16px!important}
           <button class="drop" id="drop" onclick="pickFile()">
             <span class="di"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg></span>
             <b>Subir vídeo</b>
-            <small>Arraste aqui ou clique · MP4 ou MOV até <span id="maxMb">1 GB</span> (3 GB no Pro)</small>
+            <small>Arraste aqui ou clique · MP4 ou MOV até <span id="maxMb">1 GB</span> (<span class="gbPro">3 GB</span> no Pro)</small>
           </button>
           <input id="file" type="file" accept="video/*" hidden>
           <div class="or">ou cole um link</div>
@@ -397,7 +397,7 @@ input,select,textarea{font-size:16px!important}
       <p class="kick">Dúvidas</p>
       <h2 class="t">Perguntas frequentes</h2>
       <details><summary>Preciso pagar pra testar?</summary><p>Não. Ao criar a conta você ganha <span class="freeN">3</span> cortes grátis, sem cadastrar cartão.</p></details>
-      <details><summary>Qual o tamanho máximo do vídeo?</summary><p>Até 1 GB nos planos comuns e 3 GB no Pro. Se a live for maior, cole o link da Twitch, YouTube ou Kick e marque o tempo do corte.</p></details>
+      <details><summary>Qual o tamanho máximo do vídeo?</summary><p>Até <span class="gbBase">1 GB</span> nos planos comuns e <span class="gbPro">3 GB</span> no Pro. Se a live for maior, cole o link da Twitch, YouTube ou Kick e marque o tempo do corte.</p></details>
       <details><summary>Quanto tempo pode ter cada corte?</summary><p>Até 3 minutos por corte. Para TikTok e Reels, cortes de 30 a 60 segundos costumam ir melhor.</p></details>
       <details><summary>Como eu pago?</summary><p>Pix, cartão ou boleto. Não tem fidelidade: cada pagamento libera 30 dias do plano.</p></details>
       <details><summary>Posso cortar qualquer streamer?</summary><p>Corte streamers que liberam cortes e sempre dê os créditos. Você é responsável pelo que publica.</p></details>
@@ -551,7 +551,7 @@ input,select,textarea{font-size:16px!important}
     <div class="plan pass"><h3>PASSE GTA 6 <small style="font:700 11px Inter;color:var(--pink);margin-left:6px">LANÇAMENTO</small></h3><div class="pr">R$ 9,90 <small>/7 dias</small></div><ul><li><b>30 cortes</b> em 7 dias</li><li>Todos os visuais e legendas</li><li>Legenda automática</li><li>Pagamento único no Pix</li></ul><button class="go ghost" onclick="buy('passe')">Quero o Passe</button></div>
     <div class="plan"><h3>INICIANTE</h3><div class="pr">R$ 19,90 <small>/mês</small></div><ul><li><b>30 cortes</b> por mês</li><li>18 visuais e 12 legendas</li><li>Legenda automática</li></ul><button class="go ghost" onclick="buy('iniciante')">Assinar Iniciante</button></div>
     <div class="plan hot"><span class="best">MAIS ESCOLHIDO</span><h3>CLIPADOR</h3><div class="pr">R$ 39,90 <small>/mês</small></div><ul><li><b>150 cortes</b> por mês (uns 5 por dia)</li><li><b>✨ Corte automático com IA</b>: ela acha os melhores momentos da live</li><li>Todos os 36 visuais e 36 legendas</li><li><b>Sua logo automática</b> em todos os cortes</li><li>Capa automática</li></ul><button class="go" onclick="buy('clipador')">Assinar Clipador</button></div>
-    <div class="plan"><h3>PRO</h3><div class="pr">R$ 79,90 <small>/mês</small></div><ul><li><b>300 cortes</b> por mês</li><li><b>✨ Corte automático com IA</b></li><li>Corte em lote: vários trechos de uma vez</li><li>Sua logo automática em todos os cortes</li><li>Fila prioritária e vídeos até 3 GB</li><li>Suporte no WhatsApp</li></ul><button class="go ghost" onclick="buy('pro')">Assinar Pro</button></div>
+    <div class="plan"><h3>PRO</h3><div class="pr">R$ 79,90 <small>/mês</small></div><ul><li><b>300 cortes</b> por mês</li><li><b>✨ Corte automático com IA</b></li><li>Corte em lote: vários trechos de uma vez</li><li>Sua logo automática em todos os cortes</li><li>Fila prioritária e vídeos até <span class="gbPro">3 GB</span></li><li>Suporte no WhatsApp</li></ul><button class="go ghost" onclick="buy('pro')">Assinar Pro</button></div>
     </div>
     <p class="lead" style="font-size:13px;text-align:center;margin-top:20px">Pagamento por Pix, cartão ou boleto. Cada compra libera 30 dias (7 no Passe). Os cortes ficam disponíveis por 30 dias pra baixar.</p>
     <details style="margin:6px auto 0;max-width:480px"><summary>Tenho um código</summary>
@@ -594,8 +594,8 @@ function updLen(){const a=secs($('#start').value),b=secs($('#end').value),el=$('
 ['#start','#end'].forEach(id=>document.addEventListener('input',e=>{if(e.target.matches(id))updLen()}));
 function startFromLink(){if(needAcc(startFromLink))return;const u=$('#url').value.trim();if(!u)return toast('Cole o link do momento');if(!/^https?:\/\//.test(u))return toast('Esse link não parece certo');resetMedia();src={kind:'link',url:u};$('#srcLabel').textContent=u;step(1);probeLink(u)}
 function pickFile(){if(needAcc(()=>sheet(`<h2 class="disp" style="margin:0 0 6px">Conta pronta ✅</h2><p class="lead">Agora é só escolher o vídeo da live ou do clipe.</p><button class="go" onclick="closeSheet();$('#file').click()">⬆️ Escolher vídeo</button>`)))return;$('#file').click()}
-$('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const mb=f.size/1048576,max=(ME&&ME.max_mb)||1024;
-  if(mb>max){e.target.value='';$('#linkBox').hidden=false;$('#url').focus();return toast(`Esse vídeo tem ${(mb/1024).toFixed(1)} GB e o limite do seu plano é ${Math.round(max/1024)} GB${max<3072?' (3 GB no Pro)':''}. Cole o link da live aqui embaixo e marque o tempo do corte.`)}
+$('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const mb=f.size/1048576,max=(ME&&ME.max_mb)||STATUS.mb_base||1024;
+  if(mb>max){e.target.value='';$('#linkBox').hidden=false;$('#url').focus();return toast(`Esse vídeo tem ${(mb/1024).toFixed(1)} GB e o limite do seu plano é ${Math.round(max/1024)} GB${max<(STATUS.mb_pro||3072)?' ('+Math.round((STATUS.mb_pro||3072)/1024)+' GB no Pro)':''}. Cole o link da live aqui embaixo e marque o tempo do corte.`)}
   resetMedia();src={kind:'file',file:f};$('#srcLabel').textContent=f.name;const pl=$('#player');try{URL.revokeObjectURL(pl.src)}catch{}pl.src=URL.createObjectURL(f);$('#playerBox').hidden=false;$('#markRow').hidden=false;
   pl.onloadedmetadata=()=>initTrim(pl.duration);step(1);e.target.value=''};
 function useMoment(o){if(needAcc(()=>useMoment(o)))return;resetMedia();src={kind:'link',url:o.url};$('#url').value=o.url;$('#srcLabel').textContent=o.title||o.url;probeLink(o.url,o.start,o.end);if(o.title)$('#title').value=o.title.slice(0,80).toUpperCase();$('#sheet').classList.remove('on');step(1)}
@@ -651,7 +651,7 @@ const AISTEP={'na fila':'Na fila…','preparando':'Preparando o vídeo…','baix
 function aiReset(){clearTimeout(aiPoll);AN=null;SELM=new Set();$('#aiGo').hidden=false;['#aiRun','#aiErr','#aiList'].forEach(x=>$(x).hidden=true);$('#aiPill').hidden=!!(ME&&ME.auto_moments);$('#aiGo').textContent=(ME&&ME.auto_moments)?'Achar os melhores momentos':'🔒 Achar os melhores momentos';$('#aiOr').textContent='ou escolha o trecho você mesmo'}
 async function startAI(){if(!(ME&&ME.auto_moments)){sheet(`<h2 class="disp" style="margin:0 0 6px">Corte automático com IA</h2><p class="lead">A IA ouve a live inteira e entrega os melhores momentos com título, prontos pra cortar de uma vez. Está nos planos <b style="color:#fff">Clipador</b> e <b style="color:#fff">Pro</b>.</p><button class="go" onclick="closeSheet();WIZ=true;view('planos')">Ver planos</button><button class="alt" onclick="closeSheet()">Agora não, escolho o trecho</button>`);return}
   $('#aiGo').hidden=true;$('#aiErr').hidden=true;$('#aiRun').hidden=false;$('#aiTxt').textContent=src.kind==='file'?'Enviando o vídeo…':'Preparando…';$('#aiPct').textContent='';$('#aiBar').style.width='2%';
-  try{let r;if(src.kind==='file'){r=await upProgress('/api/moments',(()=>{const fd=new FormData();fd.append('file',src.file);return fd})(),p=>{$('#aiPct').textContent=p+'%';$('#aiBar').style.width=Math.max(2,p*0.08)+'%'})}
+  try{let r;if(src.kind==='file'){const id=await upFile(src.file,(p,m)=>{$('#aiTxt').textContent=m||'Enviando o vídeo…';$('#aiPct').textContent=p+'%';$('#aiBar').style.width=Math.max(2,p*0.08)+'%'});const fd=new FormData();fd.append('upload_id',id);r=await api('/api/moments',{method:'POST',body:fd})}
     else{const fd=new FormData();fd.append('url',src.url);r=await api('/api/moments',{method:'POST',body:fd})}
     AN=r;LS.set('cgta_an',{id:r.id,src:src.kind==='file'?{kind:'file',name:src.file.name}:{kind:'link',url:src.url}});aiTick()}
   catch(e){aiFail(e.message)}}
@@ -672,6 +672,23 @@ function aiToggle(i){SELM.has(i)?SELM.delete(i):SELM.add(i);if(SELM.size>12){SEL
 function aiAll(){const n=(AN.moments||[]).length;if(SELM.size===n)SELM=new Set();else SELM=new Set([...Array(Math.min(n,12)).keys()]);renderMoments()}
 function aiPreview(i){const m=AN.moments[i];if(DUR)setTrim(m.start,m.end,{seek:'s'});else{$('#start').value=hms(m.start);$('#end').value=hms(m.end);updLen()}$('#media').scrollIntoView({behavior:'smooth',block:'center'});try{if(src.kind==='file')$('#player').play()}catch{}}
 const aiSegs=()=>[...SELM].sort((a,b)=>a-b).map(i=>{const m=AN.moments[i];return[m.start,m.end,m.title||'']});
+
+/* envio em partes, com retomada */
+async function upFile(file,onp){const CH=8*1048576;
+  const st=await api('/api/upload/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:file.name,size:file.size})});
+  let off=st.received||0,fails=0;
+  while(off<file.size){const end=Math.min(file.size,off+CH);
+    try{const r=await fetch(`/api/upload/${st.id}?offset=${off}`,{method:'PUT',headers:{Authorization:'Bearer '+TOK()},body:file.slice(off,end)});
+      const j=await r.json().catch(()=>({}));
+      if(r.status===409&&j.received!=null){off=j.received;continue}
+      if(!r.ok)throw Object.assign(new Error(j.detail||'Falha no envio'),{status:r.status,hard:r.status<500&&r.status!==408});
+      off=j.received;fails=0;onp&&onp(Math.floor(off/file.size*100))}
+    catch(e){if(e.hard)throw e;fails++;if(fails>8)throw new Error('A conexão caiu várias vezes. Confira a internet e tente de novo: o envio continua de onde parou.');
+      onp&&onp(Math.floor(off/file.size*100),'Conexão instável, tentando de novo…');await new Promise(r=>setTimeout(r,Math.min(15000,1500*fails)));
+      try{const g=await api('/api/upload/'+st.id);off=g.received}catch{}}}
+  return st.id}
+function upSheet(title){sheet(`<h2 class="disp" style="margin:0 0 6px">${title}</h2><p class="lead" id="upTxt" style="font-size:14px">Enviando o vídeo… não feche essa página.</p><div class="meter" style="height:10px"><i id="upBar" style="width:1%"></i></div><p class="d" id="upPct" style="text-align:right;font-weight:700;margin:6px 0 0">0%</p>`);$('#sheet').onclick=null}
+function upProg(p,msg){const b=$('#upBar');if(b){b.style.width=Math.max(1,p)+'%';$('#upPct').textContent=p+'%';$('#upTxt').textContent=msg||(p>=100?'Recebido! Preparando…':'Enviando o vídeo… não feche essa página.')}}
 
 let SEGS=[];
 function addSeg(){if(!(ME&&ME.batch))return locked(2);const a=$('#start').value.trim(),b=$('#end').value.trim();if(!a||!b)return toast('Marque início e fim deste trecho primeiro');SEGS.push([a,b]);renderSegs();if(DUR&&TE<DUR-1)setTrim(TE,TE+45,{side:'s',seek:'s'});else{$('#start').value='';$('#end').value='';updLen()}toast('Trecho '+SEGS.length+' adicionado. Marque o próximo.')}
@@ -707,9 +724,10 @@ async function generate(){const go=$('#go');go.disabled=true;go.textContent='Env
   if(CAMF)o.react_pos=reactPos;
   const useAI=AN&&AN.status==='pronto'&&SELM.size>0;
   if(useAI){o.analysis=AN.id;o.segments=JSON.stringify(aiSegs());o.start='';o.end='';o.title=''}
+  let upId=null;if(src.kind==='file'&&!useAI){upSheet('Enviando seu vídeo');try{upId=await upFile(src.file,upProg)}catch(e){closeSheet();$('#sheet').onclick=e2=>{if(e2.target.id==='sheet')closeSheet()};toast(e.message);go.disabled=false;go.textContent='✂️ Gerar meu corte';return}closeSheet();$('#sheet').onclick=e2=>{if(e2.target.id==='sheet')closeSheet()}}
   try{let j;if(useAI&&!CAMF){j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,start:null,end:null,segments:aiSegs()})})}
   else if(useAI&&CAMF){const fd=new FormData();fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
-  else if(src.kind==='file'||CAMF){const fd=new FormData();if(src.kind==='file')fd.append('file',src.file);else fd.append('url',src.url);if(CAMF)fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
+  else if(src.kind==='file'||CAMF){const fd=new FormData();if(src.kind==='file')fd.append('upload_id',upId);else fd.append('url',src.url);if(CAMF)fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
   else{j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,url:src.url,start:o.start||null,end:o.end||null,segments:segs.length>1?segs:[]})})}
   if(j.user){ME=j.user;refreshAcct()}{const p=PREFS();p.tpl=sel.tpl;p.cap=sel.cap;LS.set('cgta_prefs',p)}SEGS=[];CAMF=null;renderSegs();view('mine');toast((j.jobs&&j.jobs.length>1)?j.jobs.length+' cortes sendo montados':'Seu corte está sendo montado')}
   catch(err){toast(err.message);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)WIZ=true,setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='✂️ Gerar meu corte'}}
@@ -754,7 +772,7 @@ let poll;async function renderJobs(){clearTimeout(poll);const el=$('#jobs');
    const body=j.status==='revisar'?`<button class="sm" onclick="openReview('${j.id}')">✏️ Revisar legenda</button>`:j.status==='pronto'?`<a class="sm" href="${j.video}" download="gta-clipadas-${j.id}.mp4">Baixar vídeo</a>${j.cover?`<a class="sm g" href="${j.cover}" download="capa-${j.id}.jpg">Capa</a>`:''}`:j.status==='erro'?'<span style="color:var(--mute);font-size:13px">Não deu certo e o corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.</span>':j.status==='expirado'?'':`<div class="prog"><i style="width:${j.progress||5}%"></i></div>`;
    const tt=ids[i].title&&ids[i].title!=='Corte GTA'?ids[i].title:'Corte',dt=ids[i].created?new Date(ids[i].created*1000).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
    const sh=j.status==='pronto'&&navigator.share?`<button class="sm g" onclick="shareCut('${j.video}','${j.id}')">Compartilhar</button>`:'';
-   return `<div class="job">${media}<div><h3>${esc(tt)}</h3><p style="margin:0 0 2px;font-size:12px;color:var(--dim)">${dt}</p><p>${LBL[j.status]||'Expirou'}</p>${body}${sh}</div></div>`}).join('');
+   return `<div class="job">${media}<div><h3>${esc(tt)}</h3><p style="margin:0 0 2px;font-size:12px;color:var(--dim)">${dt}</p><p>${j.status==='na fila'&&j.position>1?`Na fila: ${j.position}º · já já começa`:(LBL[j.status]||'Expirou')}</p>${body}${sh}</div></div>`}).join('');
   if(pending&&!$('#v-mine').hidden)poll=setTimeout(renderJobs,2500)}
 
 /* conta, planos e pagamento */
@@ -769,7 +787,7 @@ function askCpf(plan){sheet(`<h2 class="disp" style="margin:0 0 6px">Seu CPF</h2
   <form id="cpfF"><label class="field"><input id="cpf" inputmode="numeric" maxlength="18" required placeholder="000.000.000-00"></label><button class="go" type="submit">Continuar pro pagamento</button></form>`);
   $('#cpfF').onsubmit=async e=>{e.preventDefault();const btn=e.target.querySelector('button');btn.disabled=true;try{const r=await post('/api/pay/checkout',{plan,cpf:$('#cpf').value});closeSheet();toast('Abrindo o pagamento…');location.href=r.url}catch(err){toast(err.message);btn.disabled=false}}}
 function refreshAcct(){const b=$('#acctBtn');$('#mineBtn').hidden=!ME;
-  if(!ME){b.textContent='Entrar';b.classList.remove('on');$('#gift').hidden=false;$('#maxMb').textContent='1 GB';return}
+  if(!ME){b.textContent='Entrar';b.classList.remove('on');$('#gift').hidden=false;$('#maxMb').textContent=Math.round((STATUS.mb_base||1024)/1024)+' GB';return}
   b.textContent=ME.plan==='gratis'?`${ME.left} grátis`:`✂️ ${ME.left}`;b.classList.toggle('on',ME.plan!=='gratis');$('#gift').hidden=true;
   $('#maxMb').textContent=Math.round(ME.max_mb/1024)+' GB';
   const lok=!!(ME&&ME.own_logo&&ME.has_logo);$('#logo').disabled=!lok;$('#logo').checked=lok;$('#wmNote').innerHTML=!(ME&&ME.own_logo)?'Disponível no Clipador e no Pro':!ME.has_logo?'Envie sua logo na <a href="#" onclick="view(\'conta\');return false">aba Conta</a>':'Pequena, no canto do vídeo';
@@ -869,7 +887,7 @@ $('#gal').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const t=
   d.addEventListener('drop',e=>{const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;if(!f.type.startsWith('video/'))return toast('Envie um arquivo de vídeo (MP4 ou MOV)');
     const go=()=>{const dt=new DataTransfer();dt.items.add(f);$('#file').files=dt.files;$('#file').onchange({target:$('#file')})};if(needAcc(go))return;go()})})();
 (async()=>{refreshAcct();
-  try{STATUS=await api('/api/status');document.querySelectorAll('.freeN').forEach(e=>e.textContent=STATUS.free_clips);
+  try{STATUS=await api('/api/status');document.querySelectorAll('.freeN').forEach(e=>e.textContent=STATUS.free_clips);const gb=m=>Math.round(m/1024)+' GB';document.querySelectorAll('.gbPro').forEach(e=>e.textContent=gb(STATUS.mb_pro||3072));document.querySelectorAll('.gbBase').forEach(e=>e.textContent=gb(STATUS.mb_base||1024));if(!ME)$('#maxMb').textContent=gb(STATUS.mb_base||1024);
     if(!STATUS.captions)$('#captions').closest('.tg').title='A legenda automática liga quando a chave de IA for configurada.'}catch{}
   try{CAT=await api('/api/catalog')}catch{toast('Não deu pra carregar os visuais')}
   renderGal();applyPrefs();

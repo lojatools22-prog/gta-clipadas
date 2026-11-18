@@ -38,6 +38,16 @@ for _ in range(int(os.getenv("WORKERS", "2"))):
     threading.Thread(target=_worker, daemon=True).start()
 
 
+def queue_position(jid: str) -> int | None:
+    """Posição do corte na fila (1 = o próximo a ser montado)."""
+    with _q.mutex:
+        items = sorted(_q.queue)
+    for i, it in enumerate(items):
+        if it[2] == jid:
+            return i + 1
+    return None
+
+
 def queue_size() -> int:
     return _q.qsize()
 
