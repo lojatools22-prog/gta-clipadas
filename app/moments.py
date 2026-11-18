@@ -116,6 +116,7 @@ def _audio(st: dict, d: Path) -> Path:
         if info.get("live"):
             raise RuntimeError("Essa live ainda está no ar. Use o link do VOD quando ela acabar.")
         st["title"] = info.get("title")
+        st["heatmap"] = info.get("heatmap") or []
         if info.get("duration", 0) > MAX_SECONDS:
             raise RuntimeError(f"O vídeo tem mais de {MAX_SECONDS // 3600} horas. Corte em partes ou use um trecho menor.")
         video.ytdlp(["--no-playlist", "-f", "worstaudio[abr>=32]/worstaudio/bestaudio/worst", "-o", str(d / "baixado.%(ext)s")], st["url"], timeout=1800)
@@ -173,6 +174,53 @@ def _loud_peaks(audio: Path, dur: float) -> list[float]:
         return []
 
 
+def _chat_peaks(st: dict, d: Path, dur: float) -> list[tuple[float, int]]:
+    """Picos do chat da live (replay do YouTube ou da Twitch): quando o chat explode, aconteceu alguma coisa."""
+    if not st.get("url"):
+        return []
+    try:
+        video.ytdlp(["--no-playlist", "--skip-download", "--write-subs", "--sub-langs", "live_chat,rechat", "-o", str(d / "chat.%(ext)s")],
+                    st["url"], timeout=600)
+    except Exception as e:
+        log.info("Momentos: sem replay do chat (%s)", str(e)[:120])
+    ts = []
+    for f in d.glob("chat*"):
+        try:
+            raw = f.read_text(errors="ignore")
+        except Exception:
+            continue
+        ts += [int(x) / 1000 for x in re.findall(r'"videoOffsetTimeMsec"\s*:\s*"?(\d+)', raw)]
+        ts += [float(x) for x in re.findall(r'"content_offset_seconds"\s*:\s*([\d.]+)', raw)]
+        f.unlink(missing_ok=True)
+    if len(ts) < 50:
+        return []
+    bins = [0] * (int(dur // 20) + 2)  # mensagens a cada 20 s
+    for t in ts:
+        if 0 <= t <= dur:
+            bins[int(t // 20)] += 1
+    avg = sum(bins) / max(1, len(bins))
+    order = sorted(range(len(bins)), key=lambda i: -bins[i])
+    out = []
+    for i in order:
+        if bins[i] < max(5, avg * 2.5):
+            break
+        t = i * 20.0
+        if all(abs(t - o) > 60 for o, _ in out):
+            out.append((t, bins[i] * 3))  # msgs por minuto
+        if len(out) >= max(6, int(dur // 400)):
+            break
+    log.info("Momentos: %d mensagens no chat, %d picos", len(ts), len(out))
+    return sorted(out)
+
+
+def _heat_peaks(st: dict) -> list[float]:
+    hm = st.get("heatmap") or []
+    if not hm:
+        return []
+    top = sorted(hm, key=lambda h: -h[2])[:max(3, len(hm) // 10)]
+    return sorted(h[0] for h in top if h[2] >= 0.5)
+
+
 def _fmt(s):
     s = int(s)
     return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}"
@@ -180,6 +228,7 @@ def _fmt(s):
 
 PROMPT = """Você é um editor de cortes de lives de GTA (GTA RP, GTA 6) que sabe o que viraliza no TikTok, Reels e Shorts no Brasil.
 Abaixo está a transcrição de um trecho da live com o tempo de cada fala. Momentos com áudio muito alto estão marcados com [PICO DE ÁUDIO].
+[CHAT EXPLODIU] marca quando o chat da live disparou de mensagens e [MAIS REPETIDO] marca onde o público voltou pra rever o vídeo: são os sinais mais fortes de momento bom, priorize-os.
 Escolha até {n} momentos com mais chance de viralizar: reação forte, piada, briga, susto, perseguição, fala absurda, plot twist, momento engraçado ou épico.
 Cada momento deve ter de 20 a 60 segundos, começar um pouco antes da ação (pra dar contexto) e terminar logo depois do auge.
 Se o trecho não tiver nada bom, devolva lista vazia. Não invente falas.
@@ -199,7 +248,7 @@ def _secs(v):
         return None
 
 
-def _pick(segs: list[dict], peaks: list[float], dur: float, aid: str) -> list[dict]:
+def _pick(segs: list[dict], peaks: list[float], dur: float, aid: str, chat=(), heat=()) -> list[dict]:
     if not segs:
         return []
     found = []
@@ -212,6 +261,12 @@ def _pick(segs: list[dict], peaks: list[float], dur: float, aid: str) -> list[di
         for p in peaks:
             if w0 <= p < w1:
                 lines.append(f"[{_fmt(p)}] [PICO DE ÁUDIO]")
+        for p, n in chat:
+            if w0 <= p < w1:
+                lines.append(f"[{_fmt(p)}] [CHAT EXPLODIU: {n} msgs/min]")
+        for p in heat:
+            if w0 <= p < w1:
+                lines.append(f"[{_fmt(p)}] [MAIS REPETIDO]")
         lines.sort()
         try:
             j = _post("/chat/completions", json={"model": MODEL, "temperature": 0.3, "response_format": {"type": "json_object"},
@@ -232,6 +287,12 @@ def _pick(segs: list[dict], peaks: list[float], dur: float, aid: str) -> list[di
             found.append({"start": round(a), "end": round(b), "title": str(m.get("titulo", "")).upper()[:60],
                           "score": int(max(0, min(100, float(m.get("nota", 50))))), "reason": str(m.get("motivo", ""))[:140]})
         _set(aid, progress=65 + int(33 * (wi + 1) / len(windows)), status="escolhendo")
+    for m in found:  # bônus quando o momento bate com o chat ou com o "mais repetidos"
+        near = lambda t: m["start"] - 20 <= t <= m["end"] + 5
+        if any(near(p) for p, _ in chat):
+            m["score"] = min(100, m["score"] + 12); m["chat"] = True
+        if any(near(p) for p in heat):
+            m["score"] = min(100, m["score"] + 10); m["replay"] = True
     found.sort(key=lambda m: -m["score"])
     best = []
     for m in found:
@@ -258,7 +319,9 @@ def _work(aid: str):
         (d / "transcricao.json").write_text(json.dumps(segs, ensure_ascii=False))
         peaks = _loud_peaks(audio, dur)
         audio.unlink(missing_ok=True)
-        moments = _pick(segs, peaks, dur, aid)
+        chat = _chat_peaks(st, d, dur)
+        heat = _heat_peaks(st)
+        moments = _pick(segs, peaks, dur, aid, chat, heat)
         if not moments:
             raise RuntimeError("Não achamos momentos fortes nesse vídeo. Tente outro ou escolha o trecho na mão.")
         if st.get("auto") and ON_READY:

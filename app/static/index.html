@@ -335,6 +335,7 @@ input,select,textarea{font-size:16px!important}
 .wcol div{height:52px;line-height:52px;text-align:center;scroll-snap-align:center;font:700 30px Inter,sans-serif;font-variant-numeric:tabular-nums;color:var(--dim)}
 .wcol div.on{color:#fff}.wcol div.pad{scroll-snap-align:none}
 .wsep{font:800 28px Inter,sans-serif;color:var(--dim)}
+.sig{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}.sig span{font-size:11px;font-weight:800;color:#ffb3e0;background:var(--pinkbg);border:1px solid rgba(255,31,168,.35);border-radius:999px;padding:3px 8px}
 .durhint{font-size:13px;color:var(--mute);margin:-8px 0 14px;line-height:1.45}
 .durs button small{display:block;font-size:10px;font-weight:700;opacity:.8;margin-top:2px}
 .durs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
@@ -929,7 +930,7 @@ function renderVid(){const el=$('#vid');if(!VID){el.innerHTML='<div class="empty
   const cards=clips.map(m=>{const c=m.clip,ok=c.status==='pronto',err=c.status==='erro'||c.status==='expirado',sel=VSEL.has(c.id);
     const media=ok?`<video src="${c.video}" poster="${c.cover||c.thumb}" controls playsinline preload="none"></video>`:`<img src="/previews/tpl-${esc(autoOpts().template)}.jpg" alt="" style="filter:blur(3px) brightness(.5)"><div class="wait">${err?'Não deu certo':`<i></i>${LBL[c.status]||'Na fila…'}`}</div>`;
     return `<div class="clip ${sel?'sel':''}"><div class="m">${media}${ok?`<span class="ck" onclick="vToggle('${c.id}')">${sel?'✓':''}</span>`:''}<span class="score ${m.score>=80?'hot':''}">${I('flame')} ${m.score}</span></div>
-      <div class="b"><h4>${esc(m.title||'Corte')}</h4><p>${esc(m.reason||'')}</p><span class="t">${mmss(m.start)} – ${mmss(m.end)} · ${m.end-m.start}s</span>
+      <div class="b"><h4>${esc(m.title||'Corte')}</h4><p>${esc(m.reason||'')}</p>${m.chat||m.replay?`<p class="sig">${m.chat?'<span>Chat explodiu</span>':''}${m.replay?'<span>Mais repetido</span>':''}</p>`:''}<span class="t">${mmss(m.start)} – ${mmss(m.end)} · ${m.end-m.start}s</span>
       ${ok?`<div class="acts"><a class="sm" href="${c.video}" download="gta6clips-${c.id}.mp4">Baixar</a>${navigator.share?`<button class="sm g" onclick="shareCut('${c.video}','${c.id}')">Postar</button>`:''}</div>`:''}</div></div>`}).join('');
   const rest=VID.moments.filter(m=>!m.clip);
   const more=rest.length?`<div class="more"><h3>Mais ${rest.length} momento${rest.length>1?'s':''} que a IA achou</h3><p class="lead" style="font-size:13px;margin:0 0 10px">Cada um gasta 1 corte do seu plano.</p>${rest.map(m=>`<div class="mrow"><span class="pill">${I('flame')} ${m.score}</span><b>${esc(m.title||'Momento')}</b><small style="color:var(--mute)">${mmss(m.start)}</small><button class="sm" onclick="vGen(${m.start})">Gerar</button></div>`).join('')}</div>`:'';

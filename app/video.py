@@ -376,7 +376,9 @@ def probe_url(url: str) -> dict:
     j = json.loads(out)
     info = {"duration": float(j.get("duration") or 0), "title": (j.get("title") or "")[:140],
             "thumb": j.get("thumbnail") or "", "live": bool(j.get("is_live")),
-            "extractor": (j.get("extractor_key") or "").lower(), "id": j.get("id") or ""}
+            "extractor": (j.get("extractor_key") or "").lower(), "id": j.get("id") or "",
+            # gráfico "mais repetidos" do YouTube: onde o público voltou pra rever
+            "heatmap": [(float(h.get("start_time", 0)), float(h.get("end_time", 0)), float(h.get("value", 0))) for h in (j.get("heatmap") or [])]}
     if len(_PROBE) > 500:
         _PROBE.clear()
     _PROBE[url] = (time.time(), info)
