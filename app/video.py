@@ -372,20 +372,28 @@ def _work(jid: str):
         if j.get("upload"):
             src = Path(j["upload"])
             trim = (start, end) if start is not None and end is not None else None
+        elif j.get("src_path") and Path(j["src_path"]).exists():  # já baixado (voltando da revisão de legenda)
+            src, trim = Path(j["src_path"]), None
         else:
             _set(jid, status="baixando", progress=15)
             src = download(o["url"], start, end, d)
+            _set(jid, src_path=str(src))
             trim = None
         if trim is None and probe_duration(src) > MAX_LEN + 1:
             trim = (0.0, float(MAX_LEN))
         words = []
-        if o.get("captions", True):
+        if j.get("reviewed"):
+            words = j.get("words") or []
+        elif o.get("captions", True):
             _set(jid, status="legendando", progress=45)
             try:
                 words = transcribe(src, d, trim)
             except Exception as e:  # legenda é opcional: não derruba o corte
                 _set(jid, warning=f"Legenda falhou: {e}")
                 log.error("Legenda do corte %s falhou: %s", jid, str(e)[-600:])
+            if o.get("review") and words:  # pausa para a pessoa revisar a legenda antes de montar
+                _set(jid, status="revisar", progress=55, words=words)
+                return
         _set(jid, status="renderizando", progress=70)
         render(src, d, o, trim, words, Path(j["cam"]) if j.get("cam") else None)
         for f in list(d.glob("cam.*")) + list(d.glob("upload.*")) + list(d.glob("src.*")) + list(d.glob("audio.mp3")) + list(d.glob("cover_raw.png")):
@@ -492,3 +500,11 @@ try:
 except Exception as e:
     log.error("Falha ao retomar cortes: %s", e)
 threading.Thread(target=_selftest, daemon=True).start()
+
+
+def resume_with_words(jid: str, words: list[dict]):
+    j = JOBS.get(jid)
+    if not j or j.get("status") != "revisar":
+        raise ValueError("Esse corte não está esperando revisão")
+    _set(jid, words=words, reviewed=True, status="na fila", progress=60)
+    _q.put((-int(j.get("priority", 0)) - 1, next(_seq), jid))

@@ -343,6 +343,7 @@ class JobIn(BaseModel):
     cam_size: float = 0.30
     title: str = ""
     captions: bool = True
+    review: bool = False
 
 
 def _opts(d: dict, P: dict) -> dict:
@@ -454,7 +455,8 @@ _boot_asaas()
 def _job_state(jid: str) -> dict:
     j = video.JOBS.get(jid)
     if j:
-        return {k: v for k, v in video.public(j).items() if k in ("status", "progress", "video", "thumb", "cover")}
+        return {k: v for k, v in video.public(j).items() if k in ("status", "progress", "video", "thumb", "cover")
+                or (k == "words" and j.get("status") == "revisar")}
     d = video.JOBS_DIR / jid
     if (d / "corte.mp4").exists():
         return {"status": "pronto", "progress": 100, "video": f"/files/{jid}/corte.mp4", "thumb": f"/files/{jid}/thumb.jpg",
@@ -479,7 +481,7 @@ def new_job(j: JobIn, request: Request):
 async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), analysis: str = Form(""), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
                      template: str = Form("vice-cam-cima"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
                      corner: str = Form("top-left"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
-                     watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None), logo: bool = Form(True)):
+                     watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None), logo: bool = Form(True), review: bool = Form(False)):
     u = current_user(request)
     max_mb = accounts.plan_info(u)["max_mb"]
     if (file is None or not file.filename) and not analysis:
@@ -512,7 +514,7 @@ async def new_upload(request: Request, file: UploadFile | None = File(None), url
     try:
         return _start(request, {"url": url if tmp is None else "upload", "analysis": analysis, "react_pos": react_pos, "start": start, "end": end, "segments": segments, "template": template, "caption": caption,
                                 "caption_color": caption_color, "corner": corner, "cam_size": cam_size, "title": title,
-                                "captions": captions, "watermark": watermark, "cover": cover, "logo": logo}, upload=tmp, cam=cam_tmp)
+                                "captions": captions, "watermark": watermark, "cover": cover, "logo": logo, "review": review}, upload=tmp, cam=cam_tmp)
     except HTTPException:
         if tmp:
             tmp.unlink(missing_ok=True)
@@ -564,6 +566,31 @@ def get_moments(aid: str, request: Request):
     if not st or st.get("user_id") != u["id"]:
         raise HTTPException(404, "Análise não encontrada")
     return moments.public(st)
+
+
+class CaptionsIn(BaseModel):
+    words: list
+
+
+@app.post("/api/jobs/{jid}/captions")
+def save_captions(jid: str, b: CaptionsIn, request: Request):
+    u = current_user(request)
+    r = accounts.job_owner(jid)
+    if not r or r["user_id"] != u["id"]:
+        raise HTTPException(404, "Corte não encontrado")
+    words = []
+    for w in b.words[:3000]:
+        try:
+            t = str(w["word"])[:40]
+            if t.strip():
+                words.append({"word": t, "start": float(w["start"]), "end": float(w["end"])})
+        except (KeyError, TypeError, ValueError):
+            raise HTTPException(400, "Legenda inválida")
+    try:
+        video.resume_with_words(jid, words)
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    return {"ok": True}
 
 
 @app.get("/api/my/stats")

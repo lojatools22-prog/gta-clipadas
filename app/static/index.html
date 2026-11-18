@@ -526,6 +526,7 @@ input,select,textarea{font-size:16px!important}
         <div class="tg">Cor da palavra falada</div>
         <div class="sw" id="sw"></div>
         <label class="tg">Legenda automática<input id="captions" type="checkbox" checked></label>
+        <label class="tg"><span>Revisar a legenda antes de gerar<small style="display:block;color:var(--dim);font-size:12px">Você corrige as palavras em Meus cortes e o vídeo é montado depois</small></span><input id="review" type="checkbox"></label>
         <label class="tg">Gerar capa<input id="cover" type="checkbox" checked></label>
         <label class="tg"><span>Minha logo no vídeo<small id="wmNote" style="display:block;color:var(--dim);font-size:12px"></small></span><input id="logo" type="checkbox" checked></label>
       </details>
@@ -702,7 +703,7 @@ $('#sw').onclick=e=>{const b=e.target.closest('[data-c]');if(b){sel.color=b.data
 $('#go').onclick=()=>{if(!ME)return openAuth('signup','Crie sua conta grátis pra gerar o corte. Você ganha '+(STATUS.free_clips||3)+' cortes grátis.',generate);generate()};
 async function generate(){const go=$('#go');go.disabled=true;go.textContent='Enviando…';
   const segs=[...SEGS];if($('#start').value.trim()&&$('#end').value.trim()&&segs.length)segs.push([$('#start').value.trim(),$('#end').value.trim()]);
-  const o={start:$('#start').value.trim(),end:$('#end').value.trim(),segments:segs.length>1?JSON.stringify(segs):'',template:sel.tpl,caption:sel.cap,caption_color:sel.color,corner:$('#corner').value,cam_size:$('#cam_size').value/100,title:$('#title').value,captions:$('#captions').checked,cover:$('#cover').checked,watermark:false,logo:$('#logo').checked};
+  const o={start:$('#start').value.trim(),end:$('#end').value.trim(),segments:segs.length>1?JSON.stringify(segs):'',template:sel.tpl,caption:sel.cap,caption_color:sel.color,corner:$('#corner').value,cam_size:$('#cam_size').value/100,title:$('#title').value,captions:$('#captions').checked,cover:$('#cover').checked,watermark:false,logo:$('#logo').checked,review:$('#review').checked};
   if(CAMF)o.react_pos=reactPos;
   const useAI=AN&&AN.status==='pronto'&&SELM.size>0;
   if(useAI){o.analysis=AN.id;o.segments=JSON.stringify(aiSegs());o.start='';o.end='';o.title=''}
@@ -729,16 +730,28 @@ async function openStreamer(login,name){if(needAcc(()=>openStreamer(login,name))
 async function joinWait(e){e.preventDefault();try{await api('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('#wlName').value,handle:$('#wlAt').value,whatsapp:$('#wlZap').value})});$('#wl').hidden=true;$('#wlOk').hidden=false}catch(err){toast(err.message)}return false}
 
 /* meus cortes */
-const LBL={'na fila':'Preparando seu corte…','baixando':'Pegando o trecho…','legendando':'Escrevendo a legenda…','renderizando':'Montando o vídeo…','pronto':'Pronto pra postar','erro':'Não deu certo'};
+const LBL={'na fila':'Preparando seu corte…','baixando':'Pegando o trecho…','legendando':'Escrevendo a legenda…','renderizando':'Montando o vídeo…','revisar':'Esperando você revisar a legenda','pronto':'Pronto pra postar','erro':'Não deu certo'};
+
+/* revisar legenda */
+let RV=null;
+async function openReview(id){let j;try{j=await api('/api/jobs/'+id)}catch(e){return toast(e.message)}if(!j.words)return renderJobs();
+  const g=[];let cur=[];j.words.forEach(w=>{cur.push(w);if(cur.length>=4||/[.!?,]$/.test(w.word.trim())){g.push(cur);cur=[]}});if(cur.length)g.push(cur);RV={id,g};
+  sheet(`<h2 class="disp" style="margin:0 0 6px">Revisar legenda</h2><p class="lead" style="font-size:14px">Corrija o que a IA ouviu errado. Pode apagar palavra, mas mantenha cada linha no mesmo trecho.</p>
+  <div style="max-height:52vh;overflow:auto;margin:0 -4px;padding:0 4px">${g.map((x,i)=>`<label class="field" style="margin-bottom:10px"><span style="color:var(--dim);font-weight:500">${tshort(x[0].start)}</span><input data-g="${i}" value="${esc(x.map(w=>w.word.trim()).join(' '))}"></label>`).join('')}</div>
+  <button class="go" style="margin-top:12px" onclick="saveReview()">Gerar com essa legenda</button><button class="alt" onclick="closeSheet()">Depois</button>`)}
+async function saveReview(){const out=[];RV.g.forEach((x,i)=>{const t=document.querySelector(`[data-g="${i}"]`).value.trim().split(/\s+/).filter(Boolean);if(!t.length)return;
+    if(t.length===x.length)t.forEach((w,k)=>out.push({word:w,start:x[k].start,end:x[k].end}));
+    else{const a=x[0].start,b=x[x.length-1].end,d=(b-a)/t.length;t.forEach((w,k)=>out.push({word:w,start:a+k*d,end:a+(k+1)*d}))}});
+  try{await api('/api/jobs/'+RV.id+'/captions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({words:out})});closeSheet();toast('Montando o corte com a legenda corrigida');renderJobs()}catch(e){toast(e.message)}}
 async function shareCut(u,id){try{const b=await fetch(u).then(r=>r.blob());const f=new File([b],`gta-clipadas-${id}.mp4`,{type:'video/mp4'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:'Corte GTA Clipadas'});else await navigator.share({url:location.origin+u})}catch(e){if(e.name!=='AbortError')toast('Não deu pra compartilhar. Use o Baixar vídeo.')}}
 let poll;async function renderJobs(){clearTimeout(poll);const el=$('#jobs');
   if(!ME){el.innerHTML='<div class="empty">Entre na sua conta pra ver seus cortes.<br><br><button class="go" onclick="openAuth(\'login\')">Entrar</button></div>';return}
   let rs=[];try{rs=await api('/api/my/jobs')}catch(e){el.innerHTML=`<div class="empty">${esc(e.message)}</div>`;return}
   if(!rs.length){el.innerHTML='<div class="empty">Você ainda não fez nenhum corte.<br><br><button class="go" onclick="home()">Fazer meu primeiro corte</button></div>';return}
   let pending=false;const ids=rs;
-  el.innerHTML=rs.map((j,i)=>{if(!['pronto','erro','expirado'].includes(j.status))pending=true;
+  el.innerHTML=rs.map((j,i)=>{if(!['pronto','erro','expirado','revisar'].includes(j.status))pending=true;
    const media=j.status==='pronto'?`<video src="${j.video}" poster="${j.cover||j.thumb}" controls playsinline preload="none"></video>`:`<div class="ph">${j.status==='erro'?'⚠️':'⏳'}</div>`;
-   const body=j.status==='pronto'?`<a class="sm" href="${j.video}" download="gta-clipadas-${j.id}.mp4">Baixar vídeo</a>${j.cover?`<a class="sm g" href="${j.cover}" download="capa-${j.id}.jpg">Capa</a>`:''}`:j.status==='erro'?'<span style="color:var(--mute);font-size:13px">Não deu certo e o corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.</span>':j.status==='expirado'?'':`<div class="prog"><i style="width:${j.progress||5}%"></i></div>`;
+   const body=j.status==='revisar'?`<button class="sm" onclick="openReview('${j.id}')">✏️ Revisar legenda</button>`:j.status==='pronto'?`<a class="sm" href="${j.video}" download="gta-clipadas-${j.id}.mp4">Baixar vídeo</a>${j.cover?`<a class="sm g" href="${j.cover}" download="capa-${j.id}.jpg">Capa</a>`:''}`:j.status==='erro'?'<span style="color:var(--mute);font-size:13px">Não deu certo e o corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.</span>':j.status==='expirado'?'':`<div class="prog"><i style="width:${j.progress||5}%"></i></div>`;
    const tt=ids[i].title&&ids[i].title!=='Corte GTA'?ids[i].title:'Corte',dt=ids[i].created?new Date(ids[i].created*1000).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
    const sh=j.status==='pronto'&&navigator.share?`<button class="sm g" onclick="shareCut('${j.video}','${j.id}')">Compartilhar</button>`:'';
    return `<div class="job">${media}<div><h3>${esc(tt)}</h3><p style="margin:0 0 2px;font-size:12px;color:var(--dim)">${dt}</p><p>${LBL[j.status]||'Expirou'}</p>${body}${sh}</div></div>`}).join('');
