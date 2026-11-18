@@ -12,7 +12,7 @@ DATA_LOGOS = DATA / "logos"
 DATA_LOGOS.mkdir(parents=True, exist_ok=True)
 LOGIN_SMS = os.getenv("LOGIN_SMS", "1") == "1"          # pede código por SMS ao entrar num aparelho novo
 DEV_SHOW_CODES = os.getenv("DEV_SHOW_CODES", "0") == "1"  # só para testes: devolve o código na resposta
-ADMIN_EMAILS = {e.strip().lower() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()}
+ADMIN_EMAILS = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS", "") + "," + os.getenv("TESTER_EMAILS", "")).split(",") if e.strip()}
 _lock = threading.Lock()
 
 
