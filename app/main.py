@@ -548,7 +548,8 @@ def _auto_cut(aid: str):
         m["job"] = jid
     note = None if len(res["jobs"]) == n else f"Gerei {len(res['jobs'])} cortes: seus cortes do plano acabaram."
     if n < min(len(ms), AUTO_MAX) and n == left:
-        note = f"Gerei {n} cortes: era o que restava no seu plano."
+        note = (f"A IA achou {len(ms)} momentos bons e gerou os {n} melhores com seus cortes grátis. Assine pra cortar o resto."
+                if accounts.active_plan(u) == "gratis" else f"Gerei {n} cortes: era o que restava no seu plano.")
     moments._set(aid, moments=ms, note=note)
 
 
@@ -854,6 +855,8 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
         ao["n"] = max(1, min(int(n or 10), AUTO_MAX))
     if not P.get("auto_moments"):
         raise HTTPException(402, "O corte automático com IA é dos planos Clipador e Pro.")
+    if accounts.active_plan(u) == "gratis" and accounts.public(u)["left"] <= 0:  # degustação: a análise só roda enquanto houver corte grátis
+        raise HTTPException(402, "Seus cortes grátis acabaram. Assine o Clipador pra a IA cortar mais vídeos.")
     if not video.GROQ_KEY:
         raise HTTPException(503, "O corte automático está em manutenção. Escolha o trecho na mão por enquanto.")
     busy = [s for s in moments.STATE.values() if s.get("user_id") == u["id"] and s.get("status") not in ("pronto", "erro")]

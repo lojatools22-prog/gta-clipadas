@@ -5,7 +5,7 @@ MB_BASE = int(os.getenv("MAX_UPLOAD_MB", "1024"))      # limite de vídeo enviad
 MB_PRO = int(os.getenv("MAX_UPLOAD_MB_PRO", "3072"))   # limite no Pro
 
 PLANS = {
-    "gratis":    {"name": "Grátis",      "price": 0.0,   "quota": int(os.getenv("FREE_CLIPS", "3")), "days": 0,  "tier": 0, "max_mb": MB_BASE, "priority": 0, "batch": False, "watermark_off": False, "own_logo": False, "auto_moments": False},
+    "gratis":    {"name": "Grátis",      "price": 0.0,   "quota": int(os.getenv("FREE_CLIPS", "3")), "days": 0,  "tier": 2, "max_mb": MB_BASE, "priority": 0, "batch": False, "watermark_off": False, "own_logo": True, "auto_moments": True},
     "iniciante": {"name": "Iniciante",   "price": 19.90, "quota": 30,  "days": 30, "tier": 1, "max_mb": MB_BASE, "priority": 1, "batch": False, "watermark_off": True, "own_logo": False, "auto_moments": False},
     "clipador":  {"name": "Clipador",    "price": 39.90, "quota": 150, "days": 30, "tier": 2, "max_mb": MB_BASE, "priority": 2, "batch": False, "watermark_off": True, "own_logo": True, "auto_moments": True},
     "pro":       {"name": "Pro",         "price": 79.90, "quota": 300, "days": 30, "tier": 2, "max_mb": MB_PRO, "priority": 3, "batch": True,  "watermark_off": True, "own_logo": True, "auto_moments": True},

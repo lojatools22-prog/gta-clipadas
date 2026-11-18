@@ -419,7 +419,7 @@ details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--d
           <p class="uphint">A IA assiste o vídeo inteiro, acha os melhores momentos e entrega os cortes prontos. Arquivo: MP4 ou MOV até <span id="maxMb">1 GB</span>.</p>
         </div>
         <div class="trust" id="gift">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b class="freeN">3</b> cortes grátis no cadastro</span></span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b class="freeN">3</b> cortes grátis no cadastro, com IA e todos os visuais</span></span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sem cartão</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Vídeo maior que o limite? Cole o link</span>
         </div>
@@ -471,7 +471,7 @@ details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--d
     <div class="sect faq">
       <p class="kick">Dúvidas</p>
       <h2 class="t">Perguntas frequentes</h2>
-      <details><summary>Preciso pagar pra testar?</summary><p>Não. Ao criar a conta você ganha <span class="freeN">3</span> cortes grátis, sem cadastrar cartão.</p></details>
+      <details><summary>Preciso pagar pra testar?</summary><p>Não. Ao criar a conta você ganha <span class="freeN">3</span> cortes grátis com tudo liberado: cola o link e a IA escolhe os 3 melhores momentos e já entrega cortados, com legenda e todos os visuais. Sem cadastrar cartão.</p></details>
       <details><summary>Qual o tamanho máximo do vídeo?</summary><p>Até <span class="gbBase">1 GB</span> nos planos comuns e <span class="gbPro">3 GB</span> no Pro. Se a live for maior, cole o link da Twitch, YouTube ou Kick e marque o tempo do corte.</p></details>
       <details><summary>Quanto tempo pode ter cada corte?</summary><p>Até 3 minutos por corte. Para TikTok e Reels, cortes de 30 a 60 segundos costumam ir melhor.</p></details>
       <details><summary>Como eu pago?</summary><p>Pix ou cartão, direto aqui no site. Não tem fidelidade: cada pagamento libera 30 dias do plano (o Passe libera 7 dias).</p></details>
@@ -683,7 +683,7 @@ document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>view(b.dataset.g
 function home(){view('home')}
 function step(n){view('make');[1,2,3].forEach(i=>$('#s'+i).hidden=i!==n);document.querySelectorAll('.steps i').forEach((e,i)=>e.classList.toggle('on',i<n));if(n===3)$('#go').textContent=(AN&&AN.status==='pronto'&&SELM.size)?`Gerar ${SELM.size} corte${SELM.size>1?'s':''}`:'Gerar meu corte';if(n===2)renderTpls();if(n===3)renderCaps();scrollTo(0,0)}
 
-function needAcc(fn,msg){if(ME)return false;openAuth('signup',msg||('Crie sua conta grátis pra fazer seu corte. Você ganha '+(STATUS.free_clips||3)+' cortes grátis.'),fn);return true}
+function needAcc(fn,msg){if(ME)return false;openAuth('signup',msg||('Crie sua conta grátis: a IA corta os '+(STATUS.free_clips||3)+' melhores momentos desse vídeo pra você.'),fn);return true}
 function toggleLink(){if(needAcc(()=>{$('#linkBox').hidden=false;$('#url').focus()}))return;$('#linkBox').hidden=!$('#linkBox').hidden;if(!$('#linkBox').hidden)$('#url').focus()}
 const MAXLEN=()=>STATUS.max_len||180;
 function secs(v){if(!v)return null;return String(v).split(':').reduce((a,b)=>a*60+(+b||0),0)}
