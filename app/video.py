@@ -421,6 +421,15 @@ def ytdlp(args: list, url: str, timeout: int):
             if not px:
                 _YT_OK["blocked_until"] = time.time() + 1800
             log.warning("yt-dlp: %s cliente %s barrado, tentando o próximo", "proxy" if px else "direto", c or "padrão")
+    if ck and last is not None and any(k in str(last) for k in ("recording is not available", "live stream")):
+        # algumas lives não saem com a conta logada (cookies): tenta sem eles
+        for px in ([_geo_proxy(os.getenv("YTDLP_PROXY"))] if os.getenv("YTDLP_PROXY") else []) + [None]:
+            try:
+                out = _run(["yt-dlp"] + (["--proxy", px] if px else []) + args + [url], timeout=timeout)
+                log.info("yt-dlp: live saiu sem cookies%s", " (proxy)" if px else "")
+                return out
+            except Exception as e:
+                last = e
     raise last
 
 
@@ -848,7 +857,7 @@ def _selftest():
 
 def _live_selftest():
     """Testa o "cortar ao vivo": grava 20 s de lives que estão no ar agora (YouTube e Twitch). Só registra no log."""
-    urls = os.getenv("LIVE_TEST_URLS", "https://www.youtube.com/watch?v=jfKfPfyJRdk,https://www.twitch.tv/monstercat")
+    urls = os.getenv("LIVE_TEST_URLS", "https://www.youtube.com/watch?v=jfKfPfyJRdk,https://www.youtube.com/watch?v=gCNeDWCI0vo")
     from . import livefollow
     for url in [u.strip() for u in urls.split(",") if u.strip()]:
         d = Path("/tmp/autoteste_live") / uuid.uuid4().hex[:6]
