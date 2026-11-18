@@ -106,3 +106,33 @@ def fetch_payment(pid: str) -> dict:
     r = httpx.get(f"{API}/v1/payments/{pid}", headers={"Authorization": f"Bearer {MP_TOKEN}"}, timeout=20)
     r.raise_for_status()
     return r.json()
+
+
+def ensure_asaas_webhook(data_dir, email: str = ""):
+    """Cadastra (ou atualiza) sozinho o webhook do GTA Clipadas no Asaas, com um token gerado aqui.
+    Assim ninguém precisa copiar senha entre o painel do Asaas e o Railway."""
+    global ASAAS_TOKEN
+    if not (ASAAS_KEY and PUBLIC_URL):
+        return
+    import secrets
+    from pathlib import Path
+    f = Path(data_dir) / "asaas_webhook_token"
+    if not ASAAS_TOKEN:
+        if not f.exists():
+            f.write_text(secrets.token_urlsafe(36))
+        ASAAS_TOKEN = f.read_text().strip()
+    url = PUBLIC_URL + "/api/pay/asaas"
+    body = {"name": "GTA Clipadas", "url": url, "email": email or None, "enabled": True, "interrupted": False,
+            "apiVersion": 3, "authToken": ASAAS_TOKEN, "sendType": "SEQUENTIALLY",
+            "events": ["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED", "PAYMENT_REFUNDED", "PAYMENT_CHARGEBACK_REQUESTED"]}
+    body = {k: v for k, v in body.items() if v is not None}
+    try:
+        existing = _asaas("GET", "/webhooks", params={"limit": 100}).get("data", [])
+        mine = next((w for w in existing if w.get("url") == url), None)
+        if mine:
+            _asaas("PUT", f"/webhooks/{mine['id']}", json=body)
+        else:
+            _asaas("POST", "/webhooks", json=body)
+        log.warning("Webhook do Asaas configurado: %s", url)
+    except Exception as e:
+        log.error("Não consegui configurar o webhook do Asaas sozinho: %s", e)

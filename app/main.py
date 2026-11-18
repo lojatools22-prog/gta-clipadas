@@ -428,6 +428,15 @@ def _refund_failed(jid: str):
 video.ON_FAIL = _refund_failed
 
 
+def _boot_asaas():
+    import threading
+    em = (os.getenv("ASAAS_WEBHOOK_EMAIL") or "").strip() or next((e.strip() for e in os.getenv("ADMIN_EMAILS", "").split(",") if "@" in e and "exemplo" not in e), "")
+    threading.Thread(target=payments.ensure_asaas_webhook, args=(video.DATA, em), daemon=True).start()
+
+
+_boot_asaas()
+
+
 def _job_state(jid: str) -> dict:
     j = video.JOBS.get(jid)
     if j:
