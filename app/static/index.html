@@ -220,6 +220,27 @@ select{background:var(--s2);color:#fff;border:1px solid var(--line2);border-radi
 footer{color:var(--dim);font-size:13px;border-top:1px solid var(--line);margin-top:40px}
 footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;padding:28px 20px 110px}
 footer a{color:var(--mute);text-decoration:none}footer a:hover{color:#fff}
+.gen{padding:16px 0 30px;text-align:center}
+.gen h2{font-size:clamp(26px,6vw,34px);margin:0 0 6px;letter-spacing:-.03em}.gen .lead{margin:0 auto 18px;max-width:420px;font-size:15px}
+.gen-vis{position:relative;width:140px;aspect-ratio:9/16;margin:0 auto 20px;border-radius:18px;overflow:hidden;background:#000;box-shadow:0 0 0 1px var(--line2),0 20px 60px rgba(255,31,168,.25)}
+.gen-vis img{width:100%;height:100%;object-fit:cover;filter:blur(2px) brightness(.55);transform:scale(1.05)}
+.gen-vis:after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);background-size:250% 100%;animation:shim 1.8s linear infinite}
+.gen-vis .ring{position:absolute;inset:0;display:grid;place-items:center;z-index:2}.gen-vis .ring b{font-size:30px;font-weight:800;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.gen-vis.done{width:200px}.gen-vis video{width:100%;height:100%;object-fit:cover;display:block}.gen-vis.done:after{display:none}
+@keyframes shim{from{background-position:150% 0}to{background-position:-100% 0}}
+.gen-bar{height:8px;border-radius:9px;background:var(--s2,#222);overflow:hidden;margin:0 auto 18px;max-width:420px}.gen-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),#ffc428);border-radius:9px;transition:width .6s var(--ease)}
+.gen-steps{list-style:none;padding:0;margin:0 auto 18px;max-width:420px;text-align:left;display:grid;gap:4px}
+.gen-steps li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;font-size:15px;color:var(--dim)}
+.gen-steps li i{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:800;box-shadow:0 0 0 2px var(--line2)}
+.gen-steps li.ok{color:#ddd}.gen-steps li.ok i{background:var(--pink);box-shadow:none;color:#fff}
+.gen-steps li.now{color:#fff;background:rgba(255,31,168,.08);font-weight:600}.gen-steps li.now i{box-shadow:none;border:2px solid var(--line2);border-top-color:var(--pink);animation:spin 1s linear infinite}
+.gen-steps li small{margin-left:auto;color:var(--mute);font-weight:600}
+.gen-note{max-width:420px;margin:0 auto 14px;padding:13px 14px;border-radius:12px;font-size:14px;text-align:left;box-shadow:0 0 0 1px var(--line)}
+.gen-note.warn{background:rgba(255,196,40,.08);box-shadow:0 0 0 1px rgba(255,196,40,.35)}.gen-note.free{background:rgba(60,230,122,.07);box-shadow:0 0 0 1px rgba(60,230,122,.35)}
+.gen-btns{max-width:420px;margin:0 auto;display:grid;gap:10px}
+#genPill{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom));z-index:45;border:0;border-radius:99px;padding:10px 16px;background:#fff;color:#000;font:700 14px Inter,sans-serif;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;gap:8px}
+#genPill[hidden]{display:none}#genPill i{width:14px;height:14px;border-radius:50%;border:2px solid #ccc;border-top-color:var(--pink);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;background:rgba(9,9,11,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
 .tabbar button{flex:1;background:none;border:0;color:var(--dim);font:600 11px Inter,sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;cursor:pointer;transition:color .15s}
 .tabbar button svg{width:22px;height:22px}
@@ -577,7 +598,10 @@ input,select,textarea{font-size:16px!important}
       <p class="lead" id="proStatus" style="margin-top:10px"></p>
     </details>
   </section>
+  <!-- GERANDO -->
+  <section id="v-gen" class="narrow" hidden><div id="gen"></div></section>
 </main>
+<button id="genPill" hidden onclick="view('gen')"></button>
 
 <div class="sheet" id="sheet" onclick="if(event.target.id==='sheet')this.classList.remove('on')"><div id="sheetIn"></div></div>
 <div class="toast" id="toast"></div>
@@ -597,7 +621,7 @@ const FEAT_T=['vice-cam-cima','neon-rosa','missao-cumprida','procurado-3','celul
 const FEAT_C=['pesada-karaoke','pesada-pop','neon-karaoke','neon-pop','condensada-karaoke','redonda-pop'];
 let ME=null,WIZ=false;const isPro=()=>!!(ME&&ME.pro);const myTier=()=>ME?ME.tier:0;const TIERN={1:'INICIANTE',2:'CLIPADOR'};
 
-function view(v){document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===v||(v==='make'&&b.dataset.go==='home')));if(v==='mine')renderJobs();$('#backWiz').hidden=!(v==='planos'&&WIZ);if(v!=='planos'&&v!=='make')WIZ=false;if(v==='conta')renderConta();if(v==='virais')loadVirais();scrollTo(0,0)}
+function view(v){document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===v||(v==='make'&&b.dataset.go==='home')));if(v==='mine')renderJobs();if(v==='gen')renderGen();if(typeof updPill==='function')setTimeout(updPill);$('#backWiz').hidden=!(v==='planos'&&WIZ);if(v!=='planos'&&v!=='make')WIZ=false;if(v==='conta')renderConta();if(v==='virais')loadVirais();scrollTo(0,0)}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>view(b.dataset.go));
 function home(){view('home')}
 function step(n){view('make');[1,2,3].forEach(i=>$('#s'+i).hidden=i!==n);document.querySelectorAll('.steps i').forEach((e,i)=>e.classList.toggle('on',i<n));if(n===3)$('#go').textContent=(AN&&AN.status==='pronto'&&SELM.size)?`✂️ Gerar ${SELM.size} corte${SELM.size>1?'s':''}`:'✂️ Gerar meu corte';if(n===2)renderTpls();if(n===3)renderCaps();scrollTo(0,0)}
@@ -741,18 +765,71 @@ $('#sw').onclick=e=>{const b=e.target.closest('[data-c]');if(b){sel.color=b.data
 
 $('#go').onclick=()=>{if(!ME)return openAuth('signup','Crie sua conta grátis pra gerar o corte. Você ganha '+(STATUS.free_clips||3)+' cortes grátis.',generate);generate()};
 async function generate(){const go=$('#go');go.disabled=true;go.textContent='Enviando…';
+  GEN={ids:[],file:src.kind==='file'&&!(AN&&AN.status==='pronto'&&SELM.size>0),link:src.kind!=='file',up:0,phase:'send',tpl:sel.tpl,st:{}};view('gen');
   const segs=[...SEGS];if($('#start').value.trim()&&$('#end').value.trim()&&segs.length)segs.push([$('#start').value.trim(),$('#end').value.trim()]);
   const o={start:$('#start').value.trim(),end:$('#end').value.trim(),segments:segs.length>1?JSON.stringify(segs):'',template:sel.tpl,caption:sel.cap,caption_color:sel.color,corner:$('#corner').value,cam_size:$('#cam_size').value/100,title:$('#title').value,captions:$('#captions').checked,cover:$('#cover').checked,watermark:false,logo:$('#logo').checked,review:$('#review').checked};
   if(CAMF)o.react_pos=reactPos;
   const useAI=AN&&AN.status==='pronto'&&SELM.size>0;
   if(useAI){o.analysis=AN.id;o.segments=JSON.stringify(aiSegs());o.start='';o.end='';o.title=''}
-  let upId=null;if(src.kind==='file'&&!useAI){upSheet('Enviando seu vídeo');try{upId=await upFile(src.file,upProg)}catch(e){closeSheet();$('#sheet').onclick=e2=>{if(e2.target.id==='sheet')closeSheet()};toast(e.message);go.disabled=false;go.textContent='✂️ Gerar meu corte';return}closeSheet();$('#sheet').onclick=e2=>{if(e2.target.id==='sheet')closeSheet()}}
+  let upId=null;if(src.kind==='file'&&!useAI){GEN.phase='up';renderGen();try{upId=await upFile(src.file,p=>{GEN.up=p;renderGen()})}catch(e){toast(e.message);step(3);go.disabled=false;go.textContent='✂️ Gerar meu corte';return}GEN.phase='send';GEN.up=100;renderGen()}
   try{let j;if(useAI&&!CAMF){j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,start:null,end:null,segments:aiSegs()})})}
   else if(useAI&&CAMF){const fd=new FormData();fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
   else if(src.kind==='file'||CAMF){const fd=new FormData();if(src.kind==='file')fd.append('upload_id',upId);else fd.append('url',src.url);if(CAMF)fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
   else{j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,url:src.url,start:o.start||null,end:o.end||null,segments:segs.length>1?segs:[]})})}
-  if(j.user){ME=j.user;refreshAcct()}{const p=PREFS();p.tpl=sel.tpl;p.cap=sel.cap;LS.set('cgta_prefs',p)}SEGS=[];CAMF=null;renderSegs();view('mine');toast((j.jobs&&j.jobs.length>1)?j.jobs.length+' cortes sendo montados':'Seu corte está sendo montado')}
-  catch(err){toast(err.message);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)WIZ=true,setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='✂️ Gerar meu corte'}}
+  if(j.user){ME=j.user;refreshAcct()}{const p=PREFS();p.tpl=sel.tpl;p.cap=sel.cap;LS.set('cgta_prefs',p)}SEGS=[];CAMF=null;renderSegs();
+  GEN.ids=j.jobs||[j.id];GEN.phase='job';addPending(GEN.ids);renderGen();watchJobs()}
+  catch(err){toast(err.message);if(!$('#v-gen').hidden)step(3);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)WIZ=true,setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='✂️ Gerar meu corte'}}
+
+/* tela "gerando seu corte": abre na hora, mostra as etapas e deixa a pessoa sair */
+let GEN=null,WT=null;const T0=document.title;
+const PEND=()=>LS.get('cgta_pending',[]);
+function addPending(ids){LS.set('cgta_pending',[...new Set([...PEND(),...ids])])}
+function dropPending(id){LS.set('cgta_pending',PEND().filter(x=>x!==id))}
+const GSTEPS=[['up','Enviando o vídeo'],['fila','Na fila'],['baixando','Pegando o trecho'],['legendando','Escrevendo a legenda'],['renderizando','Montando o vídeo'],['pronto','Pronto pra postar']];
+function genStage(){if(!GEN)return 'up';if(GEN.phase==='up')return 'up';if(GEN.phase==='send')return 'fila';
+  const sts=GEN.ids.map(i=>(GEN.st[i]||{}).status||'na fila');if(sts.every(x=>['pronto','erro','expirado'].includes(x)))return 'pronto';
+  const order=['na fila','baixando','legendando','renderizando','revisar','pronto'];const m=sts.filter(x=>x!=='pronto'&&x!=='erro').sort((a,b)=>order.indexOf(a)-order.indexOf(b))[0]||'na fila';
+  return m==='na fila'?'fila':m}
+function renderGen(){const el=$('#gen');if(!GEN){el.innerHTML='<div class="empty">Nenhum corte sendo gerado agora.<br><br><button class="go" onclick="home()">Fazer um corte</button></div>';return}
+  const stg=genStage(),list=GEN.ids.map(i=>GEN.st[i]||{}),n=GEN.ids.length||1;
+  const ready=list.filter(x=>x.status==='pronto'),errs=list.filter(x=>x.status==='erro'),rev=GEN.ids.find(i=>(GEN.st[i]||{}).status==='revisar');
+  const done=stg==='pronto',allErr=done&&!ready.length;
+  const steps=GSTEPS.filter(([k])=>!(k==='up'&&!GEN.file)&&!(k==='baixando'&&!GEN.link));
+  const idx=steps.findIndex(([k])=>k===stg);
+  const avg=list.length?list.reduce((a,x)=>a+(x.progress||5),0)/n:0;
+  const pct=GEN.phase==='up'?Math.round(GEN.up*0.3):GEN.phase==='send'?32:done?100:Math.round(32+avg*0.68);
+  const pos=list.map(x=>x.position).filter(Boolean).sort((a,b)=>a-b)[0];
+  const vis=done&&ready.length===1&&n===1?`<div class="gen-vis done"><video src="${ready[0].video}" poster="${ready[0].cover||ready[0].thumb}" controls playsinline autoplay muted></video></div>`
+    :`<div class="gen-vis${done?' done':''}"><img src="/previews/tpl-${GEN.tpl}.jpg" alt=""><div class="ring"><b>${allErr?'⚠️':done?'✓':pct+'%'}</b></div></div>`;
+  const title=allErr?'Não deu certo':done?(n>1?`${ready.length} cortes prontos!`:'Seu corte está pronto!'):rev?'Revise a legenda':(n>1?`Estamos gerando seus ${n} cortes`:'Estamos gerando seu corte');
+  const sub=allErr?'O corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.':done?'Baixe e poste no TikTok, Reels e Shorts.':rev?'A legenda saiu. Dá uma olhada antes de montar o vídeo.':'Leva em média 1 a 3 minutos.';
+  const note=done?'':GEN.phase==='up'?`<div class="gen-note warn">📤 <b>Mantenha esta página aberta</b> só até o envio terminar (${GEN.up}%). Depois disso pode sair.</div>`
+    :`<div class="gen-note free">✅ <b>Pode sair do site.</b> Seu corte continua sendo feito e aparece pronto quando você voltar, em Meus cortes.</div>`;
+  const bell=!done&&GEN.phase==='job'&&'Notification' in window&&Notification.permission==='default'?`<button class="go ghost" onclick="Notification.requestPermission().then(()=>renderGen())">🔔 Me avisar quando ficar pronto</button>`:'';
+  const btns=done?(ready.length===1&&n===1?`<a class="go" href="${ready[0].video}" download="gta-clipadas-${GEN.ids[0]}.mp4" style="text-decoration:none">Baixar vídeo</a>${navigator.share?`<button class="go ghost" onclick="shareCut('${ready[0].video}','${GEN.ids[0]}')">Compartilhar</button>`:''}${ready[0].cover?`<a class="go ghost" href="${ready[0].cover}" download="capa-${GEN.ids[0]}.jpg" style="text-decoration:none">Baixar capa</a>`:''}`:`<button class="go" onclick="view('mine')">Ver meus cortes</button>`)+`<button class="go ghost" onclick="GEN=null;home()">Fazer outro corte</button>`
+    :rev?`<button class="go" onclick="openReview('${rev}')">✏️ Revisar legenda</button>`:`${bell}<button class="go ghost" onclick="home()">Fazer outro corte enquanto isso</button><button class="alt" onclick="view('mine')">Ver meus cortes</button>`;
+  el.innerHTML=`<div class="gen">${vis}<h2 class="disp">${title}</h2><p class="lead">${sub}</p>
+   ${note}${done?'':`<div class="gen-bar"><i style="width:${pct}%"></i></div><ul class="gen-steps">${steps.map(([k,l],i)=>`<li class="${i<idx?'ok':i===idx?'now':''}"><i>${i<idx?'✓':''}</i>${l}${i===idx&&k==='up'?`<small>${GEN.up}%</small>`:i===idx&&k==='fila'&&pos>1?`<small>${pos}º da fila</small>`:''}</li>`).join('')}</ul>`}
+   <div class="gen-btns">${btns}</div></div>`;
+  updPill()}
+function updPill(){const p=$('#genPill');if(GEN&&!$('#v-gen').hidden&&genStage()==='pronto')GEN.seen=true;
+  const show=GEN&&GEN.phase==='job'&&!GEN.seen&&$('#v-gen').hidden;p.hidden=!show;if(!show)return;
+  p.innerHTML=genStage()==='pronto'?'✅ Seu corte ficou pronto · ver':`<i></i>Gerando ${GEN.ids.length>1?GEN.ids.length+' cortes':'seu corte'}… ver`}
+async function watchJobs(){clearTimeout(WT);const ids=PEND();if(!ids.length||!TOK())return;let left=0;
+  for(const id of ids){let j;try{j=await api('/api/jobs/'+id)}catch(e){if(e.status===404)dropPending(id);continue}
+    if(GEN&&GEN.ids.includes(id))GEN.st[id]=j;
+    if(['pronto','erro','expirado'].includes(j.status)){dropPending(id);if(j.status==='pronto')cutReady(id,j)}else left++}
+  if(GEN&&!$('#v-gen').hidden)renderGen();else updPill();
+  if(!$('#v-mine').hidden)renderJobs();
+  document.title=left?'⏳ Gerando corte… · GTA Clipadas':document.title.startsWith('⏳')?T0:document.title;
+  if(GEN&&GEN.boot){GEN.boot=false;if(genStage()==='pronto')view('gen')}
+  if(left)WT=setTimeout(watchJobs,document.hidden?6000:2500)}
+function cutReady(id,j){if(!document.title.startsWith('✅'))document.title='✅ Corte pronto · GTA Clipadas';
+  try{if(document.hidden&&'Notification' in window&&Notification.permission==='granted')new Notification('Seu corte ficou pronto! 🎬',{body:'Toque pra baixar e postar.',icon:j.thumb})}catch(e){}
+  if(GEN&&GEN.ids.includes(id))return;  // a tela de geração já mostra
+  sheet(`<div style="text-align:center"><div class="gen-vis done" style="width:170px;margin:0 auto 16px"><video src="${j.video}" poster="${j.cover||j.thumb}" controls playsinline muted></video></div><h2 class="disp" style="margin:0 0 6px">Seu corte ficou pronto!</h2><p class="lead">Ele foi gerado enquanto você estava fora.</p>
+  <a class="go" href="${j.video}" download="gta-clipadas-${id}.mp4" style="text-decoration:none">Baixar vídeo</a><button class="alt" onclick="closeSheet();view('mine')">Ver meus cortes</button></div>`)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(document.title.startsWith('✅'))document.title=T0;if(PEND().length)watchJobs()}});
 
 /* virais */
 let vmode='24';
@@ -947,7 +1024,8 @@ $('#gal').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const t=
     if(!STATUS.captions)$('#captions').closest('.tg').title='A legenda automática liga quando a chave de IA for configurada.'}catch{}
   try{CAT=await api('/api/catalog')}catch{toast('Não deu pra carregar os visuais')}
   renderGal();applyPrefs();
-  if(TOK())api('/api/me').then(u=>{ME=u;refreshAcct()}).catch(e=>{if(e.status===401)logoutLocal()});
+  if(TOK())api('/api/me').then(u=>{ME=u;refreshAcct();
+    const pend=PEND();if(pend.length){GEN={boot:true,ids:pend,file:false,link:false,up:100,phase:'job',tpl:(PREFS().tpl||'basico-legenda'),st:{}};watchJobs()}}).catch(e=>{if(e.status===401)logoutLocal()});
   const pg=new URLSearchParams(location.search).get('pagamento');if(pg){history.replaceState(null,'',location.pathname);view('planos');
     toast(pg==='success'?'Pagamento aprovado! Seu plano já está liberado.':pg==='pending'?'Pagamento em análise. Assim que aprovar, o plano libera sozinho.':'O pagamento não foi concluído.');setTimeout(()=>TOK()&&api('/api/me').then(u=>{ME=u;refreshAcct()}),2500)}
   if(location.hash==='#planos')view('planos');
