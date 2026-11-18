@@ -122,12 +122,15 @@ def _audio(st: dict, d: Path) -> Path:
         if not live and info.get("duration", 0) > MAX_SECONDS:
             raise RuntimeError(f"O vídeo tem mais de {MAX_SECONDS // 3600} horas. Corte em partes ou use um trecho menor.")
         args = ["--no-playlist", "-f", "worstaudio[abr>=32]/worstaudio/bestaudio/worst", "-o", str(d / "baixado.%(ext)s")]
-        if live:  # live ainda no ar: analisa as últimas horas que já passaram (o YouTube guarda o começo via DVR)
-            end = info.get("duration", 0)
-            st["offset"] = max(0.0, end - LIVE_WINDOW)
-            args += ["--live-from-start", "--download-sections", f"*{st['offset']:.0f}-{end:.0f}"]
-        video.ytdlp(args, st["url"], timeout=3600)
-        src = str(next(d.glob("baixado.*")))
+        if live:  # live no ar: grava os próximos minutos (funciona em qualquer live) e corta desse trecho
+            from . import livefollow
+            _set(st["id"], status="baixando", progress=5, note="Live ao vivo: gravando os próximos minutos pra achar os melhores momentos.")
+            blk = livefollow._record(st["url"], int(os.getenv("LIVE_ANALYSIS_SECONDS", "480")), video.SCRATCH / "analises" / st["id"])
+            st["source"] = str(blk); _save(st["id"])
+            src = str(blk)
+        else:
+            video.ytdlp(args, st["url"], timeout=3600)
+            src = str(next(d.glob("baixado.*")))
     video._run(["ffmpeg", "-y", "-i", src, "-vn", "-ac", "1", "-ar", "16000", "-b:a", "32k", str(out)], timeout=1800)
     for f in d.glob("baixado.*"):
         f.unlink(missing_ok=True)
