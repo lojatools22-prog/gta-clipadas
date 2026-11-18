@@ -57,11 +57,43 @@ def current_user(request: Request, required=True):
     return u
 
 
+ADMIN_SESSIONS: dict[str, float] = {}
+_ADMIN_FAILS: dict[str, list] = {}
+
+
 def admin_user(request: Request):
-    u = current_user(request)
-    if not accounts.is_admin(u):
-        raise HTTPException(403, "Só para administradores")
+    tok = token_of(request)
+    if tok and ADMIN_SESSIONS.get(tok, 0) > time.time():
+        return {"admin": True, "email": os.getenv("ADMIN_USER", "admin")}
+    u = current_user(request, required=False)
+    if not u or not accounts.is_admin(u):
+        raise HTTPException(401 if not u else 403, "Entre com o usuário e a senha do painel")
     return u
+
+
+class AdminLoginIn(BaseModel):
+    user: str
+    password: str
+
+
+@app.post("/api/admin/login")
+def admin_login(b: AdminLoginIn, request: Request):
+    import hmac as _h, secrets as _s
+    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "?").split(",")[0].strip()
+    now = time.time()
+    fails = [t for t in _ADMIN_FAILS.get(ip, []) if t > now - 900]
+    if len(fails) >= 6:
+        raise HTTPException(429, "Muitas tentativas. Espere 15 minutos.")
+    au, ap = os.getenv("ADMIN_USER", ""), os.getenv("ADMIN_PASSWORD", "")
+    if not au or not ap:
+        raise HTTPException(503, "O acesso do painel ainda não foi configurado no servidor.")
+    if not (_h.compare_digest(b.user.strip().lower(), au.lower()) and _h.compare_digest(b.password, ap)):
+        _ADMIN_FAILS[ip] = fails + [now]
+        time.sleep(1)
+        raise HTTPException(401, "Usuário ou senha errados")
+    tok = "adm_" + _s.token_urlsafe(32)
+    ADMIN_SESSIONS[tok] = now + 12 * 3600
+    return {"token": tok, "user": au}
 
 
 # ---------------- básico ----------------
@@ -662,6 +694,34 @@ def admin_overview(request: Request):
     admin_user(request)
     wl = WAITLIST.read_text(encoding="utf-8").splitlines() if WAITLIST.exists() else []
     return {**accounts.admin_stats(), "fila_agora": video.queue_size(), "lista_espera": len(wl)}
+
+
+@app.get("/api/admin/crm")
+def admin_crm(request: Request):
+    admin_user(request)
+    rows, extra = accounts.crm_rows()
+    wl = [json.loads(l) for l in WAITLIST.read_text(encoding="utf-8").splitlines()] if WAITLIST.exists() else []
+    import hashlib as _hl
+    for w in wl:
+        key = "w:" + _hl.sha1((w.get("at", "") + w.get("whatsapp", "")).encode()).hexdigest()[:12]
+        k = extra.get(key, {})
+        rows.append({"key": key, "tipo": "automatico", "name": w.get("name"), "email": "", "phone": w.get("whatsapp"), "handle": w.get("handle"),
+                     "created": time.mktime(time.strptime(w["at"], "%Y-%m-%d %H:%M:%S")) if w.get("at") else None,
+                     "plan_name": "Interessado no Automático", "cortes": 0, "pago": 0, "stage": k.get("stage") or "novo", "notes": k.get("notes") or ""})
+    rows.sort(key=lambda r: -(r.get("created") or 0))
+    return {"stages": accounts.STAGES, "leads": rows}
+
+
+class CrmIn(BaseModel):
+    key: str
+    stage: str | None = None
+    notes: str | None = None
+
+
+@app.post("/api/admin/crm")
+def admin_crm_set(b: CrmIn, request: Request):
+    admin_user(request)
+    return _wrap(accounts.crm_set, b.key[:40], b.stage, b.notes)
 
 
 @app.get("/api/admin/users")

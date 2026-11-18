@@ -34,6 +34,7 @@ with _conn() as c:
     CREATE TABLE IF NOT EXISTS otp_sends(target TEXT, at REAL);
     CREATE TABLE IF NOT EXISTS codes_used(code TEXT PRIMARY KEY, user_id INTEGER, at REAL);
     CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, user_id INTEGER, title TEXT, created REAL, charged TEXT);
+    CREATE TABLE IF NOT EXISTS crm(key TEXT PRIMARY KEY, stage TEXT, notes TEXT, updated REAL);
     CREATE TABLE IF NOT EXISTS payments(id TEXT PRIMARY KEY, user_id INTEGER, plan TEXT, amount REAL, status TEXT, provider TEXT, created REAL, updated REAL);
     """)
 
@@ -411,3 +412,43 @@ def admin_add_credits(user_id: int, n: int):
         col = "credits" if active_plan(u) == "gratis" else "quota_left"
         c.execute(f"UPDATE users SET {col}=MAX(0,{col}+?) WHERE id=?", (int(n), user_id))
     return public(_user(user_id))
+
+
+# ---------------- CRM do painel ----------------
+STAGES = ["novo", "contatado", "negociando", "cliente", "perdido"]
+
+
+def crm_rows():
+    with _conn() as c:
+        rows = c.execute("""SELECT u.*,
+            (SELECT COUNT(*) FROM jobs j WHERE j.user_id=u.id) AS cortes,
+            (SELECT MAX(created) FROM jobs j WHERE j.user_id=u.id) AS ultimo_corte,
+            (SELECT COALESCE(SUM(amount),0) FROM payments p WHERE p.user_id=u.id AND p.status='approved') AS pago,
+            (SELECT MAX(created) FROM payments p WHERE p.user_id=u.id AND p.status='approved') AS ultimo_pagamento,
+            k.stage AS stage, k.notes AS notes
+            FROM users u LEFT JOIN crm k ON k.key='u:'||u.id ORDER BY u.created DESC""").fetchall()
+        extra = {r["key"]: dict(r) for r in c.execute("SELECT * FROM crm WHERE key LIKE 'w:%'")}
+    out = []
+    now = time.time()
+    for r in rows:
+        p = active_plan(r)
+        auto = "cliente" if (r["pago"] or 0) > 0 and p != "gratis" else "novo"
+        out.append({"key": f"u:{r['id']}", "tipo": "cadastro", "user_id": r["id"], "name": r["name"], "email": r["email"], "phone": r["phone"],
+                    "plan": p, "plan_name": PLANS[p]["name"], "plan_until": r["plan_until"] if p != "gratis" else None,
+                    "left": r["credits"] if p == "gratis" else r["quota_left"], "cortes": r["cortes"], "ultimo_corte": r["ultimo_corte"],
+                    "pago": round(r["pago"] or 0, 2), "ultimo_pagamento": r["ultimo_pagamento"], "created": r["created"],
+                    "last_login": r["last_login"], "stage": r["stage"] or auto, "notes": r["notes"] or "",
+                    "quente": p == "gratis" and (r["cortes"] or 0) >= 2 and (r["created"] or 0) > now - 14 * 86400})
+    return out, extra
+
+
+def crm_set(key: str, stage: str | None, notes: str | None):
+    if stage is not None and stage not in STAGES:
+        raise AuthError("Etapa inválida")
+    with _lock, _conn() as c:
+        cur = c.execute("SELECT * FROM crm WHERE key=?", (key,)).fetchone()
+        st = stage if stage is not None else (cur["stage"] if cur else "novo")
+        nt = (notes if notes is not None else (cur["notes"] if cur else ""))[:2000]
+        c.execute("INSERT INTO crm(key,stage,notes,updated) VALUES(?,?,?,?) ON CONFLICT(key) DO UPDATE SET stage=excluded.stage, notes=excluded.notes, updated=excluded.updated",
+                  (key, st, nt, time.time()))
+    return {"ok": True}
