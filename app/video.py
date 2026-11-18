@@ -198,7 +198,22 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
     # react: webcam de quem está cortando. 'slot' ocupa o lugar da facecam do template; 'float' fica numa janela por cima
     cam_ref = inp(cam) if cam else None
     slot = cam_ref and opts.get("react_pos") == "slot" and tpl["layout"]["kind"] in ("cam_top", "cam_bottom", "split", "float")
-    if opts.get("_portrait") and not slot:  # vídeo gravado em pé: ocupa a tela toda, sem recortar facecam
+    if tpl["layout"]["kind"] == "gtacapa" and not opts.get("_portrait"):
+        # capa estilo GTA: arte de fundo, jogo de ponta a ponta no meio com linhas neon e a facecam (se tiver) numa janela acima
+        bgv = inp(Path(__file__).parent / "assets" / "gtacapa" / f"{tpl['layout']['bg']}.jpg")
+        face = (opts.get("_frame") or {}).get("cam")
+        gy, gh = 640, 608
+        vf = (f"{bgv}scale={W}:{H},setsar=1,loop=loop=-1:size=1:start=0,fps=30,setpts=N/30/TB[bgl];"
+              f"[0:v]split=2[g0][c0];[g0]{_cover(W, gh)}[game];[bgl][game]overlay=0:{gy}:shortest=1[b1];")
+        if face:
+            cw, ch = 560, 315
+            vf += (f"[c0]{framing.cam_crop(face, cw, ch, (opts.get('_frame') or {}).get('aspect', 16 / 9))},"
+                   f"pad={cw + 12}:{ch + 12}:6:6:color=0xff1fa8[cam];[b1][cam]overlay={(W - cw - 12) // 2}:{gy - ch - 12 - 40}[b2];")
+        else:
+            vf += "[c0]nullsink;[b1]null[b2];"
+        vf += (f"[b2]drawbox=x=0:y={gy - 14}:w={W}:h=14:color=0xff1fa8@0.35:t=fill,drawbox=x=0:y={gy + gh}:w={W}:h=14:color=0xff1fa8@0.35:t=fill,"
+               f"drawbox=x=0:y={gy - 6}:w={W}:h=6:color=0xff4fc0:t=fill,drawbox=x=0:y={gy + gh}:w={W}:h=6:color=0xff4fc0:t=fill[base]")
+    elif opts.get("_portrait") and not slot:  # vídeo gravado em pé: ocupa a tela toda, sem recortar facecam
         vf = f"[0:v]{_cover(W, H)}[base]"
     else:
         vf = layout_filter(tpl["layout"], opts.get("corner", "top-left"), float(opts.get("cam_size", 0.30)), cam_ref if slot else None,

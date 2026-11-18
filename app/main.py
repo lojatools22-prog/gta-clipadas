@@ -535,7 +535,7 @@ AUTO_MAX = int(os.getenv("AUTO_CLIPS", "10"))
 LONG_CLIP = 60  # acima disso o corte manual custa 2
 
 
-FREE_SHOWCASE = [("basico-facecam", "pesada-karaoke"), ("basico-fundo-orla", "condensada-pop"), ("basico-fundo-asfalto", "neon-quique")]
+FREE_SHOWCASE = [("capa-praia", "pesada-karaoke"), ("capa-cidade", "condensada-pop"), ("capa-estrada", "neon-quique")]
 
 
 def _auto_cut(aid: str):
