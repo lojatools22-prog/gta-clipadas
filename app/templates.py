@@ -29,6 +29,9 @@ TEMPLATES += [
     _t("basico-desfocado", "Fundo desfocado", "basico", {"kind": "blur_plain"}, title=(540, 470), caption=(540, 1440), shadow="preto", title_shadow="preto", pro=False),
     _t("basico-facecam", "Facecam + jogo", "basico", {"kind": "cam_top"}, title=(540, 608), caption=(540, 1400), shadow="preto", title_shadow="preto", pro=False),
     _t("basico-faixas", "Faixas pretas", "basico", {"kind": "letterbox"}, title=(540, 560), caption=(540, 1390), shadow="preto", title_shadow="preto", pro=False),
+    _t("basico-fundo-orla", "Fundo GTA: orla", "basico", {"kind": "gtabg", "bg": "aereo"}, ["gtabg_aereo"], title=(540, 470), caption=(540, 1390), shadow="preto", title_shadow="preto", pro=False),
+    _t("basico-fundo-cidade", "Fundo GTA: cidade", "basico", {"kind": "gtabg", "bg": "skyline"}, ["gtabg_skyline"], title=(540, 470), caption=(540, 1390), shadow="preto", title_shadow="preto", pro=False),
+    _t("basico-fundo-asfalto", "Fundo GTA: asfalto", "basico", {"kind": "gtabg", "bg": "asfalto"}, ["gtabg_asfalto"], title=(540, 470), caption=(540, 1390), shadow="preto", title_shadow="preto", pro=False),
 ]
 # ---- Fundo GTA: o vídeo numa janela neon sobre uma cena da cidade ----
 _g = dict(layout=None, title=(540, 470), caption=(540, 1390), shadow="preto", title_shadow="rosa")
@@ -86,7 +89,7 @@ TEMPLATES += [
     _t("retro-outdoor", "Outdoor", "retro", {"kind": "inset", "rect": [80, 560, 1000, 1078], "bg": "none"}, ["outdoor"], title=(540, 330), caption=(540, 1300), title_size=64),
     _t("retro-revista", "Capa de revista", "retro", {"kind": "crop"}, ["revista"], title=(540, 1520), caption=(540, 1100), title_size=70),
 ]
-assert len(TEMPLATES) == 46, len(TEMPLATES)
+assert len(TEMPLATES) == 49, len(TEMPLATES)
 # Níveis: 0 = grátis, 1 = Iniciante, 2 = Clipador/Pro/Passe
 TIER1_T = {"vice-cam-flutuante", "vice-sem-cam", "neon-roxo", "neon-verde", "procurado-3", "missao-falhou", "missao-nova", "celular-chamada", "retro-tv"}
 for t in TEMPLATES:
