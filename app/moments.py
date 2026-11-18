@@ -276,7 +276,8 @@ def _work(aid: str):
         msg = str(e)
         if "código" in msg or "Traceback" in msg or len(msg) > 200:
             log.error("Momentos %s falhou: %s", aid, msg[-800:])
-            msg = "Não conseguimos analisar esse vídeo. Confira se o link é público ou tente subir o arquivo."
+            fe = video.friendly_error(msg)
+            msg = fe if not fe.startswith("Algo deu errado") else "Não conseguimos analisar esse vídeo. Confira se o link é público ou tente subir o arquivo."
         _set(aid, status="erro", error=msg)
 
 

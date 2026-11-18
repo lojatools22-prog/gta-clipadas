@@ -945,7 +945,7 @@ function renderGen(){const el=$('#gen');if(!GEN){el.innerHTML='<div class="empty
   const vis=done&&ready.length===1&&n===1?`<div class="gen-vis done"><video src="${ready[0].video}" poster="${ready[0].cover||ready[0].thumb}" controls playsinline autoplay muted></video></div>`
     :`<div class="gen-vis${done?' done':''}"><img src="/previews/tpl-${GEN.tpl}.jpg" alt=""><div class="ring"><b>${allErr?'!':done?'✓':pct+'%'}</b></div></div>`;
   const title=allErr?'Não deu certo':done?(n>1?`${ready.length} cortes prontos!`:'Seu corte está pronto!'):rev?'Revise a legenda':(n>1?`Estamos gerando seus ${n} cortes`:'Estamos gerando seu corte');
-  const sub=allErr?'O corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.':done?'Baixe e poste no TikTok, Reels e Shorts.':rev?'A legenda saiu. Dá uma olhada antes de montar o vídeo.':'Leva em média 1 a 3 minutos.';
+  const sub=allErr?((list.find(x=>x.hint)||{}).hint||'Confira o vídeo e o trecho e tente de novo.')+' O corte voltou pra sua conta.':done?'Baixe e poste no TikTok, Reels e Shorts.':rev?'A legenda saiu. Dá uma olhada antes de montar o vídeo.':'Leva em média 1 a 3 minutos.';
   const note=done?'':GEN.phase==='up'?`<div class="gen-note warn">${I('upload')} <b>Mantenha esta página aberta</b> só até o envio terminar (${GEN.up}%). Depois disso pode sair.</div>`
     :`<div class="gen-note free">${I('check')} <b>Pode sair do site.</b> Seu corte continua sendo feito e aparece pronto quando você voltar, em Meus cortes.</div>`;
   const bell=!done&&GEN.phase==='job'&&'Notification' in window&&Notification.permission==='default'?`<button class="go ghost" onclick="Notification.requestPermission().then(()=>renderGen())">${I('bell')} Me avisar quando ficar pronto</button>`:'';

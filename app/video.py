@@ -293,9 +293,43 @@ def _is_yt(url: str) -> bool:
     return any(h in url for h in ("youtube.com", "youtu.be"))
 
 
+def _cookies_file():
+    """Cookies do YouTube: caminho em YTDLP_COOKIES ou o conteúdo do cookies.txt em YTDLP_COOKIES_TXT."""
+    p = os.getenv("YTDLP_COOKIES")
+    if p and Path(p).exists():
+        return Path(p)
+    txt = os.getenv("YTDLP_COOKIES_TXT")
+    if txt:
+        f = SCRATCH / "yt_cookies.txt"
+        if not f.exists():
+            f.write_text(txt.replace("\\n", "\n").replace("\\t", "\t"))
+        return f
+    return None
+
+
+def friendly_error(msg: str) -> str:
+    m = msg or ""
+    if "not a bot" in m or "429" in m or "Sign in" in m:
+        return "O YouTube bloqueou o download desse vídeo agora. Tente um link da Twitch ou Kick, ou envie o arquivo do vídeo."
+    if "Private video" in m or "private" in m.lower():
+        return "Esse vídeo é privado. Use um vídeo público."
+    if "is not available" in m or "unavailable" in m.lower() or "404" in m:
+        return "Esse vídeo não está disponível. Confira o link."
+    if "live event will begin" in m or "is_live" in m:
+        return "A live ainda está no ar. Use o link do VOD quando ela acabar."
+    if "Disco" in m or "No space" in m:
+        return "O servidor está cheio agora. Tente de novo em alguns minutos."
+    return "Algo deu errado ao montar o vídeo. Tente de novo; se repetir, tente outro trecho."
+
+
 def ytdlp(args: list, url: str, timeout: int):
     """Roda o yt-dlp; no YouTube, se cair na checagem de robô, tenta os outros clientes (começando pelo último que funcionou)."""
-    base = ["yt-dlp"] + (["--cookies", os.environ["YTDLP_COOKIES"]] if os.getenv("YTDLP_COOKIES") and Path(os.environ["YTDLP_COOKIES"]).exists() else [])
+    base = ["yt-dlp"]
+    ck = _cookies_file()
+    if ck:
+        base += ["--cookies", str(ck)]
+    if os.getenv("YTDLP_PROXY") and _is_yt(url):  # proxy residencial: o YouTube barra IP de servidor
+        base += ["--proxy", os.environ["YTDLP_PROXY"]]
     if not _is_yt(url):
         return _run(base + args + [url], timeout=timeout)
     order = [_YT_OK["client"]] + [c for c in YT_CLIENTS if c != _YT_OK["client"]]
@@ -566,7 +600,7 @@ def _work(jid: str):
              finished=time.time(), captions=len(words) > 0)
     except Exception as e:
         _drop_sources(jid)
-        _set(jid, status="erro", error=str(e)[-1500:])
+        _set(jid, status="erro", error=str(e)[-1500:], hint=friendly_error(str(e)))
         log.error("Corte %s falhou: %s\n%s", jid, str(e)[-1500:], traceback.format_exc()[-1500:])
         if ON_FAIL:
             try:

@@ -523,8 +523,8 @@ def _refund_failed(jid: str):
         if r:
             break
         time.sleep(0.2)
-    if r and r["charged"]:
-        accounts.refund(r["user_id"], r["charged"])
+    if r and accounts.refund_job(jid):
+        log.info("Corte %s falhou: crédito devolvido ao usuário %s", jid, r["user_id"])
 
 
 video.ON_FAIL = _refund_failed

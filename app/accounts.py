@@ -345,6 +345,17 @@ def refund(user_id: int, col: str):
             c.execute(f"UPDATE users SET {col}={col}+1 WHERE id=?", (user_id,))
 
 
+def refund_job(job_id) -> bool:
+    """Devolve o corte de um trabalho que falhou, uma vez só."""
+    with _lock, _conn() as c:
+        r = c.execute("SELECT user_id, charged FROM jobs WHERE id=?", (job_id,)).fetchone()
+        if not r or r["charged"] not in ("credits", "quota_left"):
+            return False
+        c.execute(f"UPDATE users SET {r['charged']}={r['charged']}+1 WHERE id=?", (r["user_id"],))
+        c.execute("UPDATE jobs SET charged='devolvido' WHERE id=?", (job_id,))
+    return True
+
+
 def add_job(job_id, user_id, title, charged_col):
     with _lock, _conn() as c:
         c.execute("INSERT INTO jobs VALUES(?,?,?,?,?)", (job_id, user_id, title, time.time(), charged_col or ""))
