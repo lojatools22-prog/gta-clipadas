@@ -114,3 +114,71 @@ def _run(fid, left_fn):
         _set(fid, status="erro", error=video.friendly_error(str(e)) if "código" in str(e) else str(e))
     finally:
         shutil.rmtree(video.SCRATCH / "aovivo" / fid, ignore_errors=True)
+
+
+def _find_live(urls):
+    """Primeira live no ar da lista (aceita /@canal/live) ou, se nenhuma, a primeira live de GTA achada na busca."""
+    for u in urls:
+        try:
+            info = video.probe_url(u)
+            if info.get("live"):
+                return u, info
+        except Exception as e:
+            log.info("Demo ao vivo: %s não serviu (%s)", u, str(e)[-160:])
+    try:
+        out = video.ytdlp(["--flat-playlist", "-J", "--no-warnings"], "ytsearch15:GTA RP ao vivo agora", timeout=60)
+        for e in json.loads(out).get("entries") or []:
+            if e.get("live_status") == "is_live" or e.get("is_live"):
+                u = f"https://www.youtube.com/watch?v={e['id']}"
+                info = video.probe_url(u)
+                if info.get("live"):
+                    return u, info
+    except Exception as e:
+        log.info("Demo ao vivo: busca falhou (%s)", str(e)[-160:])
+    return None, None
+
+
+def demo():
+    """Teste ponta a ponta do CORTAR AO VIVO numa live de GTA no ar: grava, a IA escolhe o melhor momento e monta o corte.
+    O resultado fica em /files/demo-aovivo/corte.mp4 (só pra conferência)."""
+    urls = [u.strip() for u in os.getenv("LIVE_DEMO_URLS", "").split(",") if u.strip()]
+    if not urls:
+        return
+    t0 = time.time()
+    try:
+        url, info = _find_live(urls)
+        if not url:
+            log.error("Demo ao vivo: nenhuma live no ar")
+            return
+        secs = int(os.getenv("LIVE_DEMO_SECONDS", "300"))
+        work = video.SCRATCH / "demo-aovivo"
+        shutil.rmtree(work, ignore_errors=True)
+        blk = _record(url, secs, work)
+        log.info("Demo ao vivo: gravou %ds de '%s' (%.0f MB)", secs, info.get("title", "")[:60], blk.stat().st_size / 1e6)
+        aid = "demoaovivo"
+        (moments.DIR / aid).mkdir(parents=True, exist_ok=True)
+        moments.STATE[aid] = {"id": aid, "user_id": 0, "status": "ouvindo", "moments": []}
+        audio = work / "audio.mp3"
+        video._run(["ffmpeg", "-y", "-i", str(blk), "-vn", "-ac", "1", "-ar", "16000", "-b:a", "32k", str(audio)])
+        dur = video.probe_duration(audio)
+        segs = moments._transcribe(audio, work, aid, dur)
+        peaks = moments._loud_peaks(audio, dur)
+        ms = moments._pick(segs, peaks, dur, aid) or moments._fallback(segs, peaks, dur)
+        ms = moments._rank(ms, segs)
+        if not ms:
+            raise RuntimeError("a IA não achou momento")
+        m = ms[0]
+        out = video.JOBS_DIR / "demo-aovivo"
+        shutil.rmtree(out, ignore_errors=True)
+        out.mkdir(parents=True)
+        trim = (float(m["start"]), float(m["end"]))
+        words = video.transcribe(blk, out, trim)
+        video.render(blk, out, {"template": "capa-praia", "caption": "pesada-karaoke", "title": m["title"], "wm_text": "@gta6clips",
+                                "corner": "auto", "cover": False}, trim, words)
+        log.info("Demo ao vivo OK em %.0fs: '%s' (%s-%ss, nota %s) -> /files/demo-aovivo/corte.mp4 | live: %s",
+                 time.time() - t0, m["title"], m["start"], m["end"], m.get("score"), url)
+    except Exception as e:
+        log.error("Demo ao vivo FALHOU: %s", str(e)[-800:])
+
+
+threading.Thread(target=lambda: (time.sleep(90), demo()), daemon=True).start()
