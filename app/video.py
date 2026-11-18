@@ -384,7 +384,8 @@ def _geo_proxy(px):
     return urlunsplit(u._replace(netloc=net))
 
 
-_BLOCK = ("not a bot", "Sign in", "403", "429", "Requested format is not available", "player response", "claimed content", "not available in your country", "blocked it in your country")
+_BLOCK = ("not a bot", "Sign in", "403", "429", "Requested format is not available", "player response", "claimed content", "not available in your country", "blocked it in your country",
+          "recording is not available", "live stream", "No video formats found")
 
 
 def ytdlp(args: list, url: str, timeout: int):
