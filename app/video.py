@@ -147,6 +147,25 @@ def probe_duration(path: Path) -> float:
     return float(json.loads(out)["format"]["duration"])
 
 
+_PROBE: dict = {}
+
+
+def probe_url(url: str) -> dict:
+    """Duração, título e thumb de um link (YouTube, Twitch, Kick) sem baixar o vídeo."""
+    hit = _PROBE.get(url)
+    if hit and time.time() - hit[0] < 3600:
+        return hit[1]
+    out = _run(["yt-dlp", "-J", "--no-playlist", "--skip-download", "--no-warnings", url], timeout=40)
+    j = json.loads(out)
+    info = {"duration": float(j.get("duration") or 0), "title": (j.get("title") or "")[:140],
+            "thumb": j.get("thumbnail") or "", "live": bool(j.get("is_live")),
+            "extractor": (j.get("extractor_key") or "").lower(), "id": j.get("id") or ""}
+    if len(_PROBE) > 500:
+        _PROBE.clear()
+    _PROBE[url] = (time.time(), info)
+    return info
+
+
 def download(url: str, start: float | None, end: float | None, dest: Path) -> Path:
     cmd = ["yt-dlp", "--no-playlist", "-f", "best[height<=1080]/bestvideo[height<=1080]+bestaudio/best",
            "--merge-output-format", "mp4", "-o", str(dest / "src.%(ext)s")]

@@ -288,6 +288,19 @@ async def pay_webhook(request: Request):
 
 
 # ---------------- twitch ----------------
+@app.get("/api/probe")
+async def probe(url: str, request: Request):
+    current_user(request)
+    if not url.startswith(("http://", "https://")) or len(url) > 500:
+        raise HTTPException(400, "Link inválido")
+    import asyncio
+    try:
+        return await asyncio.to_thread(video.probe_url, url)
+    except Exception as e:
+        log.warning("probe falhou %s: %s", url, str(e)[:300])
+        raise HTTPException(422, "Não conseguimos ler esse link. Confira se o vídeo é público.")
+
+
 @app.get("/api/live")
 async def live(lang: str = "pt"):
     return await safe(twitch.live_gta(lang))
