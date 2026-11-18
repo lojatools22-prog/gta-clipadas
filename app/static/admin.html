@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — GTA Clipadas</title><link rel="icon" href="/static/logo.jpg">
+<style>
+:root{--bg:#12051f;--card:#1d0b33;--line:#2f1650;--pink:#ff1fa8;--mute:#a996c4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font:15px/1.45 system-ui,-apple-system,Roboto,sans-serif}
+main{max-width:1100px;margin:auto;padding:18px}h1{margin:0 0 4px;font-size:24px}h2{font-size:18px;margin:26px 0 10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.k{background:var(--card);border-radius:14px;padding:12px}.k b{display:block;font-size:24px}.k span{color:var(--mute);font-size:13px}
+.tabs{display:flex;gap:8px;margin:20px 0 10px;flex-wrap:wrap}.tabs button{background:var(--card);color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:700;cursor:pointer}
+.tabs button.on{color:#fff;border-color:#fff}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;font-size:13px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--mute);font-weight:700}
+input,select{background:var(--bg);color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:14px}
+button.s{background:var(--pink);color:#fff;border:0;border-radius:8px;padding:6px 10px;font-weight:700;cursor:pointer}
+.wrap{overflow-x:auto}.m{color:var(--mute)}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;color:#12051f;padding:10px 16px;border-radius:10px;font-weight:700;display:none}
+</style>
+</head>
+<body><main>
+<p><a href="/" style="color:#3ce1ff">← Voltar ao site</a></p>
+<h1>Painel GTA Clipadas</h1><p class="m" id="who"></p>
+<div class="kpis" id="kpis"></div>
+<div class="tabs"><button data-t="users" class="on">Usuários</button><button data-t="pay">Pagamentos</button><button data-t="wait">Lista de espera</button></div>
+<div id="tab"></div>
+</main><div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let TOK=null;try{TOK=JSON.parse(localStorage.getItem('cgta_token'))}catch{}
+const api=(p,o={})=>fetch(p,{...o,headers:{...(o.headers||{}),Authorization:'Bearer '+TOK,'Content-Type':'application/json'}}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.detail||'Erro');return j});
+const brl=v=>'R$ '+Number(v||0).toFixed(2).replace('.',',');const dt=t=>t?new Date(t*1000).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._);t._=setTimeout(()=>t.style.display='none',2500)}
+async function kpis(){const d=await api('/api/admin/overview');const L=[['usuarios','Usuários'],['novos_24h','Novos (24h)'],['assinantes_ativos','Assinantes ativos'],['cortes_24h','Cortes (24h)'],['cortes_total','Cortes no total'],['fila_agora','Na fila agora'],['receita_30d','Receita (30 dias)'],['receita_total','Receita total'],['lista_espera','Lista de espera']];
+  $('#kpis').innerHTML=L.map(([k,n])=>`<div class="k"><b>${k.startsWith('receita')?brl(d[k]):d[k]}</b><span>${n}</span></div>`).join('')}
+const PL=['iniciante','clipador','pro','passe'];
+async function users(q=''){const d=await api('/api/admin/users?q='+encodeURIComponent(q));
+  $('#tab').innerHTML=`<p><input id="q" placeholder="Buscar por nome, e-mail ou celular" value="${esc(q)}" style="width:min(420px,100%)"></p><div class="wrap"><table><tr><th>Nome</th><th>Contato</th><th>Plano</th><th>Restam</th><th>Cortes</th><th>Criado</th><th>Ações</th></tr>
+  ${d.map(u=>`<tr><td>${esc(u.name)}${u.verified?'':' <span class="m">(sem SMS)</span>'}</td><td>${esc(u.email)}<br><span class="m">${esc(u.phone_full)}</span></td><td>${esc(u.plan_name)}${u.plan_until?'<br><span class="m">até '+dt(u.plan_until)+'</span>':''}</td><td>${u.left}</td><td>${u.cortes}</td><td>${dt(u.created)}</td>
+  <td><select data-u="${u.id}" class="pl"><option value="">Dar plano…</option>${PL.map(p=>`<option value="${p}">${p}</option>`).join('')}</select> <button class="s" data-c="${u.id}">+5 cortes</button></td></tr>`).join('')}</table></div>`;
+  $('#q').onchange=e=>users(e.target.value);
+  document.querySelectorAll('.pl').forEach(s=>s.onchange=async()=>{if(!s.value)return;if(!confirmBox(`Liberar plano ${s.value} pra este usuário?`))return(s.value='');await api('/api/admin/plan',{method:'POST',body:JSON.stringify({user_id:+s.dataset.u,plan:s.value})});toast('Plano liberado');users(q);kpis()});
+  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=async()=>{await api('/api/admin/credits',{method:'POST',body:JSON.stringify({user_id:+b.dataset.c,amount:5})});toast('+5 cortes');users(q)})}
+function confirmBox(m){try{return window.confirm(m)}catch{return true}}
+async function pays(){const d=await api('/api/admin/payments');$('#tab').innerHTML=`<div class="wrap"><table><tr><th>Data</th><th>Usuário</th><th>Plano</th><th>Valor</th><th>Situação</th><th>ID</th></tr>${d.map(p=>`<tr><td>${dt(p.created)}</td><td>${esc(p.email)}</td><td>${esc(p.plan)}</td><td>${brl(p.amount)}</td><td>${esc(p.status)}</td><td class="m">${esc(p.id)}</td></tr>`).join('')||'<tr><td colspan=6 class="m">Nenhum pagamento ainda.</td></tr>'}</table></div>`}
+async function wait(){const d=await api('/api/admin/waitlist');$('#tab').innerHTML=`<div class="wrap"><table><tr><th>Data</th><th>Nome</th><th>@</th><th>WhatsApp</th></tr>${d.reverse().map(w=>`<tr><td>${esc(w.at)}</td><td>${esc(w.name)}</td><td>${esc(w.handle)}</td><td>${esc(w.whatsapp)}</td></tr>`).join('')||'<tr><td colspan=4 class="m">Ninguém ainda.</td></tr>'}</table></div>`}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));({users,pay:pays,wait})[b.dataset.t]()});
+(async()=>{try{const me=await api('/api/me');if(!me.admin)throw new Error('Esta conta não é de administrador.');$('#who').textContent='Entrou como '+me.email;await kpis();await users();setInterval(kpis,30000)}
+  catch(e){document.querySelector('main').innerHTML=`<p><a href="/" style="color:#3ce1ff">← Voltar</a></p><h1>Painel</h1><p class="m">${esc(e.message)} Entre no site com o e-mail de administrador e volte aqui.</p>`}})();
+</script>
+</body></html>

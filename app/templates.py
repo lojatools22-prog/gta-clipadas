@@ -1,0 +1,117 @@
+"""Catálogo dos 36 templates (6 famílias x 6 variações) e 36 estilos de legenda (6 fontes x 6 animações)."""
+
+# Cores no formato ASS (&HAABBGGRR) — paleta GTA Clipadas
+C = {
+    "rosa": "&H00A81FFF", "ciano": "&H00FFE13C", "amarelo": "&H0028C4FF", "laranja": "&H003278FF",
+    "roxo": "&H00FF46BE", "verde": "&H0078E63C", "vermelho": "&H003C32FF", "branco": "&H00FFFFFF",
+    "dourado": "&H0037AFD4", "preto": "&H00000000",
+}
+NEON_ASS = {"rosa": C["rosa"], "ciano": C["ciano"], "roxo": C["roxo"], "verde": C["verde"], "laranja": C["laranja"], "amarelo": C["amarelo"]}
+
+FAMILIES = [
+    ("vice", "Vice Beach"), ("neon", "Neon Night"), ("procurado", "Procurado"),
+    ("missao", "Missão"), ("celular", "Celular"), ("retro", "Rádio / VHS"),
+]
+
+
+def _t(id, name, family, layout, overlays=(), title=(540, 608), caption=(540, 1400), active="amarelo", shadow="rosa",
+       title_color="branco", title_shadow="rosa", cards=(), flash=(), fx=(), pro=True, title_prefix="", title_size=70):
+    return {"id": id, "name": name, "family": family, "layout": layout, "overlays": list(overlays), "title": title,
+            "caption": caption, "active": active, "shadow": shadow, "title_color": title_color,
+            "title_shadow": title_shadow, "cards": list(cards), "flash": list(flash), "fx": list(fx), "pro": pro,
+            "title_prefix": title_prefix, "title_size": title_size}
+
+
+TEMPLATES = []
+# ---- Vice Beach: varia o layout ----
+TEMPLATES += [
+    _t("vice-cam-cima", "Facecam em cima", "vice", {"kind": "cam_top"}, ["vb_top"], pro=False),
+    _t("vice-cam-baixo", "Facecam embaixo", "vice", {"kind": "cam_bottom"}, ["vb_bottom"], title=(540, 1312), caption=(540, 760), pro=False),
+    _t("vice-cam-flutuante", "Facecam flutuante", "vice", {"kind": "float"}, ["vb_float"], title=(540, 1560), caption=(540, 1220)),
+    _t("vice-sem-cam", "Sem facecam (fundo desfocado)", "vice", {"kind": "blur"}, ["vb_blur"], title=(540, 445), caption=(540, 1450)),
+    _t("vice-dividido", "Tela dividida 50/50", "vice", {"kind": "split"}, ["vb_split"], title=(540, 960), caption=(540, 1500)),
+    _t("vice-moldura", "Moldura pôr do sol", "vice", {"kind": "moldura"}, ["vb_moldura"], title=(540, 250), caption=(540, 1450), title_size=64),
+]
+# ---- Neon Night: varia a cor ----
+for i, (k, label) in enumerate([("rosa", "Rosa"), ("ciano", "Ciano"), ("roxo", "Roxo"), ("verde", "Verde"), ("laranja", "Laranja"), ("amarelo", "Amarelo")]):
+    TEMPLATES.append(_t(f"neon-{k}", f"Neon {label}", "neon", {"kind": "cam_top"}, [f"neon_{k}"],
+                        active=k if k != "amarelo" else "ciano", shadow="preto", title_shadow=k, pro=i >= 2))
+# ---- Procurado: estrelas + sirene ----
+for n in range(1, 6):
+    TEMPLATES.append(_t(f"procurado-{n}", f"{n} estrela{'s' if n > 1 else ''}", "procurado", {"kind": "cam_top"}, [f"wanted_{n}"],
+                        title=(540, 830), caption=(540, 1420), active="amarelo", shadow="vermelho", title_shadow="vermelho",
+                        flash=[["siren_r", "siren_b", 0.8]] if n >= 3 else [], pro=n > 2))
+TEMPLATES.append(_t("procurado-preso", "Preso! (grades no final)", "procurado", {"kind": "cam_top"}, ["wanted_busted"],
+                    title=(540, 830), caption=(540, 1420), shadow="vermelho", title_shadow="vermelho",
+                    flash=[["siren_r", "siren_b", 0.6]], cards=[{"at": "end", "text": "PRESO", "sub": "", "color": "vermelho"}], fx=["gray_end"]))
+# ---- Missão: cartelas de início/fim ----
+_m = dict(layout={"kind": "cam_top"}, title=(560, 625), caption=(540, 1400), title_size=50)
+TEMPLATES += [
+    _t("missao-cumprida", "Missão cumprida", "missao", overlays=["mission"], cards=[{"at": "end", "text": "MISSÃO CUMPRIDA", "sub": "+ RESPEITO", "color": "dourado"}], pro=False, **_m),
+    _t("missao-falhou", "Missão falhou", "missao", overlays=["mission_red"], active="vermelho", title_shadow="vermelho", cards=[{"at": "end", "text": "MISSÃO FALHOU", "sub": "tente de novo", "color": "vermelho"}], fx=["gray_end"], **_m),
+    _t("missao-nova", "Nova missão", "missao", overlays=["mission"], cards=[{"at": "start", "text": "NOVA MISSÃO", "sub": "", "color": "amarelo"}], **_m),
+    _t("missao-chefao", "Chefão", "missao", overlays=["mission_red"], active="vermelho", title_shadow="vermelho", cards=[{"at": "start", "text": "CHEFÃO", "sub": "", "color": "vermelho"}], **_m),
+    _t("missao-dinheiro", "Dinheiro na conta", "missao", overlays=["mission_green"], active="verde", title_shadow="verde", cards=[{"at": "end", "text": "+ R$ 1.000.000", "sub": "", "color": "verde"}], **_m),
+    _t("missao-respeito", "Respeito +", "missao", overlays=["mission"], cards=[{"at": "end", "text": "RESPEITO +", "sub": "", "color": "rosa"}], **_m),
+]
+# ---- Celular: o corte dentro de um celular ----
+_p = dict(layout={"kind": "inset", "rect": [150, 300, 930, 1680], "bg": "none"})
+TEMPLATES += [
+    _t("celular-chat", "Mensagem", "celular", overlays=["phone_chat"], title=(540, 1455), caption=(540, 1050), title_color="preto", title_shadow="branco", title_size=48, pro=False, **_p),
+    _t("celular-chamada", "Chamada", "celular", overlays=["phone_chamada"], title=(540, 640), caption=(540, 1150), title_size=48, **_p),
+    _t("celular-rede", "Rede social", "celular", overlays=["phone_social"], title=(500, 1560), caption=(540, 1050), title_size=44, **_p),
+    _t("celular-gps", "GPS", "celular", overlays=["phone_gps"], title=(540, 500), caption=(600, 1050), title_size=48, **_p),
+    _t("celular-foto", "Câmera", "celular", overlays=["phone_foto"], title=(540, 1360), caption=(540, 1000), title_size=48, **_p),
+    _t("celular-pix", "Pix recebido", "celular", overlays=["phone_banco"], title=(540, 1450), caption=(540, 1050), active="verde", title_size=48, **_p),
+]
+# ---- Rádio / VHS ----
+TEMPLATES += [
+    _t("retro-vhs", "Fita VHS", "retro", {"kind": "crop"}, ["vhs"], title=(540, 300), caption=(540, 1400), fx=["vhs"], pro=False),
+    _t("retro-radio", "Rádio do carro", "retro", {"kind": "cam_top"}, ["radio"], title=(690, 590), caption=(540, 1400), active="laranja", title_shadow="laranja", title_size=44),
+    _t("retro-fita", "Fita cassete", "retro", {"kind": "blur"}, ["fita"], title=(540, 300), caption=(540, 1460), title_color="preto", title_shadow="branco", title_size=50),
+    _t("retro-tv", "TV antiga", "retro", {"kind": "inset", "rect": [110, 640, 970, 1126], "bg": "none"}, ["tv"], title=(540, 300), caption=(540, 1560), fx=["crt"], title_size=64),
+    _t("retro-outdoor", "Outdoor", "retro", {"kind": "inset", "rect": [80, 560, 1000, 1078], "bg": "none"}, ["outdoor"], title=(540, 330), caption=(540, 1300), title_size=64),
+    _t("retro-revista", "Capa de revista", "retro", {"kind": "crop"}, ["revista"], title=(540, 1520), caption=(540, 1100), title_size=70),
+]
+assert len(TEMPLATES) == 36, len(TEMPLATES)
+# Níveis: 0 = grátis, 1 = Iniciante, 2 = Clipador/Pro/Passe
+TIER1_T = {"vice-cam-flutuante", "vice-sem-cam", "neon-roxo", "neon-verde", "procurado-3", "missao-falhou", "missao-nova", "celular-chamada", "retro-tv"}
+for t in TEMPLATES:
+    t["tier"] = 0 if not t["pro"] else (1 if t["id"] in TIER1_T else 2)
+BY_ID = {t["id"]: t for t in TEMPLATES}
+
+# ---------------- Legendas ----------------
+FONTS = [
+    ("pesada", "Pesada (estilo logo)", "Bowlby One", 92, True),
+    ("neon", "Neon cursiva", "Kaushan Script", 116, False),
+    ("condensada", "Condensada", "Anton", 128, True),
+    ("redonda", "Redonda", "Fredoka One", 108, True),
+    ("maquina", "Máquina de escrever", "Special Elite", 98, True),
+    ("grafite", "Grafite", "Permanent Marker", 106, True),
+]
+ANIMS = [
+    ("karaoke", "Palavra acende"), ("pop", "Pop"), ("quique", "Uma por vez (quique)"),
+    ("tremida", "Tremida"), ("digitando", "Digitando"), ("lateral", "Entra de lado"),
+]
+CAPTION_STYLES = []
+for fi, (fk, fl, family, size, upper) in enumerate(FONTS):
+    for ai, (ak, al) in enumerate(ANIMS):
+        CAPTION_STYLES.append({"id": f"{fk}-{ak}", "name": f"{fl} · {al}", "font": family, "size": size, "upper": upper,
+                               "anim": ak, "font_key": fk, "pro": not (fi < 2 and ai < 2)})
+TIER1_C = {"pesada-quique", "pesada-tremida", "neon-quique", "neon-tremida", "condensada-karaoke", "condensada-pop", "redonda-karaoke", "redonda-pop"}
+for c in CAPTION_STYLES:
+    c["tier"] = 0 if not c["pro"] else (1 if c["id"] in TIER1_C else 2)
+CAPTION_BY_ID = {c["id"]: c for c in CAPTION_STYLES}
+CAPTION_COLORS = {"auto": "Cor do template", "amarelo": "Amarelo", "rosa": "Rosa", "ciano": "Ciano", "verde": "Verde", "branco": "Branco"}
+
+
+def public_catalog():
+    return {
+        "families": [{"id": f, "name": n} for f, n in FAMILIES],
+        "templates": [{**{k: t[k] for k in ("id", "name", "family", "pro", "tier")},
+                       "cam": t["layout"]["kind"] in ("cam_top", "cam_bottom", "float", "split")} for t in TEMPLATES],
+        "captions": [{k: c[k] for k in ("id", "name", "font_key", "anim", "pro", "tier")} for c in CAPTION_STYLES],
+        "caption_fonts": [{"id": f[0], "name": f[1]} for f in FONTS],
+        "caption_anims": [{"id": a[0], "name": a[1]} for a in ANIMS],
+        "caption_colors": CAPTION_COLORS,
+    }
