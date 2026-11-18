@@ -200,6 +200,20 @@ select{background:var(--s2);color:#fff;border:1px solid var(--line2);border-radi
 .sheet>div{background:var(--s1);border:1px solid var(--line2);width:100%;max-width:520px;margin:auto auto 0;border-radius:22px 22px 0 0;padding:24px 22px;max-height:88vh;overflow:auto;animation:up .3s var(--ease)}
 @keyframes up{from{transform:translateY(30px);opacity:.4}}
 .sheet h2{font-size:24px;letter-spacing:-.03em}
+.ck-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.ck-top small{color:var(--mute);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.ck-x{border:0;background:var(--s2,#222);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer}
+.ck-plan{display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(255,31,168,.16),rgba(255,196,40,.08));box-shadow:0 0 0 1px rgba(255,31,168,.35)}
+.ck-plan b{display:block;font-size:18px}.ck-plan small{color:var(--mute);font-size:13px}.ck-pr{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.ck-perks{list-style:none;padding:0;margin:14px 0 18px;display:grid;gap:7px}.ck-perks li{font-size:14px;color:#ddd;padding-left:24px;position:relative}.ck-perks li:before{content:'✓';position:absolute;left:2px;color:var(--pink);font-weight:800}
+.ck-lbl{font-size:13px;font-weight:600;margin:0 0 8px}.ck-lbl small{color:var(--mute);font-weight:400}
+.ck-m{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}.ck-m button{border:0;border-radius:12px;padding:12px;background:var(--s2,#1c1c22);color:#fff;text-align:left;cursor:pointer;box-shadow:0 0 0 1px var(--line)}
+.ck-m button b{display:block;font-size:15px}.ck-m button small{color:var(--mute);font-size:12px}.ck-m button.on{box-shadow:0 0 0 2px var(--pink);background:rgba(255,31,168,.08)}
+.ck-safe{color:var(--mute);font-size:12px;text-align:center;margin:12px 0 0}
+.ck-qr{background:#fff;border-radius:16px;padding:14px;width:220px;margin:0 auto 14px}.ck-qr img{width:100%;display:block}
+.ck-wait{display:flex;gap:10px;align-items:center;margin-top:14px;padding:12px;border-radius:12px;box-shadow:0 0 0 1px var(--line);font-size:13px;color:#ddd}
+.ck-wait i{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid var(--line2);border-top-color:var(--pink);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ck-ok{text-align:center}.ck-big{width:64px;height:64px;border-radius:50%;margin:6px auto 14px;display:grid;place-items:center;font-size:32px;font-weight:800;background:var(--pink);color:#fff}
 .li{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .li img{width:110px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;flex:none}
 .li div{flex:1;min-width:0;font-size:14px}
@@ -399,7 +413,7 @@ input,select,textarea{font-size:16px!important}
       <details><summary>Preciso pagar pra testar?</summary><p>Não. Ao criar a conta você ganha <span class="freeN">3</span> cortes grátis, sem cadastrar cartão.</p></details>
       <details><summary>Qual o tamanho máximo do vídeo?</summary><p>Até <span class="gbBase">1 GB</span> nos planos comuns e <span class="gbPro">3 GB</span> no Pro. Se a live for maior, cole o link da Twitch, YouTube ou Kick e marque o tempo do corte.</p></details>
       <details><summary>Quanto tempo pode ter cada corte?</summary><p>Até 3 minutos por corte. Para TikTok e Reels, cortes de 30 a 60 segundos costumam ir melhor.</p></details>
-      <details><summary>Como eu pago?</summary><p>Pix, cartão ou boleto. Não tem fidelidade: cada pagamento libera 30 dias do plano.</p></details>
+      <details><summary>Como eu pago?</summary><p>Pix ou cartão, direto aqui no site. Não tem fidelidade: cada pagamento libera 30 dias do plano (o Passe libera 7 dias).</p></details>
       <details><summary>Posso cortar qualquer streamer?</summary><p>Corte streamers que liberam cortes e sempre dê os créditos. Você é responsável pelo que publica.</p></details>
     </div>
 
@@ -551,7 +565,7 @@ input,select,textarea{font-size:16px!important}
     <button class="go ghost" id="backWiz" hidden style="width:auto;display:inline-flex;margin-top:20px;padding:10px 16px;font-size:14px" onclick="WIZ=false;view('make');step(2)">← Voltar pro meu corte</button>
     <div style="text-align:center;padding:40px 0 30px"><p class="kick">Planos</p><h2 class="disp" style="font-size:clamp(30px,5vw,44px);margin:0 0 10px">Escolha quanto você corta</h2><p class="lead" style="margin:0 auto;max-width:520px">Comece com <b><span class="freeN">3</span> cortes grátis</b> no cadastro. Sem fidelidade: pague só os meses que usar.</p></div>
     <div class="plans">
-    <div class="plan pass"><h3>PASSE GTA 6 <small style="font:700 11px Inter;color:var(--pink);margin-left:6px">LANÇAMENTO</small></h3><div class="pr">R$ 9,90 <small>/7 dias</small></div><ul><li><b>30 cortes</b> em 7 dias</li><li>Todos os visuais e legendas</li><li>Legenda automática</li><li>Pagamento único no Pix</li></ul><button class="go ghost" onclick="buy('passe')">Quero o Passe</button></div>
+    <div class="plan pass"><h3>PASSE GTA 6 <small style="font:700 11px Inter;color:var(--pink);margin-left:6px">LANÇAMENTO</small></h3><div class="pr">R$ 9,90 <small>/7 dias</small></div><ul><li><b>10 cortes</b> em 7 dias</li><li>Todos os visuais e legendas</li><li>Legenda automática</li><li>Pagamento único no Pix</li></ul><button class="go ghost" onclick="buy('passe')">Quero o Passe</button></div>
     <div class="plan"><h3>INICIANTE</h3><div class="pr">R$ 19,90 <small>/mês</small></div><ul><li><b>30 cortes</b> por mês</li><li>18 visuais e 12 legendas</li><li>Legenda automática</li></ul><button class="go ghost" onclick="buy('iniciante')">Assinar Iniciante</button></div>
     <div class="plan hot"><span class="best">MAIS ESCOLHIDO</span><h3>CLIPADOR</h3><div class="pr">R$ 39,90 <small>/mês</small></div><ul><li><b>150 cortes</b> por mês (uns 5 por dia)</li><li><b>✨ Corte automático com IA</b>: ela acha os melhores momentos da live</li><li>Todos os 36 visuais e 36 legendas</li><li><b>Sua logo automática</b> em todos os cortes</li><li>Capa automática</li></ul><button class="go" onclick="buy('clipador')">Assinar Clipador</button></div>
     <div class="plan"><h3>PRO</h3><div class="pr">R$ 79,90 <small>/mês</small></div><ul><li><b>300 cortes</b> por mês</li><li><b>✨ Corte automático com IA</b></li><li>Corte em lote: vários trechos de uma vez</li><li>Sua logo automática em todos os cortes</li><li>Fila prioritária e vídeos até <span class="gbPro">3 GB</span></li><li>Suporte no WhatsApp</li></ul><button class="go ghost" onclick="buy('pro')">Assinar Pro</button></div>
@@ -788,12 +802,46 @@ const DEV=(()=>{let d=LS.get('cgta_dev',null);if(!d){d=Math.random().toString(36
 const post=(p,b)=>api(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
 async function activatePro(){const code=$('#proCode').value.trim();if(!code)return;if(!ME)return openAuth('login','Entre na sua conta pra ativar o código.',activatePro);
   try{ME=await post('/api/pro/redeem',{code});$('#proStatus').textContent=`✅ Plano ${ME.plan_name} ativo até ${new Date(ME.plan_until*1000).toLocaleDateString('pt-BR')}.`;refreshAcct()}catch(e){$('#proStatus').textContent=e.message}}
-async function buy(plan,cpf=''){if(!ME)return openAuth('signup','Crie sua conta pra assinar.',()=>buy(plan));
-  try{const r=await post('/api/pay/checkout',{plan,cpf});toast('Abrindo o pagamento…');location.href=r.url}
-  catch(e){if(e.status===428)return askCpf(plan);toast(e.message)}}
-function askCpf(plan){sheet(`<h2 class="disp" style="margin:0 0 6px">Seu CPF</h2><p class="lead">O CPF é obrigatório pra emitir a cobrança (Pix, cartão ou boleto). Só pedimos uma vez.</p>
-  <form id="cpfF"><label class="field"><input id="cpf" inputmode="numeric" maxlength="18" required placeholder="000.000.000-00"></label><button class="go" type="submit">Continuar pro pagamento</button></form>`);
-  $('#cpfF').onsubmit=async e=>{e.preventDefault();const btn=e.target.querySelector('button');btn.disabled=true;try{const r=await post('/api/pay/checkout',{plan,cpf:$('#cpf').value});closeSheet();toast('Abrindo o pagamento…');location.href=r.url}catch(err){toast(err.message);btn.disabled=false}}}
+/* checkout próprio: Pix na nossa tela, o Asaas só processa por trás */
+const PERKS={passe:['10 cortes em 7 dias','Todos os visuais e legendas','Legenda automática','Pagamento único, sem renovação'],
+  iniciante:['30 cortes por mês','18 visuais e 12 legendas','Legenda automática','Sem fidelidade'],
+  clipador:['150 cortes por mês','Todos os visuais e legendas','Corte automático com IA','Sua logo no vídeo'],
+  pro:['300 cortes por mês','Tudo do Clipador','Vídeos maiores e cortes em lote','Prioridade na fila']};
+let PAYM='pix',PAYT=null;
+const brl=v=>'R$ '+Number(v).toFixed(2).replace('.',',');
+function buy(plan){if(!ME)return openAuth('signup','Crie sua conta pra assinar.',()=>buy(plan));
+  const P=(STATUS.plans||{})[plan];if(!P)return toast('Plano indisponível');
+  const per=plan==='passe'?'pagamento único · 7 dias':'por mês · sem fidelidade';
+  sheet(`<div class="ck"><div class="ck-top"><small>Finalizar compra</small><button class="ck-x" onclick="stopPay();closeSheet()" aria-label="Fechar">✕</button></div>
+  <div class="ck-plan"><div><b>${esc(P.name)}</b><small>${per}</small></div><div class="ck-pr">${brl(P.price)}</div></div>
+  <ul class="ck-perks">${(PERKS[plan]||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
+  <div class="ck-lbl">Forma de pagamento</div>
+  <div class="ck-m"><button type="button" data-m="pix" class="on"><b>Pix</b><small>Libera na hora</small></button><button type="button" data-m="card"><b>Cartão</b><small>Crédito</small></button></div>
+  <form id="ckF">${ME.has_billing?'':`<div class="ck-lbl">CPF <small>(obrigatório na nota, pedimos só uma vez)</small></div><label class="field"><input id="cpf" inputmode="numeric" maxlength="14" required placeholder="000.000.000-00"></label>`}
+  <button class="go" type="submit" id="ckGo">Gerar Pix de ${brl(P.price)}</button></form>
+  <p class="ck-safe">🔒 Pagamento seguro processado pelo Asaas.</p></div>`);
+  PAYM='pix';
+  const cpf=$('#cpf');if(cpf)cpf.oninput=()=>{let d=cpf.value.replace(/\D/g,'').slice(0,11);cpf.value=d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')};
+  document.querySelector('.ck-m').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;PAYM=b.dataset.m;document.querySelectorAll('.ck-m button').forEach(x=>x.classList.toggle('on',x===b));$('#ckGo').textContent=PAYM==='pix'?`Gerar Pix de ${brl(P.price)}`:`Pagar ${brl(P.price)} no cartão`};
+  $('#ckF').onsubmit=async e=>{e.preventDefault();const btn=$('#ckGo');btn.disabled=true;const t0=btn.textContent;btn.textContent='Gerando…';
+    try{const r=await post('/api/pay/start',{plan,method:PAYM,cpf:cpf?cpf.value:''});ME.has_billing=true;
+      if(PAYM==='card'||!r.qr){toast('Abrindo o pagamento seguro…');location.href=r.url;return}
+      showPix(plan,P,r)}catch(err){toast(err.message);btn.disabled=false;btn.textContent=t0}}}
+function showPix(plan,P,r){
+  $('#sheetIn').innerHTML=`<div class="ck"><div class="ck-top"><small>${esc(P.name)} · ${brl(r.value)}</small><button class="ck-x" onclick="stopPay();closeSheet()" aria-label="Fechar">✕</button></div>
+  <h2 class="disp" style="margin:4px 0 4px">Pague com Pix</h2><p class="lead" style="margin:0 0 14px;font-size:14px">Abra o app do seu banco, escolha <b style="color:#fff">Pix → Ler QR Code</b> ou use o copia e cola.</p>
+  <div class="ck-qr"><img src="data:image/png;base64,${r.qr}" alt="QR Code Pix"></div>
+  <button class="go" id="ckCopy">Copiar código Pix</button>
+  <div class="ck-wait"><i></i><span>Aguardando o pagamento… o plano libera sozinho assim que o Pix cair.</span></div>
+  <p class="ck-safe">🔒 Processado pelo Asaas. O código vale até ${r.expires?new Date(r.expires.replace(' ','T')).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'amanhã'}.</p></div>`;
+  $('#ckCopy').onclick=async()=>{try{await navigator.clipboard.writeText(r.code);$('#ckCopy').textContent='Código copiado ✓';toast('Código Pix copiado. Cole no app do banco.')}catch(e){prompt('Copie o código Pix:',r.code)}};
+  stopPay();const t0=Date.now();
+  PAYT=setInterval(async()=>{if(!$('#sheet').classList.contains('on')||Date.now()-t0>30*60e3)return stopPay();
+    try{const s=await api('/api/pay/status/'+r.id);if(s.paid){stopPay();if(s.user){ME=s.user;refreshAcct()}paidOk(P)}}catch(e){}},3000)}
+function stopPay(){clearInterval(PAYT);PAYT=null}
+function paidOk(P){$('#sheetIn').innerHTML=`<div class="ck ck-ok"><div class="ck-big">✓</div><h2 class="disp" style="margin:0 0 6px">Pagamento aprovado!</h2>
+  <p class="lead">Seu plano <b style="color:#fff">${esc(P.name)}</b> está liberado com <b style="color:#fff">${P.quota} cortes</b>.</p>
+  <button class="go" onclick="closeSheet();home()">Começar a cortar</button></div>`}
 function refreshAcct(){const b=$('#acctBtn');$('#mineBtn').hidden=!ME;
   if(!ME){b.textContent='Entrar';b.classList.remove('on');$('#gift').hidden=false;$('#maxMb').textContent=Math.round((STATUS.mb_base||1024)/1024)+' GB';return}
   b.textContent=ME.plan==='gratis'?`${ME.left} grátis`:`✂️ ${ME.left}`;b.classList.toggle('on',ME.plan!=='gratis');$('#gift').hidden=true;
@@ -873,7 +921,7 @@ async function renderConta(){const el=$('#conta');
     <div class="row2"><button class="go" onclick="view('planos')">${paid?'Renovar':'Ver planos'}</button><button class="go ghost" onclick="view('mine')">Meus cortes</button></div></div>
   <div class="stats"><div><b>${d.total}</b><span>cortes feitos</span></div><div><b>${d.month}</b><span>últimos 30 dias</span></div><div><b>${d.left}</b><span>restantes</span></div></div>
   <div class="box"><h3>Pagamentos</h3>${d.payments.length?d.payments.map(x=>`<div class="pay"><span>${esc(x.plan_name)}<br><small>${new Date(x.created*1000).toLocaleDateString('pt-BR')}</small></span><span style="text-align:right">R$ ${Number(x.amount).toFixed(2).replace('.',',')}<br><small class="${/approved|received|confirmed/i.test(x.status)?'st-ok':'st-wait'}">${/approved|received|confirmed/i.test(x.status)?'Pago':'Pendente'}</small></span></div>`).join(''):'<p class="lead" style="margin:0;font-size:14px">Nenhum pagamento ainda.</p>'}</div>
-  <div class="box"><h3>Forma de pagamento</h3><p class="lead" style="margin:0;font-size:14px">Você escolhe <b style="color:#fff">Pix, cartão ou boleto</b> na hora de cada pagamento. A gente não guarda os dados do seu cartão: pra trocar de cartão, é só usar outro no próximo pagamento.</p></div>
+  <div class="box"><h3>Forma de pagamento</h3><p class="lead" style="margin:0;font-size:14px">Você escolhe <b style="color:#fff">Pix ou cartão</b> na hora de cada pagamento. A gente não guarda os dados do seu cartão: pra trocar de cartão, é só usar outro no próximo pagamento.</p></div>
   <div class="box"><h3>Sua logo nos cortes</h3>${d.own_logo?`<div class="set" style="border:0;padding-top:0"><span style="display:flex;align-items:center;gap:12px">${d.logo?`<img src="${d.logo}" alt="" style="width:56px;height:56px;object-fit:contain;background:var(--s2);border-radius:10px;padding:4px">`:'<span style="width:56px;height:56px;border-radius:10px;border:1px dashed var(--line2);display:grid;place-items:center;color:var(--dim)">logo</span>'}<span>${d.logo?'Entra pequena no canto de todos os cortes':'PNG com fundo transparente fica melhor'}</span></span></div><div class="row2"><button class="go ghost" onclick="$('#logoFile').click()">${d.logo?'Trocar logo':'Enviar logo'}</button>${d.logo?`<button class="go ghost" onclick="delLogo()">Remover</button>`:''}</div>`:`<p class="lead" style="margin:0 0 12px;font-size:14px">Coloque a sua logo automaticamente em todos os cortes. Disponível no Clipador e no Pro.</p><button class="go ghost" onclick="view('planos')">Ver planos</button>`}</div>
   <div class="box"><h3>Preferências</h3>
     <label class="set"><span>Legenda automática<small>Já vem ligada nos novos cortes</small></span><input type="checkbox" ${p.captions!==false?'checked':''} onchange="setPref('captions',this.checked)"></label>

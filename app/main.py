@@ -268,23 +268,75 @@ async def asaas_webhook(request: Request):
     except Exception as e:
         log.error("Não consegui consultar o pagamento Asaas %s: %s", pay.get("id"), e)
         raise HTTPException(502, "tente de novo")
+    _asaas_grant(p)
+    return {"ok": True}
+
+
+def _asaas_grant(p: dict) -> bool:
+    """Libera o plano de um pagamento Asaas já conferido na API. Pode ser chamada mais de uma vez."""
     if p.get("status") not in ("RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"):
-        return {"ok": True}
+        return False
     try:
         uid, plan = (p.get("externalReference") or "").split(":")
         uid = int(uid)
     except ValueError:
-        return {"ok": True}
+        return False
     if plan not in plans.PAID:
-        return {"ok": True}
+        return False
     amount = float(p.get("value") or 0)
     if accounts.payment_upsert("asaas:" + p["id"], uid, plan, amount, "approved", "asaas"):
         if amount + 0.01 < plans.PLANS[plan]["price"]:
             log.error("Pagamento Asaas %s com valor menor que o plano (%s)", p["id"], amount)
-        else:
-            accounts.activate(uid, plan, "asaas")
-            log.info("Plano %s liberado para usuário %s (Asaas %s)", plan, uid, p["id"])
-    return {"ok": True}
+            return False
+        accounts.activate(uid, plan, "asaas")
+        log.info("Plano %s liberado para usuário %s (Asaas %s)", plan, uid, p["id"])
+    return True
+
+
+class PayIn(BaseModel):
+    plan: str
+    method: str = "pix"
+    cpf: str = ""
+
+
+@app.post("/api/pay/start")
+def pay_start(b: PayIn, request: Request):
+    """Checkout próprio: cria a cobrança e devolve o Pix para pagar na nossa tela."""
+    u = current_user(request)
+    if b.plan not in plans.PAID:
+        raise HTTPException(400, "Plano inválido")
+    if not payments.ready() or payments.PROVIDER != "asaas":
+        raise HTTPException(503, "O pagamento online abre em breve. Fale com a gente no WhatsApp pra assinar.")
+    cid = u["asaas_customer"]
+    try:
+        if not cid:
+            if not b.cpf:
+                raise HTTPException(428, "Informe seu CPF pra emitir a cobrança")
+            try:
+                cid = payments.asaas_customer(u, b.cpf)
+            except ValueError as e:
+                bad(e)
+            accounts.set_asaas_customer(u["id"], cid)
+        r = payments.asaas_charge(u, b.plan, cid, "pix" if b.method == "pix" else "card")
+    except RuntimeError as e:
+        bad(e, 502)
+    accounts.payment_upsert("asaas:" + r["id"], u["id"], b.plan, float(r["value"]), "pending", "asaas")
+    return r
+
+
+@app.get("/api/pay/status/{pid}")
+def pay_status(pid: str, request: Request):
+    u = current_user(request)
+    if not pid.startswith("pay_") or len(pid) > 40:
+        raise HTTPException(400, "Pagamento inválido")
+    try:
+        p = payments.asaas_payment(pid)
+    except Exception:
+        return {"paid": False}
+    if not (p.get("externalReference") or "").startswith(f"{u['id']}:"):
+        raise HTTPException(404, "Pagamento não encontrado")
+    paid = _asaas_grant(p)
+    return {"paid": paid, "status": p.get("status"), "user": accounts.public(accounts._user(u["id"])) if paid else None}
 
 
 @app.post("/api/pay/webhook")

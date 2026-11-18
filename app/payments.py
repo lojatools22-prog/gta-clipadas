@@ -68,6 +68,33 @@ def asaas_checkout(user, plan: str, customer_id: str) -> str:
     return pay["invoiceUrl"]
 
 
+def asaas_charge(user, plan: str, customer_id: str, method: str) -> dict:
+    """Cria a cobrança para o checkout próprio. Pix: devolve o QR Code para mostrar na nossa tela.
+    Cartão: devolve o link direto do formulário de cartão do Asaas."""
+    import datetime as _dt
+    P = PLANS[plan]
+    body = {"customer": customer_id, "billingType": "PIX" if method == "pix" else "CREDIT_CARD", "value": P["price"],
+            "dueDate": (_dt.date.today() + _dt.timedelta(days=1)).isoformat(),
+            "description": f"GTA Clipadas — {P['name']}", "externalReference": f"{user['id']}:{plan}"}
+    if method != "pix":
+        body["callback"] = {"successUrl": f"{PUBLIC_URL}/?pagamento=success#planos", "autoRedirect": True}
+    try:
+        pay = _asaas("POST", "/payments", json=body)
+    except RuntimeError:
+        if "callback" not in body:
+            raise
+        body.pop("callback")
+        pay = _asaas("POST", "/payments", json=body)
+    out = {"id": pay["id"], "url": pay.get("invoiceUrl"), "value": pay["value"]}
+    if method == "pix":
+        try:
+            qr = _asaas("GET", f"/payments/{pay['id']}/pixQrCode")
+            out.update(qr=qr.get("encodedImage"), code=qr.get("payload"), expires=qr.get("expirationDate"))
+        except RuntimeError:
+            log.error("Asaas não gerou o QR Pix (a conta precisa de uma chave Pix cadastrada); usando o link da fatura")
+    return out
+
+
 def asaas_payment(pid: str) -> dict:
     return _asaas("GET", f"/payments/{pid}")
 
