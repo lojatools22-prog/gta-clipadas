@@ -857,7 +857,7 @@ def _selftest():
 
 def _live_selftest():
     """Testa o "cortar ao vivo": grava 20 s de lives que estão no ar agora (YouTube e Twitch). Só registra no log."""
-    urls = os.getenv("LIVE_TEST_URLS", "https://www.youtube.com/watch?v=jfKfPfyJRdk,https://www.youtube.com/watch?v=gCNeDWCI0vo")
+    urls = os.getenv("LIVE_TEST_URLS", "https://www.youtube.com/watch?v=gCNeDWCI0vo")
     from . import livefollow
     for url in [u.strip() for u in urls.split(",") if u.strip()]:
         d = Path("/tmp/autoteste_live") / uuid.uuid4().hex[:6]
