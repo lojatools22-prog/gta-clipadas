@@ -331,6 +331,8 @@ def friendly_error(msg: str) -> str:
         return "O YouTube bloqueou o download desse vídeo agora. Tente um link da Twitch ou Kick, ou envie o arquivo do vídeo."
     if "Private video" in m or "private" in m.lower():
         return "Esse vídeo é privado. Use um vídeo público."
+    if "claimed content" in m or "in your country" in m:
+        return "O YouTube bloqueou esse vídeo por direitos autorais (música). Tente outro vídeo ou envie o arquivo."
     if "is not available" in m or "unavailable" in m.lower() or "404" in m:
         return "Esse vídeo não está disponível. Confira o link."
     if "live event will begin" in m:
@@ -342,7 +344,21 @@ def friendly_error(msg: str) -> str:
     return "Algo deu errado ao montar o vídeo. Tente de novo; se repetir, tente outro trecho."
 
 
-_BLOCK = ("not a bot", "Sign in", "403", "429", "Requested format is not available", "player response")
+def _geo_proxy(px):
+    """Força IP do Brasil no proxy (vídeo bloqueado por direitos em outro país, ex.: "claimed content by WMG").
+    DataImpulse: o país vai no usuário como __cr.br. Muda só o usuário; a senha não é tocada."""
+    cc = os.getenv("YTDLP_PROXY_COUNTRY", "br").lower()
+    if not px or not cc or "dataimpulse" not in px or "__cr." in px:
+        return px
+    from urllib.parse import urlsplit, urlunsplit
+    u = urlsplit(px)
+    if not u.username:
+        return px
+    net = u.netloc.replace(u.username + ":", f"{u.username}__cr.{cc}:", 1) if u.password else u.netloc.replace(u.username + "@", f"{u.username}__cr.{cc}@", 1)
+    return urlunsplit(u._replace(netloc=net))
+
+
+_BLOCK = ("not a bot", "Sign in", "403", "429", "Requested format is not available", "player response", "claimed content", "not available in your country", "blocked it in your country")
 
 
 def ytdlp(args: list, url: str, timeout: int):
@@ -354,7 +370,7 @@ def ytdlp(args: list, url: str, timeout: int):
         base += ["--cookies", str(ck)]
     if not _is_yt(url):
         return _run(base + args + [url], timeout=timeout)
-    proxy = os.getenv("YTDLP_PROXY")
+    proxy = _geo_proxy(os.getenv("YTDLP_PROXY"))
     plan = []
     if not proxy or _YT_OK.get("blocked_until", 0) < time.time():
         plan.append((None, _YT_OK["client"]))
