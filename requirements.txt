@@ -4,3 +4,4 @@ httpx
 python-multipart
 yt-dlp
 pillow
+faster-whisper==1.2.1

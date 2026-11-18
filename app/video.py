@@ -118,7 +118,10 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
     # react: webcam de quem está cortando. 'slot' ocupa o lugar da facecam do template; 'float' fica numa janela por cima
     cam_ref = inp(cam) if cam else None
     slot = cam_ref and opts.get("react_pos") == "slot" and tpl["layout"]["kind"] in ("cam_top", "cam_bottom", "split", "float")
-    vf = layout_filter(tpl["layout"], opts.get("corner", "top-left"), float(opts.get("cam_size", 0.30)), cam_ref if slot else None)
+    if opts.get("_portrait") and not slot:  # vídeo gravado em pé: ocupa a tela toda, sem recortar facecam
+        vf = f"[0:v]{_cover(W, H)}[base]"
+    else:
+        vf = layout_filter(tpl["layout"], opts.get("corner", "top-left"), float(opts.get("cam_size", 0.30)), cam_ref if slot else None)
     cur, n = "[base]", 0
 
     def nxt():
@@ -135,8 +138,9 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
         o = nxt(); vf += f";{inp(paths[name])}format=rgba[o{n}];{cur}[o{n}]overlay=0:0{o}"; cur = o
     if "crt" in tpl["fx"]:
         o = nxt(); vf += f";{cur}noise=alls=6:allf=t{o}"; cur = o
-    if opts.get("watermark", True):
-        o = nxt(); vf += f";{inp(assets.OUT / 'logo_round.png')}scale=150:150[lg];{cur}[lg]overlay={W - 180}:{H - 230}{o}"; cur = o
+    if opts.get("_logo") and Path(opts["_logo"]).exists():  # logo do próprio clipador, pequena no canto
+        o = nxt(); vf += (f";{inp(Path(opts['_logo']))}format=rgba,scale=w='min(150,iw)':h='min(150,ih)':force_original_aspect_ratio=decrease,"
+                          f"colorchannelmixer=aa=0.9[lg];{cur}[lg]overlay=W-w-40:H-h-190{o}"); cur = o
     if "gray_end" in tpl["fx"]:
         o = nxt(); vf += f";{cur}hue=s=0:enable='gte(t,{max(0, dur - 1.8):.2f})'{o}"; cur = o
     if cam_ref and not slot:
@@ -168,6 +172,20 @@ def _run(cmd, cwd=None, timeout=1800):
         key = [l for l in err.splitlines() if any(w in l.lower() for w in ("error", "invalid", "no such", "killed", "cannot", "failed"))]
         raise RuntimeError(f"código {p.returncode}: " + (" | ".join(key[-6:]) or err[-600:])[-1500:])
     return p.stdout
+
+
+def is_portrait(path: Path) -> bool:
+    try:
+        out = _run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height:stream_side_data=rotation",
+                    "-of", "json", str(path)])
+        st = json.loads(out)["streams"][0]
+        w, h = st["width"], st["height"]
+        rot = abs(int(float(next((sd.get("rotation", 0) for sd in st.get("side_data_list", []) if "rotation" in sd), 0))))
+        if rot in (90, 270):
+            w, h = h, w
+        return h > w * 1.1
+    except Exception:
+        return False
 
 
 def has_audio(path: Path) -> bool:
@@ -214,26 +232,53 @@ def download(url: str, start: float | None, end: float | None, dest: Path) -> Pa
     return files[0]
 
 
-def transcribe(src: Path, job_dir: Path) -> list[dict]:
+_WM = None
+_WM_LOCK = threading.Lock()
+LOCAL_MODEL = os.getenv("WHISPER_LOCAL_MODEL", "base")
+
+
+def _local_words(wav: Path) -> list[dict]:
+    """Transcrição no próprio servidor (faster-whisper). Reserva para quando a API não está configurada ou falha."""
+    global _WM
+    import numpy as np
+    from faster_whisper import WhisperModel
+    with _WM_LOCK:
+        if _WM is None:
+            _WM = WhisperModel(LOCAL_MODEL, device="cpu", compute_type="int8", cpu_threads=int(FF_THREADS),
+                               download_root=str(DATA / "modelos"))
+        audio = np.frombuffer(subprocess.run(["ffmpeg", "-v", "error", "-i", str(wav), "-f", "f32le", "-ac", "1", "-ar", "16000", "-"],
+                                             capture_output=True, check=True).stdout, np.float32)
+        segs, _ = _WM.transcribe(audio, language="pt", word_timestamps=True, vad_filter=True, beam_size=1,
+                                 initial_prompt="Live de GTA em português do Brasil.")
+        return [{"word": w.word, "start": float(w.start), "end": float(w.end)} for sg in segs for w in (sg.words or [])]
+
+
+def transcribe(src: Path, job_dir: Path, trim: tuple | None = None) -> list[dict]:
+    """Palavras com tempo, relativas ao início do corte. Só o trecho do corte é transcrito."""
+    audio = job_dir / "audio.mp3"
+    pre = ["-ss", f"{trim[0]:.2f}", "-t", f"{trim[1] - trim[0]:.2f}"] if trim else []
+    _run(["ffmpeg", "-y", *pre, "-i", str(src), "-vn", "-ac", "1", "-ar", "16000", "-b:a", "48k", str(audio)])
     key, url, model = (GROQ_KEY, "https://api.groq.com/openai/v1/audio/transcriptions", "whisper-large-v3-turbo") if GROQ_KEY \
         else (OPENAI_KEY, "https://api.openai.com/v1/audio/transcriptions", "whisper-1")
-    if not key:
-        return []
-    audio = job_dir / "audio.mp3"
-    _run(["ffmpeg", "-y", "-i", str(src), "-vn", "-ac", "1", "-ar", "16000", "-b:a", "48k", str(audio)])
-    with open(audio, "rb") as f:
-        r = httpx.post(url, headers={"Authorization": f"Bearer {key}"}, timeout=300,
-                       files={"file": ("audio.mp3", f, "audio/mpeg")},
-                       data={"model": model, "language": "pt", "response_format": "verbose_json",
-                             "timestamp_granularities[]": "word"})
-    r.raise_for_status()
-    return [{"word": w["word"], "start": float(w["start"]), "end": float(w["end"])} for w in r.json().get("words", [])]
+    if key:
+        try:
+            with open(audio, "rb") as f:
+                r = httpx.post(url, headers={"Authorization": f"Bearer {key}"}, timeout=300,
+                               files={"file": ("audio.mp3", f, "audio/mpeg")},
+                               data={"model": model, "language": "pt", "response_format": "verbose_json",
+                                     "timestamp_granularities[]": "word"})
+            r.raise_for_status()
+            return [{"word": w["word"], "start": float(w["start"]), "end": float(w["end"])} for w in r.json().get("words", [])]
+        except Exception as e:
+            log.warning("Transcrição pela API falhou, usando a local: %s", str(e)[:300])
+    return _local_words(audio)
 
 
 def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list[dict], cam: Path | None = None) -> Path:
     tpl = templates.BY_ID.get(opts.get("template"), templates.TEMPLATES[0])
     cap = templates.CAPTION_BY_ID.get(opts.get("caption"), templates.CAPTION_STYLES[0])
     dur = (trim[1] - trim[0]) if trim else probe_duration(src)
+    opts = {**opts, "_portrait": is_portrait(src)}
     (job_dir / "subs.ass").write_text(captions.build(words, dur, tpl, cap, opts.get("caption_color", "auto"), opts.get("title", "")), encoding="utf-8")
     vf, extra = build_filter(tpl, opts, dur, cam=cam)
     pre = ["-ss", f"{trim[0]:.2f}", "-t", f"{dur:.2f}"] if trim else []
@@ -266,7 +311,7 @@ def make_cover(src: Path, job_dir: Path, tpl: dict, opts: dict, trim, dur, cam: 
     """Capa 9:16: frame do momento no template + título grande + selo."""
     from PIL import Image, ImageDraw, ImageFilter, ImageFont
     t = (trim[0] if trim else 0) + dur * 0.45
-    vf, extra = build_filter(tpl, {**opts, "watermark": False}, dur, with_text=False, cam=cam)
+    vf, extra = build_filter(tpl, {**opts, "_logo": None}, dur, with_text=False, cam=cam)
     ins = ["-ss", f"{t:.2f}", "-i", str(src)]
     for p in extra:
         ins += ["-ss", f"{max(0.0, dur * 0.45):.2f}", "-i", str(p)] if (cam and p == cam) else ["-i", str(p)]
@@ -296,8 +341,9 @@ def make_cover(src: Path, job_dir: Path, tpl: dict, opts: dict, trim, dur, cam: 
     badge = ImageFont.truetype(str(FONTS / "Anton_400Regular.ttf"), 54)
     d.rounded_rectangle((50, 60, 330, 150), radius=18, fill=(255, 31, 168), outline=(0, 0, 0), width=5)
     d.text((190, 105), "GTA 6", font=badge, fill=(255, 255, 255), anchor="mm")
-    logo = Image.open(assets.OUT / "logo_round.png").convert("RGBA").resize((170, 170))
-    im.alpha_composite(logo, (W - 210, 40))
+    if opts.get("_logo") and Path(opts["_logo"]).exists():
+        lg = Image.open(opts["_logo"]).convert("RGBA"); lg.thumbnail((170, 170))
+        im.alpha_composite(lg, (W - lg.width - 40, 40))
     im.convert("RGB").save(job_dir / "capa.jpg", quality=90)
 
 
@@ -336,12 +382,10 @@ def _work(jid: str):
         if o.get("captions", True):
             _set(jid, status="legendando", progress=45)
             try:
-                words = transcribe(src, d)
-                if trim:
-                    words = [{**w, "start": w["start"] - trim[0], "end": w["end"] - trim[0]} for w in words
-                             if trim[0] <= w["start"] < trim[1]]
+                words = transcribe(src, d, trim)
             except Exception as e:  # legenda é opcional: não derruba o corte
                 _set(jid, warning=f"Legenda falhou: {e}")
+                log.error("Legenda do corte %s falhou: %s", jid, str(e)[-600:])
         _set(jid, status="renderizando", progress=70)
         render(src, d, o, trim, words, Path(j["cam"]) if j.get("cam") else None)
         for f in list(d.glob("cam.*")) + list(d.glob("upload.*")) + list(d.glob("src.*")) + list(d.glob("audio.mp3")) + list(d.glob("cover_raw.png")):
@@ -436,6 +480,9 @@ def _selftest():
         render(assets.OUT / "sample.mp4", d, {"template": "vice-cam-cima", "caption": "pesada-karaoke", "title": "AUTOTESTE"}, (0.0, 3.0),
                [{"word": "teste", "start": 0.2, "end": 0.8}])
         log.info("Autoteste de corte OK (%s, %s bytes)", v, (d / "corte.mp4").stat().st_size)
+        t0 = time.time()
+        transcribe(assets.OUT / "sample.mp4", d, (0.0, 3.0))  # já baixa/carrega o modelo de legenda
+        log.info("Autoteste de legenda OK (%.1fs, %s)", time.time() - t0, "API" if (GROQ_KEY or OPENAI_KEY) else f"local {LOCAL_MODEL}")
     except Exception as e:
         log.error("Autoteste de corte FALHOU: %s", str(e)[-1500:])
 

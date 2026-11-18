@@ -192,8 +192,8 @@ select{background:var(--s2);color:#fff;border:1px solid var(--line2);border-radi
 .seg button{background:var(--s2);border:1px solid var(--line);color:#fff;border-radius:10px;height:48px;width:44px;cursor:pointer}
 .note{background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:9px 13px;font-size:12px;color:var(--mute);margin:12px 0 0}
 .gift{display:flex;align-items:center;gap:10px;background:var(--pinkbg);border:1px solid rgba(255,31,168,.3);border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:14px}
-.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#fafafa;color:#09090b;font-weight:600;font-size:14px;padding:12px 18px;border-radius:12px;z-index:70;display:none;max-width:90vw;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.5);animation:tin .25s var(--ease)}
-@keyframes tin{from{opacity:0;transform:translate(-50%,8px)}}
+.toast{position:fixed;left:50%;top:calc(74px + env(safe-area-inset-top));transform:translateX(-50%);background:#fafafa;color:#09090b;font-weight:600;font-size:14px;padding:12px 18px;border-radius:12px;z-index:70;display:none;max-width:90vw;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.5);animation:tin .25s var(--ease)}
+@keyframes tin{from{opacity:0;transform:translate(-50%,-8px)}}
 .sheet{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:60;display:none;align-items:flex-end}
 .sheet.on{display:flex;animation:fade .2s}
 @keyframes fade{from{opacity:0}}
@@ -284,7 +284,7 @@ input,select,textarea{font-size:16px!important}
  .bar{bottom:0}
  .grid{grid-template-columns:repeat(4,1fr)}
  .sheet{align-items:center}.sheet>div{margin:auto;border-radius:22px}
- .toast{bottom:28px}
+ .toast{top:84px}
  footer .wrap{padding-bottom:30px}
  .vgrid{grid-template-columns:repeat(4,1fr)}
 }
@@ -400,7 +400,7 @@ input,select,textarea{font-size:16px!important}
   <!-- VIRAIS -->
   <section id="v-virais" hidden>
     <h2 class="disp" style="margin:6px 0 6px;font-size:30px">Cortes virais</h2>
-    <p class="lead">Os momentos de GTA mais vistos agora. Toque em um pra cortar.</p>
+    <p class="lead">Os momentos de GTA que mais bombaram. Escolha um e corte em 1 minuto.</p>
     <div class="tabs" id="vtabs"><button class="tab on" data-v="24">🔥 Hoje</button><button class="tab" data-v="168">Semana</button><button class="tab" data-v="live">🔴 Ao vivo agora</button></div>
     <div class="vgrid" id="vlist"></div>
     <div id="demo" class="note" hidden></div>
@@ -505,7 +505,7 @@ input,select,textarea{font-size:16px!important}
         <div class="sw" id="sw"></div>
         <label class="tg">Legenda automática<input id="captions" type="checkbox" checked></label>
         <label class="tg">Gerar capa<input id="cover" type="checkbox" checked></label>
-        <label class="tg">Logo GTA Clipadas no vídeo<input id="watermark" type="checkbox" checked></label>
+        <label class="tg"><span>Minha logo no vídeo<small id="wmNote" style="display:block;color:var(--dim);font-size:12px"></small></span><input id="logo" type="checkbox" checked></label>
       </details>
       <div class="bar"><button class="go" id="go">✂️ Gerar meu corte</button></div>
     </div>
@@ -518,16 +518,17 @@ input,select,textarea{font-size:16px!important}
   </section>
 
   <!-- CONTA -->
-  <section id="v-conta" class="narrow" hidden><div id="conta"></div></section>
+  <section id="v-conta" class="narrow" hidden><div id="conta"></div><input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></section>
 
   <!-- PLANOS -->
   <section id="v-planos" hidden>
+    <button class="go ghost" id="backWiz" hidden style="width:auto;display:inline-flex;margin-top:20px;padding:10px 16px;font-size:14px" onclick="WIZ=false;view('make');step(2)">← Voltar pro meu corte</button>
     <div style="text-align:center;padding:40px 0 30px"><p class="kick">Planos</p><h2 class="disp" style="font-size:clamp(30px,5vw,44px);margin:0 0 10px">Escolha quanto você corta</h2><p class="lead" style="margin:0 auto;max-width:520px">Comece com <b><span class="freeN">3</span> cortes grátis</b> no cadastro. Sem fidelidade: pague só os meses que usar.</p></div>
     <div class="plans">
-    <div class="plan pass"><h3>PASSE GTA 6 <small style="font:700 11px Inter;color:var(--pink);margin-left:6px">LANÇAMENTO</small></h3><div class="pr">R$ 9,90 <small>/7 dias</small></div><ul><li><b>30 cortes</b> em 7 dias</li><li>Todos os visuais e legendas, sem logo</li><li>Pagamento único no Pix</li></ul><button class="go ghost" onclick="buy('passe')">Quero o Passe</button></div>
-    <div class="plan"><h3>INICIANTE</h3><div class="pr">R$ 19,90 <small>/mês</small></div><ul><li><b>30 cortes</b> por mês</li><li>18 visuais e 12 legendas</li><li>Sem logo no vídeo</li></ul><button class="go ghost" onclick="buy('iniciante')">Assinar Iniciante</button></div>
-    <div class="plan hot"><span class="best">MAIS ESCOLHIDO</span><h3>CLIPADOR</h3><div class="pr">R$ 39,90 <small>/mês</small></div><ul><li><b>150 cortes</b> por mês (uns 5 por dia)</li><li>Todos os 36 visuais e 36 legendas</li><li>Sem logo no vídeo e capa automática</li></ul><button class="go" onclick="buy('clipador')">Assinar Clipador</button></div>
-    <div class="plan"><h3>PRO</h3><div class="pr">R$ 79,90 <small>/mês</small></div><ul><li><b>300 cortes</b> por mês</li><li>Corte em lote: vários trechos de uma vez</li><li>Fila prioritária e vídeos até 3 GB</li><li>Suporte no WhatsApp</li></ul><button class="go ghost" onclick="buy('pro')">Assinar Pro</button></div>
+    <div class="plan pass"><h3>PASSE GTA 6 <small style="font:700 11px Inter;color:var(--pink);margin-left:6px">LANÇAMENTO</small></h3><div class="pr">R$ 9,90 <small>/7 dias</small></div><ul><li><b>30 cortes</b> em 7 dias</li><li>Todos os visuais e legendas</li><li>Legenda automática</li><li>Pagamento único no Pix</li></ul><button class="go ghost" onclick="buy('passe')">Quero o Passe</button></div>
+    <div class="plan"><h3>INICIANTE</h3><div class="pr">R$ 19,90 <small>/mês</small></div><ul><li><b>30 cortes</b> por mês</li><li>18 visuais e 12 legendas</li><li>Legenda automática</li></ul><button class="go ghost" onclick="buy('iniciante')">Assinar Iniciante</button></div>
+    <div class="plan hot"><span class="best">MAIS ESCOLHIDO</span><h3>CLIPADOR</h3><div class="pr">R$ 39,90 <small>/mês</small></div><ul><li><b>150 cortes</b> por mês (uns 5 por dia)</li><li>Todos os 36 visuais e 36 legendas</li><li><b>Sua logo automática</b> em todos os cortes</li><li>Capa automática</li></ul><button class="go" onclick="buy('clipador')">Assinar Clipador</button></div>
+    <div class="plan"><h3>PRO</h3><div class="pr">R$ 79,90 <small>/mês</small></div><ul><li><b>300 cortes</b> por mês</li><li>Corte em lote: vários trechos de uma vez</li><li>Sua logo automática em todos os cortes</li><li>Fila prioritária e vídeos até 3 GB</li><li>Suporte no WhatsApp</li></ul><button class="go ghost" onclick="buy('pro')">Assinar Pro</button></div>
     </div>
     <p class="lead" style="font-size:13px;text-align:center;margin-top:20px">Pagamento por Pix, cartão ou boleto. Cada compra libera 30 dias (7 no Passe). Os cortes ficam disponíveis por 30 dias pra baixar.</p>
     <details style="margin:6px auto 0;max-width:480px"><summary>Tenho um código</summary>
@@ -554,9 +555,9 @@ const MEM={};const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))??
 let CAT=null,STATUS={},src={kind:'link'},sel={tpl:'vice-cam-cima',cap:'pesada-karaoke',color:'auto'},fam='destaques',font='destaques';
 const FEAT_T=['vice-cam-cima','neon-rosa','missao-cumprida','procurado-3','celular-chat','retro-vhs','vice-sem-cam','retro-outdoor','celular-pix'];
 const FEAT_C=['pesada-karaoke','pesada-pop','neon-karaoke','neon-pop','condensada-karaoke','redonda-pop'];
-let ME=null;const isPro=()=>!!(ME&&ME.pro);const myTier=()=>ME?ME.tier:0;const TIERN={1:'INICIANTE',2:'CLIPADOR'};
+let ME=null,WIZ=false;const isPro=()=>!!(ME&&ME.pro);const myTier=()=>ME?ME.tier:0;const TIERN={1:'INICIANTE',2:'CLIPADOR'};
 
-function view(v){document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===v||(v==='make'&&b.dataset.go==='home')));if(v==='mine')renderJobs();if(v==='conta')renderConta();if(v==='virais')loadVirais();scrollTo(0,0)}
+function view(v){document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===v||(v==='make'&&b.dataset.go==='home')));if(v==='mine')renderJobs();$('#backWiz').hidden=!(v==='planos'&&WIZ);if(v!=='planos'&&v!=='make')WIZ=false;if(v==='conta')renderConta();if(v==='virais')loadVirais();scrollTo(0,0)}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>view(b.dataset.go));
 function home(){view('home')}
 function step(n){view('make');[1,2,3].forEach(i=>$('#s'+i).hidden=i!==n);document.querySelectorAll('.steps i').forEach((e,i)=>e.classList.toggle('on',i<n));if(n===2)renderTpls();if(n===3)renderCaps();scrollTo(0,0)}
@@ -613,7 +614,7 @@ const ytId=u=>{const m=String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(
 function loadYT(id,start){$('#ytBox').hidden=false;ytReady=false;
   const mk=()=>{try{ytp&&ytp.destroy()}catch{}$('#ytBox').innerHTML='<div id="yt"></div>';ytp=new YT.Player('yt',{videoId:id,playerVars:{playsinline:1,rel:0,modestbranding:1,start:Math.floor(start||0)},events:{onReady:()=>{ytReady=true;$('#markRow').hidden=false}}})};
   if(window.YT&&YT.Player)return mk();window.onYouTubeIframeAPIReady=mk;if(!document.getElementById('ytapi')){const s=document.createElement('script');s.id='ytapi';s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s)}}
-function resetMedia(){clearReact();['#playerBox','#ytBox','#thumbBox','#probeLoad','#trim','#markRow'].forEach(s=>$(s).hidden=true);try{ytp&&ytp.destroy()}catch{}ytp=null;ytReady=false;DUR=0;$('#start').value='';$('#end').value='';$('#blankHint').hidden=true;SEGS=[];renderSegs()}
+function resetMedia(){clearReact();$('#lenInfo').textContent='';$('#title').value='';['#playerBox','#ytBox','#thumbBox','#probeLoad','#trim','#markRow'].forEach(s=>$(s).hidden=true);try{ytp&&ytp.destroy()}catch{}ytp=null;ytReady=false;DUR=0;$('#start').value='';$('#end').value='';$('#blankHint').hidden=true;SEGS=[];renderSegs()}
 async function probeLink(url,s,e){const seq=++probeSeq;$('#probeLoad').hidden=false;$('#typeBox').open=false;
   try{const d=await api('/api/probe?url='+encodeURIComponent(url));if(seq!==probeSeq)return;$('#probeLoad').hidden=true;
     if(d.title)$('#srcLabel').textContent=d.title;
@@ -628,7 +629,7 @@ function next1(){if(SEGS.length&&!$('#start').value&&!$('#end').value)return ste
   if(src.kind==='file'&&(a==null||b==null))return toast('Marque o início e o fim do corte');
   if(a!=null&&b!=null){if(b<=a)return toast('O fim precisa ser depois do início');if(b-a>MAXLEN())return toast(`O corte pode ter até ${MAXLEN()} segundos`)}
   step(2)}
-function locked(t){toast(t===1?'Disponível a partir do plano Iniciante':'Disponível a partir do plano Clipador');setTimeout(()=>view('planos'),800)}
+function locked(t){const n=t===1?'Iniciante':'Clipador',pr=t===1?'R$ 19,90':'R$ 39,90';sheet(`<h2 class="disp" style="margin:0 0 6px">Disponível no ${n}</h2><p class="lead">Esse visual faz parte do plano ${n} (${pr}/mês). Você pode continuar com outro visual agora e assinar depois, sem perder o seu corte.</p><button class="go" onclick="closeSheet();WIZ=true;view('planos')">Ver planos</button><button class="alt" onclick="closeSheet()">Continuar com outro visual</button>`)}
 function renderTpls(){if(!CAT)return;
   const tabs=[{id:'destaques',name:'Destaques'},...CAT.families];
   $('#fams').innerHTML=tabs.map(f=>`<button class="tab ${f.id===fam?'on':''}" data-f="${f.id}">${esc(f.name)}</button>`).join('');
@@ -647,21 +648,21 @@ $('#tpls').onclick=e=>{const b=e.target.closest('[data-id]');if(!b)return;const 
 $('#fonts').onclick=e=>{const b=e.target.closest('[data-f]');if(b){font=b.dataset.f;renderCaps()}};
 $('#caps').onclick=e=>{const b=e.target.closest('[data-id]');if(!b)return;const c=CAT.captions.find(x=>x.id===b.dataset.id);if(c.tier>myTier())return locked(c.tier);sel.cap=c.id;renderCaps()};
 $('#sw').onclick=e=>{const b=e.target.closest('[data-c]');if(b){sel.color=b.dataset.c;renderCaps()}};
-$('#watermark').onchange=e=>{if(!e.target.checked&&!(ME&&ME.watermark_off)){e.target.checked=true;locked(1)}};
 
 $('#go').onclick=()=>{if(!ME)return openAuth('signup','Crie sua conta grátis pra gerar o corte. Você ganha '+(STATUS.free_clips||3)+' cortes grátis.',generate);generate()};
 async function generate(){const go=$('#go');go.disabled=true;go.textContent='Enviando…';
   const segs=[...SEGS];if($('#start').value.trim()&&$('#end').value.trim()&&segs.length)segs.push([$('#start').value.trim(),$('#end').value.trim()]);
-  const o={start:$('#start').value.trim(),end:$('#end').value.trim(),segments:segs.length>1?JSON.stringify(segs):'',template:sel.tpl,caption:sel.cap,caption_color:sel.color,corner:$('#corner').value,cam_size:$('#cam_size').value/100,title:$('#title').value,captions:$('#captions').checked,cover:$('#cover').checked,watermark:$('#watermark').checked};
+  const o={start:$('#start').value.trim(),end:$('#end').value.trim(),segments:segs.length>1?JSON.stringify(segs):'',template:sel.tpl,caption:sel.cap,caption_color:sel.color,corner:$('#corner').value,cam_size:$('#cam_size').value/100,title:$('#title').value,captions:$('#captions').checked,cover:$('#cover').checked,watermark:false,logo:$('#logo').checked};
   if(CAMF)o.react_pos=reactPos;
   try{let j;if(src.kind==='file'||CAMF){const fd=new FormData();if(src.kind==='file')fd.append('file',src.file);else fd.append('url',src.url);if(CAMF)fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
   else{j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,url:src.url,start:o.start||null,end:o.end||null,segments:segs.length>1?segs:[]})})}
   if(j.user){ME=j.user;refreshAcct()}{const p=PREFS();p.tpl=sel.tpl;p.cap=sel.cap;LS.set('cgta_prefs',p)}SEGS=[];CAMF=null;renderSegs();view('mine');toast((j.jobs&&j.jobs.length>1)?j.jobs.length+' cortes sendo montados':'Seu corte está sendo montado')}
-  catch(err){toast(err.message);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='✂️ Gerar meu corte'}}
+  catch(err){toast(err.message);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)WIZ=true,setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='✂️ Gerar meu corte'}}
 
 /* virais */
 let vmode='24';
-async function loadVirais(){const el=$('#vlist');el.innerHTML='<p class="lead">Carregando…</p>';
+async function loadVirais(){const el=$('#vlist');el.innerHTML='<div class="skel" style="grid-column:1/-1;aspect-ratio:auto;height:160px;border-radius:14px"><span class="spin"></span>Carregando…</div>';
+  if(STATUS.demo){$('#vtabs').hidden=true;el.innerHTML=`<div class="box" style="grid-column:1/-1;text-align:center;padding:30px 20px"><div class="n" style="margin:0 auto 14px;width:46px;height:46px;border-radius:12px;background:var(--pinkbg);color:var(--pink);display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div><b style="font-size:17px">Ache o momento que bombou</b><p class="lead" style="margin:8px auto 18px;max-width:420px;font-size:14px">Abra os clipes de GTA mais vistos nas últimas 24h na Twitch, copie o link do que você quer e cole aqui embaixo.</p><a class="go ghost" style="text-decoration:none;margin-bottom:12px" href="https://www.twitch.tv/directory/category/grand-theft-auto-v/clips?range=24hr" target="_blank" rel="noopener">Ver clipes mais vistos de GTA ↗</a><div class="lrow"><input id="vUrl" placeholder="Cole o link do clipe" inputmode="url"><button class="go" onclick="$('#url').value=$('#vUrl').value;startFromLink()">Cortar</button></div></div>`;return}
   try{if(vmode==='live'){const d=await api('/api/live');el.innerHTML=d.length?d.map(s=>`<button class="vc" onclick="openStreamer('${esc(s.login)}','${esc(s.name)}')"><div class="th" style="background-image:url('${esc(s.thumb)}')"><i class="live">AO VIVO</i><i>${fmt(s.viewers)} assistindo</i></div><div class="tx"><b>${esc(s.name)}</b>${esc(s.title)}</div></button>`).join(''):'<p class="lead">Ninguém em live de GTA agora.</p>';return}
   const d=await api('/api/clips?hours='+vmode);el.innerHTML=d.length?d.map(c=>`<button class="vc" onclick='useMoment(${JSON.stringify({url:c.url,title:c.title})})'><div class="th" style="background-image:url('${esc(c.thumb)}')"><i>👁 ${fmt(c.views)} · ${Math.round(c.duration)}s</i></div><div class="tx"><b>${esc(c.title)}</b>${esc(c.creator)}</div></button>`).join(''):'<p class="lead">Nada por aqui ainda.</p>'}
   catch(e){el.innerHTML=`<p class="lead">${esc(e.message)}</p>`}}
@@ -675,6 +676,7 @@ async function joinWait(e){e.preventDefault();try{await api('/api/waitlist',{met
 
 /* meus cortes */
 const LBL={'na fila':'Preparando seu corte…','baixando':'Pegando o trecho…','legendando':'Escrevendo a legenda…','renderizando':'Montando o vídeo…','pronto':'Pronto pra postar','erro':'Não deu certo'};
+async function shareCut(u,id){try{const b=await fetch(u).then(r=>r.blob());const f=new File([b],`gta-clipadas-${id}.mp4`,{type:'video/mp4'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:'Corte GTA Clipadas'});else await navigator.share({url:location.origin+u})}catch(e){if(e.name!=='AbortError')toast('Não deu pra compartilhar. Use o Baixar vídeo.')}}
 let poll;async function renderJobs(){clearTimeout(poll);const el=$('#jobs');
   if(!ME){el.innerHTML='<div class="empty">Entre na sua conta pra ver seus cortes.<br><br><button class="go" onclick="openAuth(\'login\')">Entrar</button></div>';return}
   let rs=[];try{rs=await api('/api/my/jobs')}catch(e){el.innerHTML=`<div class="empty">${esc(e.message)}</div>`;return}
@@ -683,7 +685,9 @@ let poll;async function renderJobs(){clearTimeout(poll);const el=$('#jobs');
   el.innerHTML=rs.map((j,i)=>{if(!['pronto','erro','expirado'].includes(j.status))pending=true;
    const media=j.status==='pronto'?`<video src="${j.video}" poster="${j.cover||j.thumb}" controls playsinline preload="none"></video>`:`<div class="ph">${j.status==='erro'?'⚠️':'⏳'}</div>`;
    const body=j.status==='pronto'?`<a class="sm" href="${j.video}" download="gta-clipadas-${j.id}.mp4">Baixar vídeo</a>${j.cover?`<a class="sm g" href="${j.cover}" download="capa-${j.id}.jpg">Capa</a>`:''}`:j.status==='erro'?'<span style="color:var(--mute);font-size:13px">Não deu certo e o corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.</span>':j.status==='expirado'?'':`<div class="prog"><i style="width:${j.progress||5}%"></i></div>`;
-   return `<div class="job">${media}<div><h3>${esc(ids[i].title)}</h3><p>${LBL[j.status]||'Expirou'}</p>${body}</div></div>`}).join('');
+   const tt=ids[i].title&&ids[i].title!=='Corte GTA'?ids[i].title:'Corte',dt=ids[i].created?new Date(ids[i].created*1000).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+   const sh=j.status==='pronto'&&navigator.share?`<button class="sm g" onclick="shareCut('${j.video}','${j.id}')">Compartilhar</button>`:'';
+   return `<div class="job">${media}<div><h3>${esc(tt)}</h3><p style="margin:0 0 2px;font-size:12px;color:var(--dim)">${dt}</p><p>${LBL[j.status]||'Expirou'}</p>${body}${sh}</div></div>`}).join('');
   if(pending&&!$('#v-mine').hidden)poll=setTimeout(renderJobs,2500)}
 
 /* conta, planos e pagamento */
@@ -701,6 +705,7 @@ function refreshAcct(){const b=$('#acctBtn');$('#mineBtn').hidden=!ME;
   if(!ME){b.textContent='Entrar';b.classList.remove('on');$('#gift').hidden=false;$('#maxMb').textContent='1 GB';return}
   b.textContent=ME.plan==='gratis'?`${ME.left} grátis`:`✂️ ${ME.left}`;b.classList.toggle('on',ME.plan!=='gratis');$('#gift').hidden=true;
   $('#maxMb').textContent=Math.round(ME.max_mb/1024)+' GB';
+  const lok=!!(ME&&ME.own_logo&&ME.has_logo);$('#logo').disabled=!lok;$('#logo').checked=lok;$('#wmNote').innerHTML=!(ME&&ME.own_logo)?'Disponível no Clipador e no Pro':!ME.has_logo?'Envie sua logo na <a href="#" onclick="view(\'conta\');return false">aba Conta</a>':'Pequena, no canto do vídeo';
   if(!$('#v-make').hidden){renderTpls();renderCaps()}}
 function acctClick(){if(!ME)return openAuth('login');view('conta')}
 function logoutLocal(){LS.set('cgta_token',null);ME=null;refreshAcct()}
@@ -776,6 +781,7 @@ async function renderConta(){const el=$('#conta');
   <div class="stats"><div><b>${d.total}</b><span>cortes feitos</span></div><div><b>${d.month}</b><span>últimos 30 dias</span></div><div><b>${d.left}</b><span>restantes</span></div></div>
   <div class="box"><h3>Pagamentos</h3>${d.payments.length?d.payments.map(x=>`<div class="pay"><span>${esc(x.plan_name)}<br><small>${new Date(x.created*1000).toLocaleDateString('pt-BR')}</small></span><span style="text-align:right">R$ ${Number(x.amount).toFixed(2).replace('.',',')}<br><small class="${/approved|received|confirmed/i.test(x.status)?'st-ok':'st-wait'}">${/approved|received|confirmed/i.test(x.status)?'Pago':'Pendente'}</small></span></div>`).join(''):'<p class="lead" style="margin:0;font-size:14px">Nenhum pagamento ainda.</p>'}</div>
   <div class="box"><h3>Forma de pagamento</h3><p class="lead" style="margin:0;font-size:14px">Você escolhe <b style="color:#fff">Pix, cartão ou boleto</b> na hora de cada pagamento. A gente não guarda os dados do seu cartão: pra trocar de cartão, é só usar outro no próximo pagamento.</p></div>
+  <div class="box"><h3>Sua logo nos cortes</h3>${d.own_logo?`<div class="set" style="border:0;padding-top:0"><span style="display:flex;align-items:center;gap:12px">${d.logo?`<img src="${d.logo}" alt="" style="width:56px;height:56px;object-fit:contain;background:var(--s2);border-radius:10px;padding:4px">`:'<span style="width:56px;height:56px;border-radius:10px;border:1px dashed var(--line2);display:grid;place-items:center;color:var(--dim)">logo</span>'}<span>${d.logo?'Entra pequena no canto de todos os cortes':'PNG com fundo transparente fica melhor'}</span></span></div><div class="row2"><button class="go ghost" onclick="$('#logoFile').click()">${d.logo?'Trocar logo':'Enviar logo'}</button>${d.logo?`<button class="go ghost" onclick="delLogo()">Remover</button>`:''}</div>`:`<p class="lead" style="margin:0 0 12px;font-size:14px">Coloque a sua logo automaticamente em todos os cortes. Disponível no Clipador e no Pro.</p><button class="go ghost" onclick="view('planos')">Ver planos</button>`}</div>
   <div class="box"><h3>Preferências</h3>
     <label class="set"><span>Legenda automática<small>Já vem ligada nos novos cortes</small></span><input type="checkbox" ${p.captions!==false?'checked':''} onchange="setPref('captions',this.checked)"></label>
     <label class="set"><span>Gerar capa<small>Thumbnail 9:16 junto com o corte</small></span><input type="checkbox" ${p.cover!==false?'checked':''} onchange="setPref('cover',this.checked)"></label>
@@ -786,6 +792,9 @@ async function renderConta(){const el=$('#conta');
     ${d.admin?'<div class="set"><span>Administração</span><a class="sm g" href="/admin">Painel de admin</a></div>':''}
     <div class="set"><span>Sessão</span><button class="sm g" onclick="api('/api/auth/logout',{method:'POST'}).catch(()=>{});logoutLocal();home();toast('Você saiu')">Sair da conta</button></div></div>`}
 
+$('#logoFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const fd=new FormData();fd.append('file',f);try{await api('/api/my/logo',{method:'POST',body:fd});toast('Logo salva! Ela entra nos próximos cortes.');renderConta()}catch(err){toast(err.message)}};
+async function delLogo(){try{await api('/api/my/logo',{method:'DELETE'});toast('Logo removida');renderConta()}catch(err){toast(err.message)}}
+
 const GAL=['vice-cam-cima','neon-rosa','procurado-3','celular-chat','missao-cumprida','retro-vhs'];
 function renderGal(){const el=$('#gal');if(!el)return;el.innerHTML=GAL.map(id=>{const t=CAT&&CAT.templates.find(x=>x.id===id);return `<button data-t="${id}"><img loading="lazy" src="/previews/tpl-${id}.jpg" alt=""><span>${esc(t?t.name:'')}</span></button>`}).join('')}
 $('#gal').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const t=CAT&&CAT.templates.find(x=>x.id===b.dataset.t);if(t&&t.tier<=myTier())sel.tpl=t.id;pickFile()};
@@ -794,7 +803,6 @@ $('#gal').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const t=
     const go=()=>{const dt=new DataTransfer();dt.items.add(f);$('#file').files=dt.files;$('#file').onchange({target:$('#file')})};if(needAcc(go))return;go()})})();
 (async()=>{refreshAcct();
   try{STATUS=await api('/api/status');document.querySelectorAll('.freeN').forEach(e=>e.textContent=STATUS.free_clips);
-    if(STATUS.demo){$('#demo').hidden=false;$('#demo').textContent=STATUS.demo_text||'Lives e clipes de exemplo até a Twitch ser conectada.'}
     if(!STATUS.captions)$('#captions').closest('.tg').title='A legenda automática liga quando a chave de IA for configurada.'}catch{}
   try{CAT=await api('/api/catalog')}catch{toast('Não deu pra carregar os visuais')}
   renderGal();applyPrefs();

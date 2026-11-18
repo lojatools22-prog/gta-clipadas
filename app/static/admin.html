@@ -4,8 +4,9 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admin — GTA Clipadas</title><link rel="icon" href="/static/logo.jpg">
 <style>
-:root{--bg:#12051f;--card:#1d0b33;--line:#2f1650;--pink:#ff1fa8;--mute:#a996c4}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font:15px/1.45 system-ui,-apple-system,Roboto,sans-serif}
+@font-face{font-family:Inter;src:url(/static/inter-400.woff2) format("woff2");font-weight:400}@font-face{font-family:Inter;src:url(/static/inter-700.woff2) format("woff2");font-weight:700}
+:root{--bg:#09090b;--card:#111114;--line:rgba(255,255,255,.1);--pink:#ff1fa8;--mute:#a1a1aa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font:15px/1.45 Inter,system-ui,-apple-system,Roboto,sans-serif}
 main{max-width:1100px;margin:auto;padding:18px}h1{margin:0 0 4px;font-size:24px}h2{font-size:18px;margin:26px 0 10px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .k{background:var(--card);border-radius:14px;padding:12px}.k b{display:block;font-size:24px}.k span{color:var(--mute);font-size:13px}
@@ -19,10 +20,10 @@ button.s{background:var(--pink);color:#fff;border:0;border-radius:8px;padding:6p
 </style>
 </head>
 <body><main>
-<p><a href="/" style="color:#3ce1ff">← Voltar ao site</a></p>
+<p><a href="/" style="color:#ff7ad1">← Voltar ao site</a></p>
 <h1>Painel GTA Clipadas</h1><p class="m" id="who"></p>
 <div class="kpis" id="kpis"></div>
-<div class="tabs"><button data-t="users" class="on">Usuários</button><button data-t="pay">Pagamentos</button><button data-t="wait">Lista de espera</button></div>
+<div class="tabs"><button data-t="users" class="on">Usuários</button><button data-t="pay">Pagamentos</button><button data-t="wait">Interessados no Automático</button></div>
 <div id="tab"></div>
 </main><div class="toast" id="toast"></div>
 <script>
@@ -46,6 +47,6 @@ async function pays(){const d=await api('/api/admin/payments');$('#tab').innerHT
 async function wait(){const d=await api('/api/admin/waitlist');$('#tab').innerHTML=`<div class="wrap"><table><tr><th>Data</th><th>Nome</th><th>@</th><th>WhatsApp</th></tr>${d.reverse().map(w=>`<tr><td>${esc(w.at)}</td><td>${esc(w.name)}</td><td>${esc(w.handle)}</td><td>${esc(w.whatsapp)}</td></tr>`).join('')||'<tr><td colspan=4 class="m">Ninguém ainda.</td></tr>'}</table></div>`}
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));({users,pay:pays,wait})[b.dataset.t]()});
 (async()=>{try{const me=await api('/api/me');if(!me.admin)throw new Error('Esta conta não é de administrador.');$('#who').textContent='Entrou como '+me.email;await kpis();await users();setInterval(kpis,30000)}
-  catch(e){document.querySelector('main').innerHTML=`<p><a href="/" style="color:#3ce1ff">← Voltar</a></p><h1>Painel</h1><p class="m">${esc(e.message)} Entre no site com o e-mail de administrador e volte aqui.</p>`}})();
+  catch(e){document.querySelector('main').innerHTML=`<p><a href="/" style="color:#ff7ad1">← Voltar</a></p><h1>Painel</h1><p class="m">${e.message==='Esta conta não é de administrador.'?'Essa conta não é de administrador.':'Entre no site com o e-mail de administrador e volte aqui.'}</p>`}})();
 </script>
 </body></html>

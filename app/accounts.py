@@ -8,6 +8,8 @@ from .plans import PLANS
 DATA = Path(os.getenv("DATA_DIR", Path(__file__).parent.parent / "data"))
 DATA.mkdir(parents=True, exist_ok=True)
 DB = DATA / "contas.db"
+DATA_LOGOS = DATA / "logos"
+DATA_LOGOS.mkdir(parents=True, exist_ok=True)
 LOGIN_SMS = os.getenv("LOGIN_SMS", "1") == "1"          # pede código por SMS ao entrar num aparelho novo
 DEV_SHOW_CODES = os.getenv("DEV_SHOW_CODES", "0") == "1"  # só para testes: devolve o código na resposta
 ADMIN_EMAILS = {e.strip().lower() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()}
@@ -278,13 +280,18 @@ def is_admin(u) -> bool:
     return bool(u) and u["email"] in ADMIN_EMAILS
 
 
+def logo_path(user_id) -> Path:
+    return DATA_LOGOS / f"{int(user_id)}.png"
+
+
 def public(u) -> dict:
     p = active_plan(u)
     left = u["credits"] if p == "gratis" else u["quota_left"]
     return {"name": u["name"], "email": u["email"], "phone": u["phone"][:-4].replace(u["phone"][3:-4], "•" * len(u["phone"][3:-4])) + u["phone"][-4:],
             "plan": p, "plan_name": PLANS[p]["name"], "plan_until": u["plan_until"] if p != "gratis" else None,
             "left": left, "tier": PLANS[p]["tier"], "max_mb": PLANS[p]["max_mb"], "batch": PLANS[p]["batch"],
-            "watermark_off": PLANS[p]["watermark_off"], "admin": is_admin(u), "has_billing": bool(u["asaas_customer"]),
+            "watermark_off": PLANS[p]["watermark_off"], "own_logo": PLANS[p].get("own_logo", False), "has_logo": logo_path(u["id"]).exists(),
+            "admin": is_admin(u), "has_billing": bool(u["asaas_customer"]),
             # compatibilidade com a interface
             "credits": left, "pro": p != "gratis"}
 

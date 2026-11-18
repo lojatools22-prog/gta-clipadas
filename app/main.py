@@ -336,6 +336,7 @@ class JobIn(BaseModel):
     caption: str = "pesada-karaoke"
     caption_color: str = "auto"
     watermark: bool = True
+    logo: bool = True
     cover: bool = True
     corner: str = "top-left"
     cam_size: float = 0.30
@@ -359,6 +360,8 @@ def _opts(d: dict, P: dict) -> dict:
     if not P["watermark_off"]:
         d["watermark"] = True
     d["react_pos"] = "slot" if d.get("react_pos") == "slot" else "float"
+    for k in [k for k in d if k.startswith("_")]:
+        d.pop(k)
     d.pop("segments", None)
     return d
 
@@ -383,6 +386,9 @@ def _start(request: Request, raw: dict, upload: Path | None = None, cam: Path | 
     P = accounts.plan_info(u)
     segs = _segments(raw, P)
     base = _opts(raw, P)
+    lp = accounts.logo_path(u["id"])
+    if P.get("own_logo") and lp.exists() and str(raw.get("logo", True)).lower() not in ("false", "0", ""):
+        base["_logo"] = str(lp)
     out = []
     try:
         for i, (a, b) in enumerate(segs):
@@ -448,7 +454,7 @@ def new_job(j: JobIn, request: Request):
 async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
                      template: str = Form("vice-cam-cima"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
                      corner: str = Form("top-left"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
-                     watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None)):
+                     watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None), logo: bool = Form(True)):
     u = current_user(request)
     max_mb = accounts.plan_info(u)["max_mb"]
     if file is None or not file.filename:
@@ -481,7 +487,7 @@ async def new_upload(request: Request, file: UploadFile | None = File(None), url
     try:
         return _start(request, {"url": url if tmp is None else "upload", "react_pos": react_pos, "start": start, "end": end, "segments": segments, "template": template, "caption": caption,
                                 "caption_color": caption_color, "corner": corner, "cam_size": cam_size, "title": title,
-                                "captions": captions, "watermark": watermark, "cover": cover}, upload=tmp, cam=cam_tmp)
+                                "captions": captions, "watermark": watermark, "cover": cover, "logo": logo}, upload=tmp, cam=cam_tmp)
     except HTTPException:
         if tmp:
             tmp.unlink(missing_ok=True)
@@ -502,7 +508,39 @@ def get_job(jid: str):
 @app.get("/api/my/stats")
 def my_stats(request: Request):
     u = current_user(request)
-    return {**accounts.public(u), **accounts.user_stats(u["id"]), "quota": plans.PLANS[accounts.active_plan(u)]["quota"]}
+    return {**accounts.public(u), **accounts.user_stats(u["id"]), "quota": plans.PLANS[accounts.active_plan(u)]["quota"], "logo": _logo_data(u["id"])}
+
+
+@app.post("/api/my/logo")
+async def upload_logo(request: Request, file: UploadFile = File(...)):
+    u = current_user(request)
+    if not accounts.plan_info(u).get("own_logo"):
+        raise HTTPException(402, "Colocar a sua logo nos cortes é dos planos Clipador e Pro.")
+    data = await file.read(5 * 1048576 + 1)
+    if len(data) > 5 * 1048576:
+        raise HTTPException(413, "A logo pode ter até 5 MB.")
+    from PIL import Image
+    import io
+    try:
+        im = Image.open(io.BytesIO(data)).convert("RGBA")
+    except Exception:
+        raise HTTPException(400, "Envie uma imagem PNG ou JPG.")
+    im.thumbnail((400, 400))
+    im.save(accounts.logo_path(u["id"]), "PNG")
+    return {"ok": True, "logo": _logo_data(u["id"])}
+
+
+@app.delete("/api/my/logo")
+def delete_logo(request: Request):
+    u = current_user(request)
+    accounts.logo_path(u["id"]).unlink(missing_ok=True)
+    return {"ok": True}
+
+
+def _logo_data(uid):
+    import base64
+    p = accounts.logo_path(uid)
+    return "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode() if p.exists() else None
 
 
 @app.get("/api/my/jobs")
@@ -586,6 +624,25 @@ PREVIEWS.mkdir(exist_ok=True)
 app.mount("/previews", StaticFiles(directory=PREVIEWS), name="previews")
 
 
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
+
+
+@app.exception_handler(StarletteHTTPException)
+async def not_found(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404 and not request.url.path.startswith(("/api/", "/files/", "/previews/", "/static/")):
+        return HTMLResponse(NOT_FOUND, status_code=404)
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=getattr(exc, "headers", None))
+
+
+NOT_FOUND = """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Página não encontrada — GTA Clipadas</title><link rel="icon" href="/static/logo.jpg">
+<style>@font-face{font-family:Inter;src:url(/static/inter-800.woff2) format("woff2");font-weight:800}@font-face{font-family:Inter;src:url(/static/inter-400.woff2) format("woff2");font-weight:400}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#09090b;color:#fafafa;font:16px/1.6 Inter,system-ui,sans-serif;text-align:center;padding:20px}
+img{width:72px;height:72px;border-radius:50%}h1{font-size:30px;letter-spacing:-.03em;margin:18px 0 6px}p{color:#a1a1aa;margin:0 0 24px}
+a{display:inline-block;background:#ff1fa8;color:#fff;text-decoration:none;font-weight:800;padding:14px 24px;border-radius:12px}</style></head>
+<body><div><img src="/static/logo.jpg" alt=""><h1>Essa página não existe</h1><p>O link pode estar errado ou o conteúdo saiu do ar.</p><a href="/">Voltar pro GTA Clipadas</a></div></body></html>"""
+
+
 @app.get("/")
 def index():
     return FileResponse(STATIC / "index.html")
@@ -596,11 +653,22 @@ def admin_page():
     return FileResponse(STATIC / "admin.html")
 
 
+def _legal(name: str):
+    from fastapi.responses import HTMLResponse
+    emp = os.getenv("EMPRESA_NOME", "").strip()
+    cnpj = os.getenv("EMPRESA_CNPJ", "").strip()
+    full = f"{emp}, CNPJ {cnpj}" if emp and cnpj else (emp or "os responsáveis pelo GTA Clipadas")
+    contato = os.getenv("CONTATO_EMAIL", "").strip()
+    contato = f'<a href="mailto:{contato}">{contato}</a>' if contato else "pelos canais de suporte do site"
+    h = (STATIC / name).read_text(encoding="utf-8").replace("{{EMPRESA}}", full).replace("{{EMPRESA_CAP}}", full[:1].upper() + full[1:]).replace("{{CONTATO}}", contato)
+    return HTMLResponse(h)
+
+
 @app.get("/termos")
 def termos():
-    return FileResponse(STATIC / "termos.html")
+    return _legal("termos.html")
 
 
 @app.get("/privacidade")
 def privacidade():
-    return FileResponse(STATIC / "privacidade.html")
+    return _legal("privacidade.html")
