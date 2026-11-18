@@ -135,7 +135,7 @@ input:disabled{opacity:.7}
 .opt:hover{box-shadow:0 0 0 2px rgba(255,255,255,.35)}
 .opt:active{transform:scale(.97)}
 .opt img{display:block;width:100%;height:100%;object-fit:cover}
-.opt.v{aspect-ratio:9/16}.opt.h{aspect-ratio:18/7}
+.seg2{display:flex;gap:4px;padding:4px;background:var(--card,#16161c);border-radius:12px;box-shadow:0 0 0 1px var(--line);margin:4px 0 8px}.seg2 button{flex:1;border:0;background:none;color:var(--mute);font:600 15px Inter,sans-serif;padding:11px;border-radius:9px;cursor:pointer}.seg2 button.on{background:#fff;color:#000}.famHint{color:var(--mute);font-size:13px;margin:0 0 10px}.tdesc{margin-top:12px;padding:12px 14px;border-radius:12px;box-shadow:0 0 0 1px var(--line);display:grid;gap:2px}.tdesc small{color:var(--mute);font-size:12px}.tdesc b{font-size:15px}.tdesc span{font-size:13px;color:var(--mute)}.opt.v{aspect-ratio:9/16}.opt.h{aspect-ratio:18/7}
 .opt.on{box-shadow:0 0 0 3px var(--pink),0 10px 30px -10px rgba(255,31,168,.6)}
 .opt.on::after{content:"✓";position:absolute;top:7px;left:7px;width:24px;height:24px;border-radius:50%;background:var(--pink);color:#fff;font-weight:800;display:grid;place-items:center;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .opt .p{position:absolute;top:7px;right:7px;background:rgba(9,9,11,.85);color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;letter-spacing:.03em;border:1px solid var(--line2)}
@@ -500,8 +500,11 @@ input,select,textarea{font-size:16px!important}
 
     <div id="s2" hidden>
       <div class="wh"><button class="back" onclick="step(1)">←</button><h2 class="disp">Escolha o visual</h2></div>
-      <div class="tabs" id="fams"></div>
+      <div class="seg2" id="fams"></div>
+      <p class="famHint" id="famHint"></p>
+      <div class="tabs" id="subs"></div>
       <div class="grid" id="tpls"></div>
+      <div class="tdesc" id="tdesc"></div>
       <div class="box react" id="reactBox" style="margin-top:16px">
         <div class="pl-row" style="margin:0"><span><b style="font-size:15px">Seu react</b><br><small style="color:var(--mute);font-size:13px">Grave você reagindo ao corte e coloque por cima</small></span><span class="pill">opcional</span></div>
         <button type="button" class="go ghost" style="margin-top:12px" onclick="$('#camFile').click()" id="camBtn">📷 Adicionar meu react</button>
@@ -575,7 +578,7 @@ const fmt=n=>n>=1000?(n/1000).toFixed(n>=10000?0:1).replace('.',',')+' mil':Stri
 const hms=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return `${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`};
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._);t._=setTimeout(()=>t.style.display='none',3200)}
 const MEM={};const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return MEM[k]??d}},set(k,v){MEM[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
-let CAT=null,STATUS={},src={kind:'link'},sel={tpl:'vice-cam-cima',cap:'pesada-karaoke',color:'auto'},fam='destaques',font='destaques';
+let CAT=null,STATUS={},src={kind:'link'},sel={tpl:'basico-legenda',cap:'pesada-karaoke',color:'auto'},fam='basico',sub='todos',font='destaques';
 const FEAT_T=['vice-cam-cima','neon-rosa','missao-cumprida','procurado-3','celular-chat','retro-vhs','vice-sem-cam','retro-outdoor','celular-pix'];
 const FEAT_C=['pesada-karaoke','pesada-pop','neon-karaoke','neon-pop','condensada-karaoke','redonda-pop'];
 let ME=null,WIZ=false;const isPro=()=>!!(ME&&ME.pro);const myTier=()=>ME?ME.tier:0;const TIERN={1:'INICIANTE',2:'CLIPADOR'};
@@ -699,11 +702,15 @@ function next1(){if(AN&&AN.status==='pronto'&&SELM.size)return step(2);if(SEGS.l
   step(2)}
 function locked(t){const n=t===1?'Iniciante':'Clipador',pr=t===1?'R$ 19,90':'R$ 39,90';sheet(`<h2 class="disp" style="margin:0 0 6px">Disponível no ${n}</h2><p class="lead">Esse visual faz parte do plano ${n} (${pr}/mês). Você pode continuar com outro visual agora e assinar depois, sem perder o seu corte.</p><button class="go" onclick="closeSheet();WIZ=true;view('planos')">Ver planos</button><button class="alt" onclick="closeSheet()">Continuar com outro visual</button>`)}
 function renderTpls(){if(!CAT)return;
-  const tabs=[{id:'destaques',name:'Destaques'},...CAT.families];
-  $('#fams').innerHTML=tabs.map(f=>`<button class="tab ${f.id===fam?'on':''}" data-f="${f.id}">${esc(f.name)}</button>`).join('');
-  const list=fam==='destaques'?FEAT_T.map(id=>CAT.templates.find(t=>t.id===id)).filter(Boolean):CAT.templates.filter(t=>t.family===fam);
+  $('#fams').innerHTML=[['basico','Básicos'],['efeitos','Com efeitos']].map(([id,n])=>`<button class="${fam===id?'on':''}" data-f="${id}">${n}</button>`).join('');
+  $('#famHint').textContent=fam==='basico'?'Corte limpo, só com a legenda. Sem arte por cima.':'Mesmo corte com arte de GTA por cima: bordas, cartelas, estrelas, celular.';
+  const effs=CAT.families.filter(f=>f.id!=='basico');
+  $('#subs').hidden=fam==='basico';
+  $('#subs').innerHTML=[{id:'todos',name:'Todos'},...effs].map(f=>`<button class="tab ${f.id===sub?'on':''}" data-s="${f.id}">${esc(f.name)}</button>`).join('');
+  const list=fam==='basico'?CAT.templates.filter(t=>t.family==='basico'):sub==='todos'?FEAT_T.map(id=>CAT.templates.find(t=>t.id===id)).filter(Boolean):CAT.templates.filter(t=>t.family===sub);
   $('#tpls').innerHTML=list.map(t=>`<button class="opt v ${t.id===sel.tpl?'on':''}" data-id="${t.id}"><img loading="lazy" src="/previews/tpl-${t.id}.jpg" alt="">${t.tier>myTier()?`<span class="p">${TIERN[t.tier]}</span>`:''}<span class="n">${esc(t.name)}</span></button>`).join('');
-  const cur=CAT.templates.find(t=>t.id===sel.tpl);$('#camBox').hidden=!(cur&&cur.cam);slotAvail()}
+  const cur=CAT.templates.find(t=>t.id===sel.tpl);
+  if(cur){const fn=(CAT.families.find(f=>f.id===cur.family)||{}).name||'';$('#tdesc').innerHTML=`<small>${cur.family==='basico'?'Básico':'Com efeitos · '+esc(fn)}</small><b>${esc(cur.name)}</b><span>${esc(cur.desc||'')}</span>`}$('#camBox').hidden=!(cur&&cur.cam);slotAvail()}
 function renderCaps(){if(!CAT)return;
   const tabs=[{id:'destaques',name:'Destaques'},...CAT.caption_fonts];
   $('#fonts').innerHTML=tabs.map(f=>`<button class="tab ${f.id===font?'on':''}" data-f="${f.id}">${esc(f.name)}</button>`).join('');
@@ -712,6 +719,7 @@ function renderCaps(){if(!CAT)return;
   const SW={auto:'linear-gradient(135deg,#ff1fa8,#ffc428)',amarelo:'#ffc428',rosa:'#ff1fa8',ciano:'#3ce1ff',verde:'#3ce67a',branco:'#fff'};
   $('#sw').innerHTML=Object.keys(SW).map(k=>`<button class="${k===sel.color?'on':''}" data-c="${k}" title="${esc(CAT.caption_colors[k]||k)}" style="background:${SW[k]}"></button>`).join('')}
 $('#fams').onclick=e=>{const b=e.target.closest('[data-f]');if(b){fam=b.dataset.f;renderTpls()}};
+$('#subs').onclick=e=>{const b=e.target.closest('[data-s]');if(b){sub=b.dataset.s;renderTpls()}};
 $('#tpls').onclick=e=>{const b=e.target.closest('[data-id]');if(!b)return;const t=CAT.templates.find(x=>x.id===b.dataset.id);if(t.tier>myTier())return locked(t.tier);sel.tpl=t.id;renderTpls()};
 $('#fonts').onclick=e=>{const b=e.target.closest('[data-f]');if(b){font=b.dataset.f;renderCaps()}};
 $('#caps').onclick=e=>{const b=e.target.closest('[data-id]');if(!b)return;const c=CAT.captions.find(x=>x.id===b.dataset.id);if(c.tier>myTier())return locked(c.tier);sel.cap=c.id;renderCaps()};
@@ -880,7 +888,7 @@ async function renderConta(){const el=$('#conta');
 $('#logoFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const fd=new FormData();fd.append('file',f);try{await api('/api/my/logo',{method:'POST',body:fd});toast('Logo salva! Ela entra nos próximos cortes.');renderConta()}catch(err){toast(err.message)}};
 async function delLogo(){try{await api('/api/my/logo',{method:'DELETE'});toast('Logo removida');renderConta()}catch(err){toast(err.message)}}
 
-const GAL=['vice-cam-cima','neon-rosa','procurado-3','celular-chat','missao-cumprida','retro-vhs'];
+const GAL=['basico-legenda','basico-desfocado','vice-cam-cima','neon-rosa','procurado-3','celular-chat'];
 function renderGal(){const el=$('#gal');if(!el)return;el.innerHTML=GAL.map(id=>{const t=CAT&&CAT.templates.find(x=>x.id===id);return `<button data-t="${id}"><img loading="lazy" src="/previews/tpl-${id}.jpg" alt=""><span>${esc(t?t.name:'')}</span></button>`}).join('')}
 $('#gal').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const t=CAT&&CAT.templates.find(x=>x.id===b.dataset.t);if(t&&t.tier<=myTier())sel.tpl=t.id;pickFile()};
 (()=>{const d=$('#drop');['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('over')}));['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('over')}));

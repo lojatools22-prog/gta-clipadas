@@ -92,7 +92,7 @@ threading.Thread(target=_cleanup_loop, daemon=True).start()
 _lock = threading.Lock()
 
 # ---------------- Layouts ----------------
-LAYOUT_LABELS = {"cam_top": "Facecam em cima", "cam_bottom": "Facecam embaixo", "float": "Facecam flutuante",
+LAYOUT_LABELS = {"blur_plain": "Fundo desfocado", "letterbox": "Faixas pretas", "cam_top": "Facecam em cima", "cam_bottom": "Facecam embaixo", "float": "Facecam flutuante",
                  "blur": "Sem facecam", "split": "Dividido", "crop": "Tela cheia", "moldura": "Moldura", "inset": "Moldura de objeto"}
 CAM_CORNERS = ["top-left", "top-right", "bottom-left", "bottom-right"]
 
@@ -129,6 +129,11 @@ def layout_filter(lay: dict, corner: str, cs: float, cam_ref: str | None = None)
                 f"[b]scale={W}:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2[base]")
     if k == "crop":
         return f"[0:v]{_cover(W, H)}[base]"
+    if k == "blur_plain":  # vídeo inteiro no meio, o próprio vídeo desfocado atrás, sem tingir
+        return (f"[0:v]split=2[a][b];[a]{_cover(W, H)},boxblur=30:4,eq=brightness=-0.12[bg];"
+                f"[b]scale={W}:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2[base]")
+    if k == "letterbox":  # vídeo inteiro no meio com faixas pretas
+        return f"[0:v]scale={W}:-2,pad={W}:{H}:0:(oh-ih)/2:black[base]"
     if k == "moldura":
         return f"[0:v]{_cover(W, 1590)},pad={W}:{H}:0:330:color=0x1a0630[base]"
     if k == "inset":

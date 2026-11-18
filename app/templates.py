@@ -9,7 +9,7 @@ C = {
 NEON_ASS = {"rosa": C["rosa"], "ciano": C["ciano"], "roxo": C["roxo"], "verde": C["verde"], "laranja": C["laranja"], "amarelo": C["amarelo"]}
 
 FAMILIES = [
-    ("vice", "Vice Beach"), ("neon", "Neon Night"), ("procurado", "Procurado"),
+    ("basico", "Básicos"), ("vice", "Vice Beach"), ("neon", "Neon Night"), ("procurado", "Procurado"),
     ("missao", "Missão"), ("celular", "Celular"), ("retro", "Rádio / VHS"),
 ]
 
@@ -23,6 +23,13 @@ def _t(id, name, family, layout, overlays=(), title=(540, 608), caption=(540, 14
 
 
 TEMPLATES = []
+# ---- Básicos: corte limpo, só a legenda (sem arte por cima) ----
+TEMPLATES += [
+    _t("basico-legenda", "Só legenda", "basico", {"kind": "crop"}, title=(540, 300), caption=(540, 1400), shadow="preto", title_shadow="preto", pro=False),
+    _t("basico-desfocado", "Fundo desfocado", "basico", {"kind": "blur_plain"}, title=(540, 470), caption=(540, 1440), shadow="preto", title_shadow="preto", pro=False),
+    _t("basico-facecam", "Facecam + jogo", "basico", {"kind": "cam_top"}, title=(540, 608), caption=(540, 1400), shadow="preto", title_shadow="preto", pro=False),
+    _t("basico-faixas", "Faixas pretas", "basico", {"kind": "letterbox"}, title=(540, 560), caption=(540, 1390), shadow="preto", title_shadow="preto", pro=False),
+]
 # ---- Vice Beach: varia o layout ----
 TEMPLATES += [
     _t("vice-cam-cima", "Facecam em cima", "vice", {"kind": "cam_top"}, ["vb_top"], pro=False),
@@ -73,11 +80,28 @@ TEMPLATES += [
     _t("retro-outdoor", "Outdoor", "retro", {"kind": "inset", "rect": [80, 560, 1000, 1078], "bg": "none"}, ["outdoor"], title=(540, 330), caption=(540, 1300), title_size=64),
     _t("retro-revista", "Capa de revista", "retro", {"kind": "crop"}, ["revista"], title=(540, 1520), caption=(540, 1100), title_size=70),
 ]
-assert len(TEMPLATES) == 36, len(TEMPLATES)
+assert len(TEMPLATES) == 40, len(TEMPLATES)
 # Níveis: 0 = grátis, 1 = Iniciante, 2 = Clipador/Pro/Passe
 TIER1_T = {"vice-cam-flutuante", "vice-sem-cam", "neon-roxo", "neon-verde", "procurado-3", "missao-falhou", "missao-nova", "celular-chamada", "retro-tv"}
 for t in TEMPLATES:
     t["tier"] = 0 if not t["pro"] else (1 if t["id"] in TIER1_T else 2)
+LAYOUT_DESC = {"cam_top": "Facecam em cima, jogo embaixo", "cam_bottom": "Jogo em cima, facecam embaixo",
+               "float": "Jogo em tela cheia, facecam no canto", "blur": "Vídeo inteiro, fundo desfocado",
+               "blur_plain": "Vídeo inteiro, fundo desfocado", "split": "Tela dividida 50/50", "crop": "Tela cheia",
+               "moldura": "Vídeo com moldura", "inset": "Vídeo dentro de um objeto", "letterbox": "Vídeo inteiro, faixas pretas"}
+FAMILY_FX = {"basico": "só legenda, sem efeitos", "vice": "arte de praia Vice City", "neon": "borda neon",
+             "procurado": "estrelas de procurado", "missao": "cartela de missão", "celular": "dentro de um celular",
+             "retro": "efeito retrô"}
+for t in TEMPLATES:
+    fx = FAMILY_FX[t["family"]]
+    if t["family"] == "procurado" and t["flash"]:
+        fx += " + sirene"
+    if t["family"] == "missao" and t["cards"]:
+        fx = f"cartela \"{t['cards'][0]['text'].title()}\" no {'início' if t['cards'][0]['at'] == 'start' else 'final'}"
+    if t["family"] in ("celular", "retro"):
+        fx = {"celular": "dentro da tela de um celular", "retro": "efeito retrô"}[t["family"]]
+    t["desc"] = f"{LAYOUT_DESC[t['layout']['kind']]} · {fx}"
+    t["effects"] = t["family"] != "basico"
 BY_ID = {t["id"]: t for t in TEMPLATES}
 
 # ---------------- Legendas ----------------
@@ -108,7 +132,7 @@ CAPTION_COLORS = {"auto": "Cor do template", "amarelo": "Amarelo", "rosa": "Rosa
 def public_catalog():
     return {
         "families": [{"id": f, "name": n} for f, n in FAMILIES],
-        "templates": [{**{k: t[k] for k in ("id", "name", "family", "pro", "tier")},
+        "templates": [{**{k: t[k] for k in ("id", "name", "family", "pro", "tier", "desc", "effects")},
                        "cam": t["layout"]["kind"] in ("cam_top", "cam_bottom", "float", "split")} for t in TEMPLATES],
         "captions": [{k: c[k] for k in ("id", "name", "font_key", "anim", "pro", "tier")} for c in CAPTION_STYLES],
         "caption_fonts": [{"id": f[0], "name": f[1]} for f in FONTS],
