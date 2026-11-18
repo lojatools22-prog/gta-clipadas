@@ -535,6 +535,9 @@ AUTO_MAX = int(os.getenv("AUTO_CLIPS", "10"))
 LONG_CLIP = 60  # acima disso o corte manual custa 2
 
 
+FREE_SHOWCASE = [("basico-desfocado", "pesada-karaoke"), ("basico-fundo-orla", "condensada-pop"), ("basico-fundo-asfalto", "neon-quique")]
+
+
 def _auto_cut(aid: str):
     """Fim da análise com "gerar sozinho": cria os melhores cortes direto, como no fluxo do Cut.Pro."""
     st = moments.get(aid)
@@ -545,8 +548,21 @@ def _auto_cut(aid: str):
     if n <= 0:
         raise HTTPException(402, "Seus cortes do plano acabaram. Renove pra gerar os cortes desse vídeo.")
     raw = {k: v for k, v in st["auto"].items() if k != "n"}
-    raw.update(analysis=aid, segments=[[m["start"], m["end"], m.get("title") or ""] for m in ms[:n]])
-    res = _start_for(u, raw)
+    free = accounts.active_plan(u) == "gratis"
+    if free:  # teste grátis: cada corte com um visual e uma legenda diferentes, pra pessoa ver o que o app faz
+        res = {"jobs": []}
+        for i, m in enumerate(ms[:n]):
+            tpl, cap = FREE_SHOWCASE[i % len(FREE_SHOWCASE)]
+            r1 = {**raw, "template": tpl, "caption": cap, "caption_color": "auto",
+                  "analysis": aid, "segments": [[m["start"], m["end"], m.get("title") or ""]]}
+            try:
+                res["jobs"] += _start_for(u, r1)["jobs"]
+            except HTTPException:
+                break
+            m["look"] = f"{templates.BY_ID[tpl]['name']} · {templates.CAPTION_BY_ID[cap]['name']}"
+    else:
+        raw.update(analysis=aid, segments=[[m["start"], m["end"], m.get("title") or ""] for m in ms[:n]])
+        res = _start_for(u, raw)
     for m, jid in zip(ms, res["jobs"]):
         m["job"] = jid
     note = None if len(res["jobs"]) == n else f"Gerei {len(res['jobs'])} cortes: seus cortes do plano acabaram."

@@ -267,6 +267,47 @@ def _fallback(segs, peaks, dur, chat=(), heat=()):
     return out[:12]
 
 
+RANK = """Você é o editor-chefe de um canal de cortes de GTA que viraliza no TikTok no Brasil.
+Abaixo estão momentos candidatos de uma live, com o que foi falado em cada um e os sinais (chat explodiu, mais repetido, pico de áudio).
+Ordene do MAIS para o MENOS viralizável. Seja exigente: os primeiros têm que prender nos 2 primeiros segundos
+(reação forte, risada, susto, briga, fala absurda, plot twist, perseguição, morte engraçada). Corte sem graça vai pro fim ou sai.
+Para cada um, escreva um título curto, específico e chamativo em caixa alta (até 7 palavras, sem ser genérico) e uma nota de 0 a 100.
+Responda só JSON: {{"ordem":[{{"id":0,"titulo":"...","nota":0-100,"motivo":"uma frase"}}]}}
+
+CANDIDATOS:
+{lista}"""
+
+
+def _rank(cands: list[dict], segs: list[dict]) -> list[dict]:
+    """Segunda passada: a IA compara os candidatos entre si e escolhe os melhores (é o que vai para o teste grátis)."""
+    if len(cands) < 2:
+        return cands
+    lst = []
+    for i, m in enumerate(cands[:15]):
+        fala = " ".join(x["text"] for x in segs if m["start"] - 2 <= x["start"] < m["end"])[:450]
+        sig = ", ".join(k for k, v in (("chat explodiu", m.get("chat")), ("mais repetido", m.get("replay"))) if v)
+        lst.append(f'[{i}] {_fmt(m["start"])}-{_fmt(m["end"])} | título atual: {m["title"]} | sinais: {sig or "-"}\nfala: {fala}')
+    try:
+        j = _chat([{"role": "user", "content": RANK.format(lista="\n\n".join(lst))}])
+        data = json.loads(j["choices"][0]["message"]["content"])
+        out, seen = [], set()
+        for r in data.get("ordem", []):
+            i = int(r.get("id", -1))
+            if 0 <= i < len(cands) and i not in seen:
+                seen.add(i)
+                m = dict(cands[i])
+                if r.get("titulo"):
+                    m["title"] = str(r["titulo"]).upper()[:60]
+                m["score"] = int(max(0, min(100, float(r.get("nota", m["score"])))))
+                m["reason"] = str(r.get("motivo") or m.get("reason", ""))[:140]
+                out.append(m)
+        out += [m for k, m in enumerate(cands) if k not in seen]
+        return out
+    except Exception as e:
+        log.warning("Momentos: ranking final falhou: %s", str(e)[:200])
+        return cands
+
+
 def _fmt(s):
     s = int(s)
     return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}"
@@ -277,6 +318,8 @@ Abaixo está a transcrição de um trecho da live com o tempo de cada fala. Mome
 [CHAT EXPLODIU] marca quando o chat da live disparou de mensagens e [MAIS REPETIDO] marca onde o público voltou pra rever o vídeo: são os sinais mais fortes de momento bom, priorize-os.
 Escolha até {n} momentos com mais chance de viralizar: reação forte, piada, briga, susto, perseguição, fala absurda, plot twist, momento engraçado ou épico.
 Cada momento deve ter de 20 a 60 segundos, começar um pouco antes da ação (pra dar contexto) e terminar logo depois do auge.
+Descarte o que é morno: andar pelo mapa, menu, loading, silêncio, leitura de chat sem reação, conversa sem graça.
+O título tem que ser específico do que acontece (ex.: "ELE ROUBOU O CARRO DA POLÍCIA"), nunca genérico como "MOMENTO ÉPICO" ou "EITA".
 Se o trecho não tiver nada bom, devolva lista vazia. Não invente falas.
 Responda só JSON: {{"momentos":[{{"inicio":"H:MM:SS","fim":"H:MM:SS","titulo":"FRASE DE IMPACTO EM CAIXA ALTA, ATÉ 6 PALAVRAS","nota":0-100,"motivo":"uma frase"}}]}}
 
@@ -367,6 +410,7 @@ def _work(aid: str):
         chat = [] if st.get("live") else _chat_peaks(st, d, dur)  # chat de live no ar não termina de baixar
         heat = _heat_peaks(st)
         moments = _pick(segs, peaks, dur, aid, chat, heat) or _fallback(segs, peaks, dur, chat, heat)
+        moments = _rank(moments, segs)
         off = st.get("offset") or 0
         for m in moments:  # live no ar: os tempos da análise contam do começo do trecho baixado
             m["start"] += round(off); m["end"] += round(off)

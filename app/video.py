@@ -328,11 +328,12 @@ def _fix_cookies(txt: str) -> str:
 def friendly_error(msg: str) -> str:
     m = msg or ""
     if "not a bot" in m or "429" in m or "Sign in" in m:
-        return "O YouTube bloqueou o download desse vídeo agora. Tente um link da Twitch ou Kick, ou envie o arquivo do vídeo."
+        return "O YouTube bloqueou o download desse vídeo agora. Tente de novo em alguns minutos, use um link da Twitch ou Kick, ou envie o arquivo do vídeo."
     if "Private video" in m or "private" in m.lower():
         return "Esse vídeo é privado. Use um vídeo público."
     if "claimed content" in m or "in your country" in m:
-        return "O YouTube bloqueou esse vídeo por direitos autorais (música). Tente outro vídeo ou envie o arquivo."
+        return ("Essa live tem música com direitos autorais e o YouTube bloqueia o download dela. Solução: grave a tela do trecho "
+                "que você quer (ou baixe o vídeo) e envie o arquivo aqui. A IA corta igualzinho.")
     if "is not available" in m or "unavailable" in m.lower() or "404" in m:
         return "Esse vídeo não está disponível. Confira o link."
     if "live event will begin" in m:
