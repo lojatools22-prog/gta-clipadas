@@ -8,7 +8,7 @@ from . import video
 log = video.log
 DIR = video.DATA / "analises"
 DIR.mkdir(parents=True, exist_ok=True)
-MAX_SECONDS = int(os.getenv("MOMENTS_MAX_SECONDS", str(4 * 3600)))
+MAX_SECONDS = int(os.getenv("MOMENTS_MAX_SECONDS", str(12 * 3600)))
 CHUNK = 600  # 10 minutos por pedaço de áudio
 WINDOW = 420  # a IA olha 7 minutos de conversa por vez
 MODEL = os.getenv("MOMENTS_MODEL", "llama-3.3-70b-versatile")
@@ -119,7 +119,7 @@ def _audio(st: dict, d: Path) -> Path:
         st["heatmap"] = info.get("heatmap") or []
         if info.get("duration", 0) > MAX_SECONDS:
             raise RuntimeError(f"O vídeo tem mais de {MAX_SECONDS // 3600} horas. Corte em partes ou use um trecho menor.")
-        video.ytdlp(["--no-playlist", "-f", "worstaudio[abr>=32]/worstaudio/bestaudio/worst", "-o", str(d / "baixado.%(ext)s")], st["url"], timeout=1800)
+        video.ytdlp(["--no-playlist", "-f", "worstaudio[abr>=32]/worstaudio/bestaudio/worst", "-o", str(d / "baixado.%(ext)s")], st["url"], timeout=3600)
         src = str(next(d.glob("baixado.*")))
     video._run(["ffmpeg", "-y", "-i", src, "-vn", "-ac", "1", "-ar", "16000", "-b:a", "32k", str(out)], timeout=1800)
     for f in d.glob("baixado.*"):
