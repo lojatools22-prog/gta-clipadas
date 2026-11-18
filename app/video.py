@@ -75,8 +75,15 @@ def _cover(w, h):
     return f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h}"
 
 
-def layout_filter(lay: dict, corner: str, cs: float) -> str:
+def layout_filter(lay: dict, corner: str, cs: float, cam_ref: str | None = None) -> str:
     k = lay["kind"]
+    if cam_ref and k in ("cam_top", "cam_bottom", "split", "float"):
+        # webcam enviada em arquivo separado: usa o vídeo inteiro dela como facecam
+        if k == "float":
+            return f"[0:v]{_cover(W, H)}[game];{cam_ref}{_cover(424, 234)}[cam];[game][cam]overlay=48:198[base]"
+        ch = 960 if k == "split" else 608
+        f = f"{cam_ref}{_cover(W, ch)}[cam];[0:v]{_cover(W, H - ch)}[game];"
+        return f + ("[game][cam]" if k == "cam_bottom" else "[cam][game]") + "vstack=inputs=2[base]"
     if k in ("cam_top", "cam_bottom", "split"):
         ch = 960 if k == "split" else 608
         gh = H - ch
@@ -99,7 +106,7 @@ def layout_filter(lay: dict, corner: str, cs: float) -> str:
     raise ValueError(k)
 
 
-def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True) -> tuple[str, list[Path]]:
+def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam: Path | None = None) -> tuple[str, list[Path]]:
     """Monta o filtro completo. Devolve (filtro, lista de imagens extras na ordem dos inputs 1..n)."""
     paths = art.build_all()
     inputs: list[Path] = []
@@ -108,7 +115,8 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True) -> t
         inputs.append(p)
         return f"[{len(inputs)}:v]"
 
-    vf = layout_filter(tpl["layout"], opts.get("corner", "top-left"), float(opts.get("cam_size", 0.30)))
+    cam_ref = inp(cam) if cam else None
+    vf = layout_filter(tpl["layout"], opts.get("corner", "top-left"), float(opts.get("cam_size", 0.30)), cam_ref)
     cur, n = "[base]", 0
 
     def nxt():
@@ -136,10 +144,23 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True) -> t
     return vf, inputs
 
 
+FF_THREADS = os.getenv("FFMPEG_THREADS", "2")
+
+
 def _run(cmd, cwd=None, timeout=1800):
+    if cmd and cmd[0] == "ffmpeg":
+        # o container enxerga todos os núcleos da máquina física; sem limite o x264 abre dezenas de
+        # threads e estoura a memória do plano
+        cmd = ["ffmpeg", "-hide_banner", "-threads", FF_THREADS, "-filter_threads", FF_THREADS,
+               "-filter_complex_threads", FF_THREADS] + cmd[1:]
+        if "libx264" in cmd:
+            i = cmd.index("libx264") + 1
+            cmd = cmd[:i] + ["-threads", FF_THREADS, "-x264-params", f"threads={FF_THREADS}:lookahead_threads=1"] + cmd[i:]
     p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
     if p.returncode != 0:
-        raise RuntimeError((p.stderr or p.stdout)[-1500:])
+        err = (p.stderr or p.stdout or "")
+        key = [l for l in err.splitlines() if any(w in l.lower() for w in ("error", "invalid", "no such", "killed", "cannot", "failed"))]
+        raise RuntimeError(f"código {p.returncode}: " + (" | ".join(key[-6:]) or err[-600:])[-1500:])
     return p.stdout
 
 
@@ -196,16 +217,16 @@ def transcribe(src: Path, job_dir: Path) -> list[dict]:
     return [{"word": w["word"], "start": float(w["start"]), "end": float(w["end"])} for w in r.json().get("words", [])]
 
 
-def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list[dict]) -> Path:
+def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list[dict], cam: Path | None = None) -> Path:
     tpl = templates.BY_ID.get(opts.get("template"), templates.TEMPLATES[0])
     cap = templates.CAPTION_BY_ID.get(opts.get("caption"), templates.CAPTION_STYLES[0])
     dur = (trim[1] - trim[0]) if trim else probe_duration(src)
     (job_dir / "subs.ass").write_text(captions.build(words, dur, tpl, cap, opts.get("caption_color", "auto"), opts.get("title", "")), encoding="utf-8")
-    vf, extra = build_filter(tpl, opts, dur)
+    vf, extra = build_filter(tpl, opts, dur, cam=cam)
     pre = ["-ss", f"{trim[0]:.2f}", "-t", f"{dur:.2f}"] if trim else []
     ins = pre + ["-i", str(src)]
     for p in extra:
-        ins += ["-i", str(p)]
+        ins += (pre + ["-i", str(p)]) if (cam and p == cam) else ["-i", str(p)]
     out = job_dir / "corte.mp4"
     _run(["ffmpeg", "-y", *ins, "-filter_complex", vf, "-map", "[v]", "-map", "0:a?", "-r", "30",
           "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p",
@@ -213,20 +234,20 @@ def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list
     _run(["ffmpeg", "-y", "-ss", f"{min(1.0, dur / 2):.2f}", "-i", out.name, "-frames:v", "1", "-vf", "scale=360:-2", "thumb.jpg"], cwd=job_dir)
     if opts.get("cover", True):
         try:
-            make_cover(src, job_dir, tpl, opts, trim, dur)
+            make_cover(src, job_dir, tpl, opts, trim, dur, cam)
         except Exception as e:  # capa é extra: não derruba o corte
             (job_dir / "cover_error.txt").write_text(str(e))
     return out
 
 
-def make_cover(src: Path, job_dir: Path, tpl: dict, opts: dict, trim, dur):
+def make_cover(src: Path, job_dir: Path, tpl: dict, opts: dict, trim, dur, cam: Path | None = None):
     """Capa 9:16: frame do momento no template + título grande + selo."""
     from PIL import Image, ImageDraw, ImageFilter, ImageFont
     t = (trim[0] if trim else 0) + dur * 0.45
-    vf, extra = build_filter(tpl, {**opts, "watermark": False}, dur, with_text=False)
+    vf, extra = build_filter(tpl, {**opts, "watermark": False}, dur, with_text=False, cam=cam)
     ins = ["-ss", f"{t:.2f}", "-i", str(src)]
     for p in extra:
-        ins += ["-i", str(p)]
+        ins += ["-ss", f"{t:.2f}", "-i", str(p)] if (cam and p == cam) else ["-i", str(p)]
     _run(["ffmpeg", "-y", *ins, "-filter_complex", vf, "-map", "[v]", "-frames:v", "1", "cover_raw.png"], cwd=job_dir)
     im = Image.open(job_dir / "cover_raw.png").convert("RGBA")
     shade = Image.new("RGBA", im.size, (0, 0, 0, 0)); sd = ImageDraw.Draw(shade)
@@ -300,8 +321,8 @@ def _work(jid: str):
             except Exception as e:  # legenda é opcional: não derruba o corte
                 _set(jid, warning=f"Legenda falhou: {e}")
         _set(jid, status="renderizando", progress=70)
-        render(src, d, o, trim, words)
-        for f in list(d.glob("upload.*")) + list(d.glob("src.*")) + list(d.glob("audio.mp3")) + list(d.glob("cover_raw.png")):
+        render(src, d, o, trim, words, Path(j["cam"]) if j.get("cam") else None)
+        for f in list(d.glob("cam.*")) + list(d.glob("upload.*")) + list(d.glob("src.*")) + list(d.glob("audio.mp3")) + list(d.glob("cover_raw.png")):
             f.unlink(missing_ok=True)
         cover = f"/files/{jid}/capa.jpg" if (d / "capa.jpg").exists() else None
         _set(jid, status="pronto", progress=100, video=f"/files/{jid}/corte.mp4", thumb=f"/files/{jid}/thumb.jpg", cover=cover,
@@ -316,7 +337,7 @@ def _work(jid: str):
                 pass
 
 
-def create_job(opts: dict, upload: Path | None = None, priority: int = 0, keep_upload: bool = False) -> dict:
+def create_job(opts: dict, upload: Path | None = None, priority: int = 0, keep_upload: bool = False, cam: Path | None = None) -> dict:
     s, e = opts.get("start"), opts.get("end")
     if s is not None and e is not None:
         if e <= s:
@@ -337,6 +358,13 @@ def create_job(opts: dict, upload: Path | None = None, priority: int = 0, keep_u
         else:
             shutil.move(str(upload), dst)
         job["upload"] = str(dst)
+    if cam:
+        cdst = d / ("cam" + cam.suffix)
+        try:
+            os.link(cam, cdst)
+        except OSError:
+            shutil.copy(cam, cdst)
+        job["cam"] = str(cdst)
     job["priority"] = priority
     JOBS[jid] = job
     _save(jid)

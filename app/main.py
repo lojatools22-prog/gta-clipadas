@@ -377,7 +377,7 @@ def _segments(raw: dict, P: dict) -> list:
     return segs
 
 
-def _start(request: Request, raw: dict, upload: Path | None = None):
+def _start(request: Request, raw: dict, upload: Path | None = None, cam: Path | None = None):
     u = current_user(request)
     P = accounts.plan_info(u)
     segs = _segments(raw, P)
@@ -395,7 +395,7 @@ def _start(request: Request, raw: dict, upload: Path | None = None):
                     raise HTTPException(402, str(e))
                 break  # cota acabou no meio do lote: gera os que deu
             try:
-                job = video.create_job(o, upload=upload, priority=P["priority"], keep_upload=upload is not None and len(segs) > 1)
+                job = video.create_job(o, upload=upload, priority=P["priority"], keep_upload=upload is not None and len(segs) > 1, cam=cam)
             except ValueError as e:
                 accounts.refund(u["id"], col)
                 raise HTTPException(400, str(e))
@@ -447,7 +447,7 @@ def new_job(j: JobIn, request: Request):
 async def new_upload(request: Request, file: UploadFile = File(...), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
                      template: str = Form("vice-cam-cima"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
                      corner: str = Form("top-left"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
-                     watermark: bool = Form(True), cover: bool = Form(True)):
+                     watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None)):
     u = current_user(request)
     max_mb = accounts.plan_info(u)["max_mb"]
     tmp = Path(tempfile.mkstemp(suffix=Path(file.filename or "v.mp4").suffix or ".mp4", dir=video.DATA)[1])
@@ -459,13 +459,27 @@ async def new_upload(request: Request, file: UploadFile = File(...), start: str 
                 f.close(); tmp.unlink(missing_ok=True)
                 raise HTTPException(413, f"Vídeo acima de {max_mb // 1024} GB no seu plano. Cole o link da live e marque o trecho.")
             f.write(chunk)
+    cam_tmp = None
+    if cam is not None and cam.filename:
+        cam_tmp = Path(tempfile.mkstemp(suffix=Path(cam.filename).suffix or ".mp4", dir=video.DATA)[1])
+        csize = 0
+        with open(cam_tmp, "wb") as f:
+            while chunk := await cam.read(1 << 20):
+                csize += len(chunk)
+                if csize > 1024 * 1048576:
+                    f.close(); cam_tmp.unlink(missing_ok=True); tmp.unlink(missing_ok=True)
+                    raise HTTPException(413, "O vídeo da webcam pode ter até 1 GB.")
+                f.write(chunk)
     try:
         return _start(request, {"url": "upload", "start": start, "end": end, "segments": segments, "template": template, "caption": caption,
                                 "caption_color": caption_color, "corner": corner, "cam_size": cam_size, "title": title,
-                                "captions": captions, "watermark": watermark, "cover": cover}, upload=tmp)
+                                "captions": captions, "watermark": watermark, "cover": cover}, upload=tmp, cam=cam_tmp)
     except HTTPException:
         tmp.unlink(missing_ok=True)
         raise
+    finally:
+        if cam_tmp:
+            cam_tmp.unlink(missing_ok=True)
 
 
 @app.get("/api/jobs/{jid}")
@@ -474,6 +488,12 @@ def get_job(jid: str):
     if st["status"] == "expirado" and not accounts.job_owner(jid):
         raise HTTPException(404, "Corte não encontrado")
     return {"id": jid, **st}
+
+
+@app.get("/api/my/stats")
+def my_stats(request: Request):
+    u = current_user(request)
+    return {**accounts.public(u), **accounts.user_stats(u["id"]), "quota": plans.PLANS[accounts.active_plan(u)]["quota"]}
 
 
 @app.get("/api/my/jobs")

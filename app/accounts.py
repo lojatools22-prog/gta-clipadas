@@ -348,6 +348,17 @@ def user_jobs(user_id, limit=80):
         return [dict(r) for r in c.execute("SELECT id,title,created FROM jobs WHERE user_id=? ORDER BY created DESC LIMIT ?", (user_id, limit))]
 
 
+def user_stats(user_id):
+    month = time.time() - 30 * 86400
+    with _conn() as c:
+        tot = c.execute("SELECT COUNT(*) FROM jobs WHERE user_id=?", (user_id,)).fetchone()[0]
+        mon = c.execute("SELECT COUNT(*) FROM jobs WHERE user_id=? AND created>=?", (user_id, month)).fetchone()[0]
+        pays = [dict(r) for r in c.execute("SELECT plan,amount,status,created FROM payments WHERE user_id=? ORDER BY created DESC LIMIT 24", (user_id,))]
+    for p in pays:
+        p["plan_name"] = PLANS.get(p["plan"], {}).get("name", p["plan"])
+    return {"total": tot, "month": mon, "payments": pays}
+
+
 # ---------------- pagamentos ----------------
 def payment_upsert(pid: str, user_id: int, plan: str, amount: float, status: str, provider="mercadopago") -> bool:
     """Grava o pagamento. Devolve True se ele acabou de virar 'approved' (para liberar o plano uma vez só)."""
