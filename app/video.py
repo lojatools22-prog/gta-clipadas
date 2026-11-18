@@ -847,7 +847,7 @@ def _selftest():
 
 def _live_selftest():
     """Testa corte de live AO VIVO: baixa 20 s de um trecho que já passou. Só registra no log."""
-    url = os.getenv("YT_LIVE_TEST_URL", "")
+    url = os.getenv("YT_LIVE_TEST_URL", "https://www.youtube.com/watch?v=jfKfPfyJRdk")
     if not url:
         return
     d = Path("/tmp/autoteste_live")
@@ -859,9 +859,9 @@ def _live_selftest():
         if not info.get("live"):
             log.info("Autoteste de live: o link de teste não está ao vivo agora")
             return
-        a = max(0.0, info["duration"] - 120)
-        src = download(url, a, a + 20, d)
-        log.info("Autoteste de LIVE OK: %.0fs baixados de '%s' (%.1f MB) em %.0fs", probe_duration(src), info["title"][:50],
+        from . import livefollow  # gravar a partir de agora (o que o "cortar ao vivo" usa)
+        src = livefollow._record(url, 20, d)
+        log.info("Autoteste de AO VIVO OK: gravou %.0fs de '%s' (%.1f MB) em %.0fs", probe_duration(src), info["title"][:50],
                  src.stat().st_size / 1e6, time.time() - t0)
     except Exception as e:
         log.error("Autoteste de LIVE FALHOU: %s", str(e)[-700:])

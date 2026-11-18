@@ -664,6 +664,7 @@ details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--d
   </section>
   <!-- VÍDEO (projeto: cortes que a IA gerou) -->
   <section id="v-video" class="narrow" hidden><div id="vid"></div></section>
+  <section id="v-live" class="narrow" hidden><div id="livef"></div></section>
   <!-- GERANDO -->
   <section id="v-gen" class="narrow" hidden><div id="gen"></div></section>
 </main>
@@ -889,8 +890,25 @@ async function generate(){const go=$('#go');go.disabled=true;go.textContent='Env
 let VID=null,VT=null,VSEL=new Set();
 const mmss=t=>{t=Math.max(0,Math.round(t||0));const h=Math.floor(t/3600),m=Math.floor(t%3600/60),x=t%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0')};
 function goLink(){if(needAcc(goLink))return;const u=$('#url').value.trim();if(!u)return toast('Cole o link da live ou do vídeo');if(!/^https?:\/\//.test(u))return toast('Esse link não parece certo');
-  if(ME.auto_moments)return startAuto({url:u});
+  if(ME.auto_moments){liveCheck(u);return}
   autoUpsell(()=>startFromLink())}
+/* ===== cortar AO VIVO: o servidor acompanha a live e manda os cortes a cada bloco ===== */
+let LF=null,LFT=null;
+async function liveCheck(u){toast('Lendo o link…');let d=null;try{d=await api('/api/probe?url='+encodeURIComponent(u))}catch(e){}
+  if(!d||!d.live)return startAuto({url:u});
+  sheet(`<h2 class="disp" style="margin:0 0 6px">Essa live está ao vivo</h2><p class="lead" style="font-size:14px">Não precisa esperar acabar. Escolha como cortar:</p>
+    <div class="box" style="margin:10px 0"><b style="display:block;margin-bottom:4px">Cortar ao vivo</b><small style="color:var(--mute)">A IA acompanha a live a partir de agora e manda os melhores cortes a cada 8 minutos, enquanto ela acontece.</small>
+    <div class="durs" style="margin-top:12px">${[30,60,120].map(m=>`<button type="button" onclick="closeSheet();liveStart('${esc(u)}',${m})">${m<60?m+' min':(m/60)+'h'}</button>`).join('')}</div></div>
+    <button class="alt" onclick="closeSheet();startAuto({url:'${esc(u)}'})">Cortar o que já passou (últimas 3 horas)</button>`)}
+async function liveStart(u,mins){try{const o=autoOpts();LF=await api('/api/live/follow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u,minutes:mins,template:o.template,caption:o.caption,wm_text:o.wm_text})});LS.set('cgta_lf',LF.id);view('live');renderLF();watchLF()}catch(e){toast(e.message)}}
+async function watchLF(){clearTimeout(LFT);if(!LF)return;try{LF=await api('/api/live/follow/'+LF.id)}catch(e){}renderLF();if(['na fila','gravando','analisando'].includes(LF.status)||(LF.videos||[]).some(v=>!['pronto','erro'].includes(v.status)))LFT=setTimeout(watchLF,6000)}
+function renderLF(){const el=$('#livef');if(!el||!LF)return;const on=['na fila','gravando','analisando'].includes(LF.status);const vs=LF.videos||[];
+  const fim=new Date((LF.until||0)*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  el.innerHTML=`<div class="wh" style="margin:10px 0 16px"><button class="back" onclick="home()">←</button><h2 class="disp" style="font-size:22px">${esc(LF.title||'Live ao vivo')}</h2></div>
+   <div class="box anl"><div style="font-size:13px;font-weight:800;color:${on?'#ff4fa8':'var(--mute)'}">${on?'● CORTANDO AO VIVO':LF.status==='erro'?'NÃO DEU':'TERMINOU'}</div>
+   <p class="lead" style="font-size:14px;margin:8px 0">${LF.status==='erro'?esc(LF.error||''):on?`A IA está acompanhando a live até ${fim}. A cada 8 minutos ela manda os melhores cortes aqui e em Meus vídeos. Pode fechar a página.`:esc(LF.note||'Acompanhamento terminado.')}</p>
+   ${on?`<button class="go ghost" onclick="api('/api/live/follow/${LF.id}/stop',{method:'POST'}).then(()=>watchLF())">Parar de acompanhar</button>`:''}</div>
+   ${vs.length?`<h3 style="margin:18px 0 10px">Blocos da live (${vs.length})</h3>`+vs.map(v=>`<button class="box" style="width:100%;text-align:left;margin-bottom:8px;cursor:pointer" onclick="openVideo('${v.id}')"><b>${esc(v.name||'Bloco')}</b><small style="display:block;color:var(--mute)">${v.status==='pronto'?((v.moments||[]).filter(m=>m.job).length+' cortes prontos'):v.status==='erro'?esc(v.error||'Não deu'):'Analisando…'}</small></button>`).join(''):(on?'<p class="lead" style="font-size:14px;margin-top:16px">O primeiro bloco chega em uns 10 minutos.</p>':'')}`}
 function autoUpsell(manual){sheet(`<h2 class="disp" style="margin:0 0 6px">Quer que a IA faça os cortes?</h2><p class="lead">No <b style="color:#fff">Clipador</b> a IA assiste o vídeo inteiro e entrega os <b style="color:#fff">10 melhores cortes</b> prontos, com nota de viral. No seu plano você escolhe o trecho na mão.</p>
   <button class="go" onclick="closeSheet();WIZ=false;view('planos')">Ver o Clipador</button><button class="alt" onclick="closeSheet();(${manual.toString()})()">Escolher o trecho na mão</button>`)}
 function autoOpts(){const p=PREFS();return {template:p.tpl||'capa-praia',caption:p.cap||'pesada-karaoke',wm_text:p.wm||'',caption_color:'auto',captions:p.captions!==false,cover:p.cover!==false,logo:p.logo!==false}}

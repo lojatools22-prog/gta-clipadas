@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import httpx
 
-from . import twitch, video, templates, accounts, plans, payments, notify, moments
+from . import twitch, video, templates, accounts, plans, payments, notify, moments, livefollow
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("app")
@@ -898,6 +898,54 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
     if not url.startswith(ALLOWED):
         raise HTTPException(400, "Envie um vídeo ou um link da Twitch, YouTube ou Kick")
     return moments.create(u["id"], url=url, auto=ao)
+
+
+class FollowIn(BaseModel):
+    url: str
+    minutes: int = 60
+    template: str = "capa-praia"
+    caption: str = "pesada-karaoke"
+    wm_text: str = ""
+    por_bloco: int = 2
+
+
+@app.post("/api/live/follow")
+def live_follow(b: FollowIn, request: Request):
+    """Cortar AO VIVO: acompanha a live e vai entregando os melhores cortes a cada bloco."""
+    u = current_user(request)
+    P = accounts.plan_info(u)
+    if accounts.public(u)["left"] <= 0:
+        raise HTTPException(402, "Seus cortes acabaram. Assine um plano pra cortar ao vivo.")
+    if not b.url.startswith(ALLOWED):
+        raise HTTPException(400, "Cole o link de uma live da YouTube, Twitch ou Kick")
+    if livefollow.active_for(u["id"]):
+        return livefollow.public(livefollow.active_for(u["id"])[0])
+    ao = _opts({"template": b.template, "caption": b.caption, "caption_color": "auto", "captions": True, "cover": True,
+                "logo": True, "wm_text": b.wm_text}, P)
+    ao["n_bloco"] = max(1, min(int(b.por_bloco or 2), 4))
+    mins = max(10, min(int(b.minutes or 60), 240))
+    return livefollow.start(u["id"], b.url, mins, ao, lambda uid: accounts.public(accounts._user(uid))["left"])
+
+
+@app.get("/api/live/follow/{fid}")
+def live_follow_get(fid: str, request: Request):
+    u = current_user(request)
+    st = livefollow.get(fid)
+    if not st or st.get("user_id") != u["id"]:
+        raise HTTPException(404, "Não encontrado")
+    out = livefollow.public(st)
+    out["videos"] = [moments.public(moments.get(v)) for v in st.get("videos", []) if moments.get(v)]
+    return out
+
+
+@app.post("/api/live/follow/{fid}/stop")
+def live_follow_stop(fid: str, request: Request):
+    u = current_user(request)
+    st = livefollow.get(fid)
+    if not st or st.get("user_id") != u["id"]:
+        raise HTTPException(404, "Não encontrado")
+    livefollow.stop(fid)
+    return livefollow.public(livefollow.get(fid))
 
 
 @app.get("/api/moments/{aid}")
