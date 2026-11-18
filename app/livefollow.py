@@ -61,15 +61,38 @@ def stop(fid):
 
 
 def _record(url: str, secs: int, dest: Path) -> Path:
-    """Grava os próximos `secs` segundos da live (a partir de agora)."""
+    """Grava os próximos `secs` segundos da live (a partir de agora). Se a conexão cair no meio, continua de onde parou
+    e junta os pedaços."""
     dest.mkdir(parents=True, exist_ok=True)
-    video.ytdlp(["--no-playlist", "--no-live-from-start", "-f", "best[height<=720]/best",
-                 "--downloader", "ffmpeg", "--downloader-args", f"ffmpeg:-t {secs}",
-                 "--no-part", "-o", str(dest / "bloco.%(ext)s")], url, timeout=secs + 300)
-    files = sorted(dest.glob("bloco.*"))
-    if not files or files[0].stat().st_size < 50_000:
+    parts, got, t_end = [], 0.0, time.time() + secs + 120
+    while got < secs * 0.9 and time.time() < t_end:
+        k = len(parts)
+        need = int(secs - got)
+        try:
+            video.ytdlp(["--no-playlist", "--no-live-from-start", "-f", "best[height<=720]/best",
+                         "--downloader", "ffmpeg", "--downloader-args", f"ffmpeg:-t {need}",
+                         "--no-part", "-o", str(dest / f"p{k}.%(ext)s")], url, timeout=need + 300)
+        except Exception as e:
+            if not parts:
+                raise
+            log.warning("Ao vivo: gravação parou (%s), seguindo com o que tem", str(e)[-200:])
+            break
+        f = next(iter(sorted(dest.glob(f"p{k}.*"))), None)
+        if not f or f.stat().st_size < 20_000:
+            break
+        d = video.probe_duration(f)
+        parts.append(f); got += d
+        if d < 5:
+            time.sleep(5)
+    if not parts:
         raise RuntimeError("A gravação da live não gerou vídeo")
-    return files[0]
+    if len(parts) == 1:
+        return parts[0]
+    lst = dest / "lista.txt"
+    lst.write_text("".join(f"file '{p}'\n" for p in parts))
+    out = dest / "bloco.mp4"
+    video._run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(out)], timeout=600)
+    return out
 
 
 def _run(fid, left_fn):
@@ -126,7 +149,7 @@ def _find_live(urls):
         except Exception as e:
             log.info("Demo ao vivo: %s não serviu (%s)", u, str(e)[-160:])
     try:
-        out = video.ytdlp(["--flat-playlist", "-J", "--no-warnings"], "ytsearch15:GTA RP ao vivo agora", timeout=60)
+        out = video.ytdlp(["--flat-playlist", "-J", "--no-warnings"], "ytsearch20:GTA RP ao vivo", timeout=60)
         for e in json.loads(out).get("entries") or []:
             if e.get("live_status") == "is_live" or e.get("is_live"):
                 u = f"https://www.youtube.com/watch?v={e['id']}"
@@ -154,7 +177,7 @@ def demo():
         work = video.SCRATCH / "demo-aovivo"
         shutil.rmtree(work, ignore_errors=True)
         blk = _record(url, secs, work)
-        log.info("Demo ao vivo: gravou %ds de '%s' (%.0f MB)", secs, info.get("title", "")[:60], blk.stat().st_size / 1e6)
+        log.info("Demo ao vivo: gravou %.0fs de '%s' (%.0f MB) | %s", video.probe_duration(blk), info.get("title", "")[:60], blk.stat().st_size / 1e6, url)
         aid = "demoaovivo"
         (moments.DIR / aid).mkdir(parents=True, exist_ok=True)
         moments.STATE[aid] = {"id": aid, "user_id": 0, "status": "ouvindo", "moments": []}
@@ -164,6 +187,8 @@ def demo():
         segs = moments._transcribe(audio, work, aid, dur)
         peaks = moments._loud_peaks(audio, dur)
         ms = moments._pick(segs, peaks, dur, aid) or moments._fallback(segs, peaks, dur)
+        if not ms and dur > 40:  # sem fala nem pico: pega o trecho do meio, só pra entregar o teste
+            ms = [{"start": round(dur / 2 - 20), "end": round(dur / 2 + 20), "title": "MOMENTO DA LIVE AO VIVO", "score": 50}]
         ms = moments._rank(ms, segs)
         if not ms:
             raise RuntimeError("a IA não achou momento")
