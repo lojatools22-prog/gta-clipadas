@@ -272,7 +272,7 @@ def _run(cmd, cwd=None, timeout=1800):
     p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
     if p.returncode != 0:
         err = (p.stderr or p.stdout or "")
-        key = [l for l in err.splitlines() if any(w in l.lower() for w in ("error", "invalid", "no such", "killed", "cannot", "failed"))]
+        key = [l for l in err.splitlines() if any(w in l.lower() for w in ("error", "invalid", "no such", "killed", "cannot", "failed", "warning"))]
         raise RuntimeError(f"código {p.returncode}: " + (" | ".join(key[-6:]) or err[-600:])[-1500:])
     return p.stdout
 
@@ -847,25 +847,19 @@ def _selftest():
 
 
 def _live_selftest():
-    """Testa corte de live AO VIVO: baixa 20 s de um trecho que já passou. Só registra no log."""
-    url = os.getenv("YT_LIVE_TEST_URL", "https://www.youtube.com/watch?v=jfKfPfyJRdk")
-    if not url:
-        return
-    d = Path("/tmp/autoteste_live")
-    shutil.rmtree(d, ignore_errors=True)
-    d.mkdir(parents=True)
-    t0 = time.time()
-    try:
-        info = probe_url(url)
-        if not info.get("live"):
-            log.info("Autoteste de live: o link de teste não está ao vivo agora")
-            return
-        from . import livefollow  # gravar a partir de agora (o que o "cortar ao vivo" usa)
-        src = livefollow._record(url, 20, d)
-        log.info("Autoteste de AO VIVO OK: gravou %.0fs de '%s' (%.1f MB) em %.0fs", probe_duration(src), info["title"][:50],
-                 src.stat().st_size / 1e6, time.time() - t0)
-    except Exception as e:
-        log.error("Autoteste de LIVE FALHOU: %s", str(e)[-700:])
+    """Testa o "cortar ao vivo": grava 20 s de lives que estão no ar agora (YouTube e Twitch). Só registra no log."""
+    urls = os.getenv("LIVE_TEST_URLS", "https://www.youtube.com/watch?v=jfKfPfyJRdk,https://www.twitch.tv/monstercat")
+    from . import livefollow
+    for url in [u.strip() for u in urls.split(",") if u.strip()]:
+        d = Path("/tmp/autoteste_live") / uuid.uuid4().hex[:6]
+        d.mkdir(parents=True, exist_ok=True)
+        t0 = time.time()
+        try:
+            src = livefollow._record(url, 20, d)
+            log.info("Autoteste de AO VIVO OK (%s): gravou %.0fs (%.1f MB) em %.0fs", url[:40], probe_duration(src), src.stat().st_size / 1e6, time.time() - t0)
+        except Exception as e:
+            log.error("Autoteste de AO VIVO FALHOU (%s): %s", url[:40], str(e)[-900:])
+        shutil.rmtree(d, ignore_errors=True)
 
 
 def _yt_selftest():
