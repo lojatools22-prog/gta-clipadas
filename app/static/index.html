@@ -551,7 +551,7 @@ details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--d
         </div>
         <div class="tr-lbl"><span>Duração do corte</span></div>
         <div class="durs" id="durs"></div>
-        <div class="tr-lbl"><span>Arraste as bordas rosas pra ajustar</span><span id="fineL"></span></div>
+        <div class="tr-lbl"><span>Arraste o meio pra mover, as bordas pra ajustar</span><span id="fineL"></span></div>
         <div class="fine" id="fine"><div class="f-sel" id="fSel"></div><div class="hd" id="hS" role="slider" aria-label="Início do corte" tabindex="0"><i></i></div><div class="hd" id="hE" role="slider" aria-label="Fim do corte" tabindex="0"><i></i></div></div>
         <button class="go ghost prev" type="button" id="prevBtn" onclick="previewSel()" hidden><svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Assistir o trecho escolhido</button>
         <details class="more"><summary>Mais ajustes</summary>
@@ -730,7 +730,7 @@ const fx=e=>{const r=$('#fine').getBoundingClientRect(),q=(e.clientX-r.left)/r.w
 /* segurando o dedo na borda, a janela anda sozinha: dá pra levar a borda até onde quiser */
 setInterval(()=>{if(!EDGEK||!EDGE||!DUR)return;const w=FB-FA,st=Math.max(3,w*.06);
   if(EDGE<0&&FA>0){FA=Math.max(0,FA-st);FB=FA+w}else if(EDGE>0&&FB<DUR){FB=Math.min(DUR,FB+st);FA=FB-w}else return;
-  if(EDGEK==='s')setTrim(EDGE<0?FA:Math.min(FB,TE-1),TE,{side:'s',refine:false,seek:'s',fix:true});else setTrim(TS,EDGE>0?FB:Math.max(FA,TS+1),{side:'e',refine:false,seek:'e',fix:true});
+  if(EDGEK==='m'){const len=TE-TS;const ns=EDGE<0?Math.max(0,FA):Math.max(0,Math.min(DUR-len,FB-len));setTrim(ns,ns+len,{keep:true,refine:false,seek:'s'})}else if(EDGEK==='s')setTrim(EDGE<0?FA:Math.min(FB,TE-1),TE,{side:'s',refine:false,seek:'s',fix:true});else setTrim(TS,EDGE>0?FB:Math.max(FA,TS+1),{side:'e',refine:false,seek:'e',fix:true});
   $('#fineL').textContent=tshort(FA)+' – '+tshort(FB)},90);
 const DURS=[15,30,45,60,90,120,180];
 function renderDurs(){const M=MAXLEN(),len=TE-TS;$('#durs').innerHTML=DURS.filter(d=>d<=M&&d<=DUR).map(d=>`<button type="button" data-d="${d}" class="${Math.round(len)===d?'on':''}">${d<60?d+'s':d%60?Math.floor(d/60)+'min'+(d%60):(d/60)+' min'}</button>`).join('')}
@@ -739,6 +739,8 @@ let _pv=null;function previewSel(){clearInterval(_pv);seekTo(TS);setTimeout(()=>
   _pv=setInterval(()=>{const t=curTime();if(t!=null&&t>=TE){clearInterval(_pv);try{src.kind==='file'?$('#player').pause():ytp.pauseVideo()}catch{}}},250)},120)}
 drag($('#hS'),e=>{EDGEK='s';setTrim(Math.min(fx(e),TE-1),TE,{side:'s',refine:false,seek:'s',fix:true})},()=>{EDGEK=null;EDGE=0;fineRange();drawTrim()});
 drag($('#hE'),e=>{EDGEK='e';setTrim(TS,Math.max(fx(e),TS+1),{side:'e',refine:false,seek:'e',fix:true})},()=>{EDGEK=null;EDGE=0;fineRange();drawTrim()});
+/* arrastar o meio da faixa move o trecho inteiro (como rolar a linha do tempo) */
+(()=>{let off=0;drag($('#fine'),(e,first)=>{const t=fx(e),len=TE-TS;if(first)off=(t>=TS&&t<=TE)?t-TS:len/2;EDGEK='m';setTrim(t-off,t-off+len,{keep:true,refine:false,seek:'s'})},()=>{EDGEK=null;EDGE=0;fineRange();drawTrim()})})();
 (()=>{let off=0;const ov=$('#ov');const ox=e=>{const r=ov.getBoundingClientRect();return Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*DUR};
   drag(ov,(e,first)=>{const t=ox(e),len=TE-TS;if(first)off=(t>=TS&&t<=TE)?t-TS:len/2;setTrim(t-off,t-off+len,{keep:true,seek:'s'})})})();
 ['hS','hE'].forEach(id=>$('#'+id).addEventListener('keydown',e=>{const d=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0;if(!d)return;e.preventDefault();const st=e.shiftKey?5:1;id==='hS'?setTrim(TS+d*st,TE,{side:'s',seek:'s'}):setTrim(TS,TE+d*st,{side:'e',seek:'e'})}));
@@ -746,8 +748,8 @@ $('.nudge').onclick=e=>{const b=e.target.closest('[data-n]');if(!b||!DUR)return;
 ['#start','#end'].forEach(id=>$(id).addEventListener('change',()=>{if(!DUR)return;const a=secs($('#start').value),b=secs($('#end').value);if(a!=null&&b!=null&&b>a)setTrim(a,b)}));
 addEventListener('resize',()=>DUR&&drawTrim());
 const ytId=u=>{const m=String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|live\/|embed\/))([\w-]{11})/);return m&&m[1]};
-function loadYT(id,start){$('#ytBox').hidden=false;ytReady=false;
-  const mk=()=>{try{ytp&&ytp.destroy()}catch{}$('#ytBox').innerHTML='<div id="yt"></div>';ytp=new YT.Player('yt',{videoId:id,playerVars:{playsinline:1,rel:0,modestbranding:1,start:Math.floor(start||0)},events:{onReady:()=>{ytReady=true;$('#markRow').hidden=false;$('#howto').hidden=false;$('#prevBtn').hidden=false}}})};
+function loadYT(id,start,cb){$('#ytBox').hidden=false;ytReady=false;
+  const mk=()=>{try{ytp&&ytp.destroy()}catch{}$('#ytBox').innerHTML='<div id="yt"></div>';ytp=new YT.Player('yt',{videoId:id,playerVars:{playsinline:1,rel:0,modestbranding:1,start:Math.floor(start||0)},events:{onReady:()=>{ytReady=true;$('#markRow').hidden=false;$('#howto').hidden=false;$('#prevBtn').hidden=false;if(cb){const t=()=>{const d=ytp.getDuration&&ytp.getDuration();if(d>1)cb(d);else setTimeout(t,400)};t()}}}})};
   if(window.YT&&YT.Player)return mk();window.onYouTubeIframeAPIReady=mk;if(!document.getElementById('ytapi')){const s=document.createElement('script');s.id='ytapi';s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s)}}
 function resetMedia(){clearReact();aiReset();aiBtn();$('#lenInfo').textContent='';$('#title').value='';['#playerBox','#ytBox','#thumbBox','#probeLoad','#trim','#markRow','#howto','#prevBtn'].forEach(s=>$(s).hidden=true);try{ytp&&ytp.destroy()}catch{}ytp=null;ytReady=false;DUR=0;$('#start').value='';$('#end').value='';$('#blankHint').hidden=true;SEGS=[];renderSegs()}
 async function probeLink(url,s,e){const seq=++probeSeq;$('#probeLoad').hidden=false;$('#typeBox').open=false;
@@ -756,7 +758,7 @@ async function probeLink(url,s,e){const seq=++probeSeq;$('#probeLoad').hidden=fa
     if(d.live){$('#typeBox').open=true;$('#blankHint').hidden=false;toast('Essa live ainda está no ar. Use o link do VOD quando ela acabar, ou digite os tempos.');return}
     const id=ytId(url);if(id)loadYT(id,s);else if(d.thumb){$('#thumb').src=d.thumb;$('#thumbBox').hidden=false}
     initTrim(d.duration,s,e)}
-  catch(err){if(seq!==probeSeq)return;$('#probeLoad').hidden=true;$('#typeBox').open=true;$('#blankHint').hidden=false;toast(err.message)}}
+  catch(err){if(seq!==probeSeq)return;$('#probeLoad').hidden=true;const yid=ytId(url);if(yid){loadYT(yid,s,d=>{if(seq===probeSeq)initTrim(d,s,e)});return}$('#typeBox').open=true;$('#blankHint').hidden=false;toast(err.message)}}
 /* corte automático com IA */
 let AN=null,SELM=new Set(),aiPoll=null;
 const AISTEP={'na fila':'Na fila…','preparando':'Preparando o vídeo…','baixando':'Baixando a live…','ouvindo':'Ouvindo a live…','escolhendo':'Escolhendo os melhores momentos…'};

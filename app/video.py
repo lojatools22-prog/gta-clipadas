@@ -119,7 +119,7 @@ threading.Thread(target=_cleanup_loop, daemon=True).start()
 _lock = threading.Lock()
 
 # ---------------- Layouts ----------------
-LAYOUT_LABELS = {"blur_plain": "Fundo desfocado", "letterbox": "Faixas pretas", "cam_top": "Facecam em cima", "cam_bottom": "Facecam embaixo", "float": "Facecam flutuante",
+LAYOUT_LABELS = {"gtabg": "Fundo GTA", "blur_plain": "Fundo desfocado", "letterbox": "Faixas pretas", "cam_top": "Facecam em cima", "cam_bottom": "Facecam embaixo", "float": "Facecam flutuante",
                  "blur": "Sem facecam", "split": "Dividido", "crop": "Tela cheia", "moldura": "Moldura", "inset": "Moldura de objeto"}
 CAM_CORNERS = ["top-left", "top-right", "bottom-left", "bottom-right"]
 
@@ -173,6 +173,8 @@ def layout_filter(lay: dict, corner: str, cs: float, cam_ref: str | None = None,
     if k == "blur_plain":  # vídeo inteiro no meio, o próprio vídeo desfocado atrás, sem tingir
         return (f"[0:v]split=2[a][b];[a]{_cover(W, H)},boxblur=30:4,eq=brightness=-0.12[bg];"
                 f"[b]scale={W}:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2[base]")
+    if k == "gtabg":  # vídeo inteiro numa janela no meio; a arte de fundo (com o buraco) entra por cima como overlay
+        return f"[0:v]{_cover(1000, 562)},pad={W}:{H}:40:600:color=black[base]"
     if k == "letterbox":  # vídeo inteiro no meio com faixas pretas
         return f"[0:v]scale={W}:-2,pad={W}:{H}:0:(oh-ih)/2:black[base]"
     if k == "moldura":
@@ -282,12 +284,43 @@ def probe_duration(path: Path) -> float:
 _PROBE: dict = {}
 
 
+# O YouTube às vezes barra servidores ("confirm you're not a bot"). Tentamos outros clientes do player antes de desistir.
+YT_CLIENTS = [None, "tv_simply", "tv", "mweb", "web_safari", "android_vr"]
+_YT_OK = {"client": None}
+
+
+def _is_yt(url: str) -> bool:
+    return any(h in url for h in ("youtube.com", "youtu.be"))
+
+
+def ytdlp(args: list, url: str, timeout: int):
+    """Roda o yt-dlp; no YouTube, se cair na checagem de robô, tenta os outros clientes (começando pelo último que funcionou)."""
+    base = ["yt-dlp"] + (["--cookies", os.environ["YTDLP_COOKIES"]] if os.getenv("YTDLP_COOKIES") and Path(os.environ["YTDLP_COOKIES"]).exists() else [])
+    if not _is_yt(url):
+        return _run(base + args + [url], timeout=timeout)
+    order = [_YT_OK["client"]] + [c for c in YT_CLIENTS if c != _YT_OK["client"]]
+    last = None
+    for c in order:
+        extra = ["--extractor-args", f"youtube:player_client={c}"] if c else []
+        try:
+            out = _run(base + extra + args + [url], timeout=timeout)
+            _YT_OK["client"] = c
+            return out
+        except Exception as e:
+            last = e
+            msg = str(e)
+            if not any(k in msg for k in ("not a bot", "Sign in", "403", "Requested format is not available", "player response")):
+                raise
+            log.warning("yt-dlp: cliente %s barrado, tentando o próximo", c or "padrão")
+    raise last
+
+
 def probe_url(url: str) -> dict:
     """Duração, título e thumb de um link (YouTube, Twitch, Kick) sem baixar o vídeo."""
     hit = _PROBE.get(url)
     if hit and time.time() - hit[0] < 3600:
         return hit[1]
-    out = _run(["yt-dlp", "-J", "--no-playlist", "--skip-download", "--no-warnings", url], timeout=40)
+    out = ytdlp(["-J", "--no-playlist", "--skip-download", "--no-warnings"], url, timeout=40)
     j = json.loads(out)
     info = {"duration": float(j.get("duration") or 0), "title": (j.get("title") or "")[:140],
             "thumb": j.get("thumbnail") or "", "live": bool(j.get("is_live")),
@@ -299,12 +332,11 @@ def probe_url(url: str) -> dict:
 
 
 def download(url: str, start: float | None, end: float | None, dest: Path) -> Path:
-    cmd = ["yt-dlp", "--no-playlist", "-f", "best[height<=1080]/bestvideo[height<=1080]+bestaudio/best",
+    cmd = ["--no-playlist", "-f", "best[height<=1080]/bestvideo[height<=1080]+bestaudio/best",
            "--merge-output-format", "mp4", "-o", str(dest / "src.%(ext)s")]
     if start is not None and end is not None:
         cmd += ["--download-sections", f"*{start:.2f}-{end:.2f}"]
-    cmd.append(url)
-    _run(cmd, timeout=900)
+    ytdlp(cmd, url, timeout=900)
     files = sorted(dest.glob("src.*"))
     if not files:
         raise RuntimeError("Download não gerou arquivo")

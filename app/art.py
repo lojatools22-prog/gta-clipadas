@@ -387,7 +387,7 @@ def build_all(force=False) -> dict:
     jobs["wanted_busted"] = lambda: wanted(5, busted=True)
     for k in ("chat", "chamada", "social", "gps", "foto", "banco"):
         jobs[f"phone_{k}"] = (lambda k=k: phone_ui(k))
-    paths = {}
+    paths = {f"gtabg_{f.stem}": f for f in (Path(__file__).parent / "assets" / "gtabg").glob("*.png")}
     for name, fn in jobs.items():
         p = OUT / f"{name}.png"
         if force or not p.exists():

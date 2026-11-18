@@ -270,6 +270,8 @@ def user_by_token(token):
 
 # ---------------- planos e cotas ----------------
 def active_plan(u) -> str:
+    if is_admin(u):  # dono da plataforma: tudo liberado (Pro) para testar
+        return "pro"
     return u["plan"] if u and u["plan"] != "gratis" and (u["plan_until"] or 0) > time.time() else "gratis"
 
 
@@ -278,7 +280,7 @@ def plan_info(u) -> dict:
 
 
 def is_admin(u) -> bool:
-    return bool(u) and u["email"] in ADMIN_EMAILS
+    return bool(u) and (u["email"] or "").lower() in ADMIN_EMAILS
 
 
 def logo_path(user_id) -> Path:
@@ -287,7 +289,7 @@ def logo_path(user_id) -> Path:
 
 def public(u) -> dict:
     p = active_plan(u)
-    left = u["credits"] if p == "gratis" else u["quota_left"]
+    left = 999 if is_admin(u) else u["credits"] if p == "gratis" else u["quota_left"]
     return {"name": u["name"], "email": u["email"], "phone": u["phone"][:-4].replace(u["phone"][3:-4], "•" * len(u["phone"][3:-4])) + u["phone"][-4:],
             "plan": p, "plan_name": PLANS[p]["name"], "plan_until": u["plan_until"] if p != "gratis" else None,
             "left": left, "tier": PLANS[p]["tier"], "max_mb": PLANS[p]["max_mb"], "batch": PLANS[p]["batch"],
@@ -326,6 +328,8 @@ def redeem(u, code: str, codes_by_plan: dict) -> dict:
 
 def charge(u) -> str:
     """Desconta 1 corte da cota do plano (ou dos grátis). Devolve de onde saiu."""
+    if is_admin(u):
+        return "admin"
     p = active_plan(u)
     col = "credits" if p == "gratis" else "quota_left"
     with _lock, _conn() as c:

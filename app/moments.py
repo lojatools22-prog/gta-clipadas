@@ -118,7 +118,7 @@ def _audio(st: dict, d: Path) -> Path:
         st["title"] = info.get("title")
         if info.get("duration", 0) > MAX_SECONDS:
             raise RuntimeError(f"O vídeo tem mais de {MAX_SECONDS // 3600} horas. Corte em partes ou use um trecho menor.")
-        video._run(["yt-dlp", "--no-playlist", "-f", "bestaudio/worst", "-o", str(d / "baixado.%(ext)s"), st["url"]], timeout=1800)
+        video.ytdlp(["--no-playlist", "-f", "bestaudio/worst", "-o", str(d / "baixado.%(ext)s")], st["url"], timeout=1800)
         src = str(next(d.glob("baixado.*")))
     video._run(["ffmpeg", "-y", "-i", src, "-vn", "-ac", "1", "-ar", "16000", "-b:a", "32k", str(out)], timeout=1800)
     for f in d.glob("baixado.*"):
