@@ -322,7 +322,16 @@ input,select,textarea{font-size:16px!important}
 .nudge span{width:48px;font-size:13px;font-weight:600;color:var(--mute)}
 .nudge button{flex:1;background:var(--s2);border:1px solid var(--line2);color:#fff;border-radius:9px;padding:9px 0;font:600 13px Inter,sans-serif;cursor:pointer;font-variant-numeric:tabular-nums;transition:background .15s,transform .1s}
 .nudge button:hover{background:var(--s3)}.nudge button:active{transform:scale(.95);background:var(--pinkbg);border-color:var(--pink)}
-.markrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.markrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 18px}
+.mk{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--pink);color:#fff;border:0;border-radius:12px;padding:15px 8px;font:800 15px Inter,sans-serif;cursor:pointer;box-shadow:0 8px 22px -10px rgba(255,31,168,.7);transition:transform .1s}
+.mk:active{transform:scale(.97)}.mk .i{width:20px;height:20px}
+.howto{margin:0 0 14px;padding:12px 14px 12px 34px;background:var(--s2);border:1px solid var(--line2);border-radius:12px;font-size:14px;line-height:1.55;color:var(--mute)}
+.howto b{color:#fff}
+.durs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.durs button{flex:1;min-width:56px;background:var(--s2);border:1px solid var(--line2);color:#fff;border-radius:999px;padding:9px 0;font:700 13px Inter,sans-serif;cursor:pointer}
+.durs button.on{background:var(--pinkbg);border-color:var(--pink);color:#ffb3e0}
+.prev{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0 0 12px}.prev .i{width:18px;height:18px}
+details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--dim);font-size:13px;font-weight:600;padding:6px 0 12px}
 .markrow .go{padding:12px 8px;font-size:14px}
 .acc-h{display:flex;align-items:center;gap:14px;margin:6px 0 18px}
 .av{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--pink),#7c3aed);display:grid;place-items:center;font-weight:800;font-size:22px;flex:none}
@@ -530,23 +539,29 @@ input,select,textarea{font-size:16px!important}
         <div id="probeLoad" class="skel" hidden><span class="spin"></span>Lendo o vídeo…</div>
       </div>
       <div id="trim" hidden>
-        <div class="tr-read">
-          <div><small>Início</small><b id="rS">0:00</b></div>
-          <div class="tr-len" id="rL">45s</div>
-          <div style="text-align:right"><small>Fim</small><b id="rE">0:45</b></div>
-        </div>
-        <div class="tr-lbl"><span>Vídeo inteiro</span><span id="durL"></span></div>
-        <div class="ov" id="ov"><div class="ov-win" id="ovWin"></div><div class="ov-head" id="ovHead"></div></div>
-        <div class="tr-lbl"><span>Ajuste fino</span><span id="fineL"></span></div>
-        <div class="fine" id="fine"><div class="f-sel" id="fSel"></div><div class="hd" id="hS" role="slider" aria-label="Início do corte" tabindex="0"><i></i></div><div class="hd" id="hE" role="slider" aria-label="Fim do corte" tabindex="0"><i></i></div></div>
-        <div class="nudge">
-          <div><span>Início</span><button type="button" data-n="s,-5">−5s</button><button type="button" data-n="s,-1">−1s</button><button type="button" data-n="s,1">+1s</button><button type="button" data-n="s,5">+5s</button></div>
-          <div><span>Fim</span><button type="button" data-n="e,-5">−5s</button><button type="button" data-n="e,-1">−1s</button><button type="button" data-n="e,1">+1s</button><button type="button" data-n="e,5">+5s</button></div>
-        </div>
+        <ol class="howto" id="howto" hidden><li>Dê play e assista a live</li><li>Quando a parte boa começar, toque em <b>Começa aqui</b></li><li>Quando acabar, toque em <b>Termina aqui</b></li></ol>
         <div class="markrow" id="markRow" hidden>
-          <button class="go ghost" type="button" onclick="mark('start')">Início = onde parei</button>
-          <button class="go ghost" type="button" onclick="mark('end')">Fim = onde parei</button>
+          <button class="mk" type="button" onclick="mark('start')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4v16M9 12h10M15 8l4 4-4 4"/></svg>Começa aqui</button>
+          <button class="mk" type="button" onclick="mark('end')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4v16M15 12H5M9 8l-4 4 4 4"/></svg>Termina aqui</button>
         </div>
+        <div class="tr-read">
+          <div><small>Começa</small><b id="rS">0:00</b></div>
+          <div class="tr-len" id="rL">45s</div>
+          <div style="text-align:right"><small>Termina</small><b id="rE">0:45</b></div>
+        </div>
+        <div class="tr-lbl"><span>Duração do corte</span></div>
+        <div class="durs" id="durs"></div>
+        <div class="tr-lbl"><span>Arraste as bordas rosas pra ajustar</span><span id="fineL"></span></div>
+        <div class="fine" id="fine"><div class="f-sel" id="fSel"></div><div class="hd" id="hS" role="slider" aria-label="Início do corte" tabindex="0"><i></i></div><div class="hd" id="hE" role="slider" aria-label="Fim do corte" tabindex="0"><i></i></div></div>
+        <button class="go ghost prev" type="button" id="prevBtn" onclick="previewSel()" hidden><svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Assistir o trecho escolhido</button>
+        <details class="more"><summary>Mais ajustes</summary>
+          <div class="nudge">
+            <div><span>Começa</span><button type="button" data-n="s,-5">−5s</button><button type="button" data-n="s,-1">−1s</button><button type="button" data-n="s,1">+1s</button><button type="button" data-n="s,5">+5s</button></div>
+            <div><span>Termina</span><button type="button" data-n="e,-5">−5s</button><button type="button" data-n="e,-1">−1s</button><button type="button" data-n="e,1">+1s</button><button type="button" data-n="e,5">+5s</button></div>
+          </div>
+          <div class="tr-lbl" style="margin-top:14px"><span>Onde está na live inteira (arraste pra mover)</span><span id="durL"></span></div>
+          <div class="ov" id="ov"><div class="ov-win" id="ovWin"></div><div class="ov-head" id="ovHead"></div></div>
+        </details>
       </div>
       <details id="typeBox"><summary>Digitar os tempos</summary>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
@@ -682,23 +697,23 @@ $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const mb=f.size/1
   if(ME&&ME.auto_moments&&!e.manual){e.target.value='';sheet(`<h2 class="disp" style="margin:0 0 6px">Como você quer cortar?</h2><p class="lead" style="font-size:14px">${esc(f.name)}</p>
     <button class="go" id="fAuto">A IA acha os 10 melhores cortes</button><button class="alt" id="fMan">Eu escolho o trecho</button>`);
     $('#fAuto').onclick=()=>{closeSheet();startAuto({file:f})};$('#fMan').onclick=()=>{closeSheet();const dt=new DataTransfer();dt.items.add(f);$('#file').files=dt.files;$('#file').onchange({target:$('#file'),manual:true})};return}
-  resetMedia();src={kind:'file',file:f};$('#srcLabel').textContent=f.name;const pl=$('#player');try{URL.revokeObjectURL(pl.src)}catch{}pl.src=URL.createObjectURL(f);$('#playerBox').hidden=false;$('#markRow').hidden=false;
+  resetMedia();src={kind:'file',file:f};$('#srcLabel').textContent=f.name;const pl=$('#player');try{URL.revokeObjectURL(pl.src)}catch{}pl.src=URL.createObjectURL(f);$('#playerBox').hidden=false;$('#markRow').hidden=false;$('#howto').hidden=false;
   pl.onloadedmetadata=()=>initTrim(pl.duration);step(1);e.target.value=''};
 function useMoment(o){if(needAcc(()=>useMoment(o)))return;resetMedia();src={kind:'link',url:o.url};$('#url').value=o.url;$('#srcLabel').textContent=o.title||o.url;probeLink(o.url,o.start,o.end);if(o.title)$('#title').value=o.title.slice(0,80).toUpperCase();$('#sheet').classList.remove('on');step(1)}
 
 /* ---- linha do tempo do corte ---- */
 let DUR=0,TS=0,TE=0,FA=0,FB=0,ytp=null,ytReady=false,probeSeq=0;
 const tshort=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`};
-function fineRange(){const len=TE-TS,pad=Math.max(20,len*.6);FA=Math.max(0,TS-pad);FB=Math.min(DUR,TE+pad);if(FB-FA<10){FA=0;FB=DUR}$('#fineL').textContent=tshort(FA)+' – '+tshort(FB)}
+function fineRange(){const len=TE-TS,pad=Math.max(60,len*1.2);FA=Math.max(0,TS-pad);FB=Math.min(DUR,TE+pad);if(FB-FA<10){FA=0;FB=DUR}$('#fineL').textContent=tshort(FA)+' – '+tshort(FB)}
 function drawTrim(){if(!DUR)return;const ow=$('#ov').clientWidth,M=MAXLEN(),len=TE-TS;
   $('#ovWin').style.left=(TS/DUR*100)+'%';$('#ovWin').style.width=Math.max(len/DUR*100,0)+'%';
   const fp=t=>((t-FA)/(FB-FA)*100)+'%';$('#hS').style.left=fp(TS);$('#hE').style.left=fp(TE);$('#fSel').style.left=fp(TS);$('#fSel').style.width=((TE-TS)/(FB-FA)*100)+'%';
   $('#rS').textContent=tshort(TS);$('#rE').textContent=tshort(TE);const L=$('#rL');L.textContent=Math.round(len)+'s';L.classList.toggle('bad',len>M);
-  $('#start').value=hms(TS);$('#end').value=hms(TE);updLen()}
+  $('#start').value=hms(TS);$('#end').value=hms(TE);updLen();renderDurs();$('#prevBtn').hidden=$('#markRow').hidden}
 function setTrim(s,e,o={}){const M=MAXLEN();s=Math.round(s);e=Math.round(e);
   if(o.keep){const len=e-s;s=Math.min(Math.max(0,s),DUR-len);e=s+len}
   s=Math.max(0,Math.min(s,DUR-1));e=Math.max(s+1,Math.min(e,DUR));
-  if(e-s>M){if(o.side==='s')e=s+M;else s=e-M}
+  if(e-s>M){if(o.fix)o.side==='s'?s=e-M:e=s+M;else if(o.side==='s')e=s+M;else s=e-M}
   TS=s;TE=e;if(o.refine!==false)fineRange();drawTrim();if(o.seek!=null)seekTo(o.seek==='e'?TE:TS)}
 let _sk;function seekTo(t){clearTimeout(_sk);_sk=setTimeout(()=>{try{if(src.kind==='file'){const p=$('#player');p.currentTime=t}else if(ytp&&ytReady)ytp.seekTo(t,true)}catch{}},60)}
 function initTrim(d,s,e){DUR=Math.floor(d);if(!(DUR>1)){$('#trim').hidden=true;$('#typeBox').open=true;return}
@@ -710,9 +725,20 @@ function mark(k){const t=curTime();if(t==null)return;if(!DUR){$('#'+k).value=hms
 function drag(el,onMove,onEnd){el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.setPointerCapture(e.pointerId);el.classList.add('drag');onMove(e,true);
   const mv=ev=>onMove(ev,false),up=()=>{el.classList.remove('drag');el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);onEnd&&onEnd()};
   el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)})}
-const fx=e=>{const r=$('#fine').getBoundingClientRect();return FA+Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*(FB-FA)};
-drag($('#hS'),e=>setTrim(Math.min(fx(e),TE-1),TE,{side:'s',refine:false,seek:'s'}),()=>{fineRange();drawTrim()});
-drag($('#hE'),e=>setTrim(TS,Math.max(fx(e),TS+1),{side:'e',refine:false,seek:'e'}),()=>{fineRange();drawTrim()});
+let EDGE=0,EDGEX=null,EDGEK=null;
+const fx=e=>{const r=$('#fine').getBoundingClientRect(),q=(e.clientX-r.left)/r.width;EDGE=q<0.04?-1:q>0.96?1:0;return FA+Math.min(1,Math.max(0,q))*(FB-FA)};
+/* segurando o dedo na borda, a janela anda sozinha: dá pra levar a borda até onde quiser */
+setInterval(()=>{if(!EDGEK||!EDGE||!DUR)return;const w=FB-FA,st=Math.max(3,w*.06);
+  if(EDGE<0&&FA>0){FA=Math.max(0,FA-st);FB=FA+w}else if(EDGE>0&&FB<DUR){FB=Math.min(DUR,FB+st);FA=FB-w}else return;
+  if(EDGEK==='s')setTrim(EDGE<0?FA:Math.min(FB,TE-1),TE,{side:'s',refine:false,seek:'s',fix:true});else setTrim(TS,EDGE>0?FB:Math.max(FA,TS+1),{side:'e',refine:false,seek:'e',fix:true});
+  $('#fineL').textContent=tshort(FA)+' – '+tshort(FB)},90);
+const DURS=[15,30,45,60,90,120,180];
+function renderDurs(){const M=MAXLEN(),len=TE-TS;$('#durs').innerHTML=DURS.filter(d=>d<=M&&d<=DUR).map(d=>`<button type="button" data-d="${d}" class="${Math.round(len)===d?'on':''}">${d<60?d+'s':d%60?Math.floor(d/60)+'min'+(d%60):(d/60)+' min'}</button>`).join('')}
+$('#durs').onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;const d=+b.dataset.d;let s=TS,e2=TS+d;if(e2>DUR){e2=DUR;s=Math.max(0,DUR-d)}setTrim(s,e2,{side:'s'})};
+let _pv=null;function previewSel(){clearInterval(_pv);seekTo(TS);setTimeout(()=>{try{if(src.kind==='file'){const p=$('#player');p.currentTime=TS;p.play()}else if(ytp&&ytReady){ytp.seekTo(TS,true);ytp.playVideo()}}catch{}
+  _pv=setInterval(()=>{const t=curTime();if(t!=null&&t>=TE){clearInterval(_pv);try{src.kind==='file'?$('#player').pause():ytp.pauseVideo()}catch{}}},250)},120)}
+drag($('#hS'),e=>{EDGEK='s';setTrim(Math.min(fx(e),TE-1),TE,{side:'s',refine:false,seek:'s',fix:true})},()=>{EDGEK=null;EDGE=0;fineRange();drawTrim()});
+drag($('#hE'),e=>{EDGEK='e';setTrim(TS,Math.max(fx(e),TS+1),{side:'e',refine:false,seek:'e',fix:true})},()=>{EDGEK=null;EDGE=0;fineRange();drawTrim()});
 (()=>{let off=0;const ov=$('#ov');const ox=e=>{const r=ov.getBoundingClientRect();return Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*DUR};
   drag(ov,(e,first)=>{const t=ox(e),len=TE-TS;if(first)off=(t>=TS&&t<=TE)?t-TS:len/2;setTrim(t-off,t-off+len,{keep:true,seek:'s'})})})();
 ['hS','hE'].forEach(id=>$('#'+id).addEventListener('keydown',e=>{const d=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0;if(!d)return;e.preventDefault();const st=e.shiftKey?5:1;id==='hS'?setTrim(TS+d*st,TE,{side:'s',seek:'s'}):setTrim(TS,TE+d*st,{side:'e',seek:'e'})}));
@@ -721,9 +747,9 @@ $('.nudge').onclick=e=>{const b=e.target.closest('[data-n]');if(!b||!DUR)return;
 addEventListener('resize',()=>DUR&&drawTrim());
 const ytId=u=>{const m=String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|live\/|embed\/))([\w-]{11})/);return m&&m[1]};
 function loadYT(id,start){$('#ytBox').hidden=false;ytReady=false;
-  const mk=()=>{try{ytp&&ytp.destroy()}catch{}$('#ytBox').innerHTML='<div id="yt"></div>';ytp=new YT.Player('yt',{videoId:id,playerVars:{playsinline:1,rel:0,modestbranding:1,start:Math.floor(start||0)},events:{onReady:()=>{ytReady=true;$('#markRow').hidden=false}}})};
+  const mk=()=>{try{ytp&&ytp.destroy()}catch{}$('#ytBox').innerHTML='<div id="yt"></div>';ytp=new YT.Player('yt',{videoId:id,playerVars:{playsinline:1,rel:0,modestbranding:1,start:Math.floor(start||0)},events:{onReady:()=>{ytReady=true;$('#markRow').hidden=false;$('#howto').hidden=false;$('#prevBtn').hidden=false}}})};
   if(window.YT&&YT.Player)return mk();window.onYouTubeIframeAPIReady=mk;if(!document.getElementById('ytapi')){const s=document.createElement('script');s.id='ytapi';s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s)}}
-function resetMedia(){clearReact();aiReset();aiBtn();$('#lenInfo').textContent='';$('#title').value='';['#playerBox','#ytBox','#thumbBox','#probeLoad','#trim','#markRow'].forEach(s=>$(s).hidden=true);try{ytp&&ytp.destroy()}catch{}ytp=null;ytReady=false;DUR=0;$('#start').value='';$('#end').value='';$('#blankHint').hidden=true;SEGS=[];renderSegs()}
+function resetMedia(){clearReact();aiReset();aiBtn();$('#lenInfo').textContent='';$('#title').value='';['#playerBox','#ytBox','#thumbBox','#probeLoad','#trim','#markRow','#howto','#prevBtn'].forEach(s=>$(s).hidden=true);try{ytp&&ytp.destroy()}catch{}ytp=null;ytReady=false;DUR=0;$('#start').value='';$('#end').value='';$('#blankHint').hidden=true;SEGS=[];renderSegs()}
 async function probeLink(url,s,e){const seq=++probeSeq;$('#probeLoad').hidden=false;$('#typeBox').open=false;
   try{const d=await api('/api/probe?url='+encodeURIComponent(url));if(seq!==probeSeq)return;$('#probeLoad').hidden=true;
     if(d.title)$('#srcLabel').textContent=d.title;
