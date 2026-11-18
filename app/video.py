@@ -115,7 +115,53 @@ def _cleanup_loop():
         time.sleep(6 * 3600)
 
 
+def _du(p: Path) -> int:
+    try:
+        return sum(f.stat().st_size for f in p.rglob("*") if f.is_file()) if p.is_dir() else p.stat().st_size
+    except Exception:
+        return 0
+
+
+def _disk_guard(min_free=int(float(os.getenv("MIN_FREE_GB", "3")) * 1e9), report=False):
+    """Disco de trabalho cheio derruba tudo ("No space left on device"). Apaga o que é temporário e está parado há
+    mais de 20 min (gravações, análises, envios, autotestes), do mais velho pro mais novo, até sobrar espaço."""
+    roots = [SCRATCH / "analises", SCRATCH / "aovivo", SCRATCH / "cortes", SCRATCH / "envios", SCRATCH / "demo-aovivo",
+             Path("/tmp/autoteste_live"), Path("/tmp/autoteste_yt"), DATA / "trabalho"]
+    if report:
+        try:
+            log.info("Disco: trabalho %s livre %.1f GB | dados %s livre %.1f GB | %s", SCRATCH, _free(SCRATCH) / 1e9, DATA, _free(DATA) / 1e9,
+                     ", ".join(f"{r.name}={_du(r) / 1e9:.2f}GB" for r in roots + [JOBS_DIR] if r.exists()))
+        except Exception:
+            pass
+    if _free(SCRATCH) >= min_free:
+        return
+    items = []
+    for r in roots:
+        if r.is_dir():
+            items += [x for x in r.iterdir()]
+    items = sorted([x for x in items if time.time() - x.stat().st_mtime > 1200], key=lambda x: x.stat().st_mtime)
+    freed = 0
+    for x in items:
+        if _free(SCRATCH) >= min_free:
+            break
+        n = _du(x)
+        shutil.rmtree(x, ignore_errors=True) if x.is_dir() else x.unlink(missing_ok=True)
+        freed += n
+    log.warning("Disco quase cheio: apaguei %.2f GB de temporários; livre agora %.1f GB", freed / 1e9, _free(SCRATCH) / 1e9)
+
+
+def _guard_loop():
+    _disk_guard(report=True)
+    while True:
+        time.sleep(600)
+        try:
+            _disk_guard()
+        except Exception as e:
+            log.warning("Disco: limpeza falhou: %s", e)
+
+
 threading.Thread(target=_cleanup_loop, daemon=True).start()
+threading.Thread(target=_guard_loop, daemon=True).start()
 _lock = threading.Lock()
 
 # ---------------- Layouts ----------------

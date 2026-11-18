@@ -40,6 +40,19 @@ def public(st):
     return {k: st.get(k) for k in ("id", "url", "title", "status", "minutes", "started", "until", "blocks", "videos", "error", "note")}
 
 
+def list_for(user_id, limit=10):
+    out = []
+    for f in DIR.glob("*.json"):
+        try:
+            st = STATE.get(f.stem) or json.loads(f.read_text())
+        except Exception:
+            continue
+        if st.get("user_id") == user_id:
+            out.append(st)
+    out.sort(key=lambda s: -s.get("started", 0))
+    return [public(s) for s in out[:limit]]
+
+
 def active_for(user_id):
     return [s for s in STATE.values() if s.get("user_id") == user_id and s.get("status") in ("na fila", "gravando", "analisando")]
 
@@ -63,6 +76,10 @@ def stop(fid):
 def _record(url: str, secs: int, dest: Path) -> Path:
     """Grava os próximos `secs` segundos da live (a partir de agora). Se a conexão cair no meio, continua de onde parou
     e junta os pedaços."""
+    try:
+        video._disk_guard()
+    except Exception:
+        pass
     dest.mkdir(parents=True, exist_ok=True)
     parts, got, t_end = [], 0.0, time.time() + secs + 120
     while got < secs * 0.9 and time.time() < t_end:

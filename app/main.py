@@ -588,6 +588,11 @@ def my_videos(request: Request):
     return moments.list_for(current_user(request)["id"])
 
 
+@app.get("/api/my/lives")
+def my_lives(request: Request):
+    return livefollow.list_for(current_user(request)["id"])
+
+
 @app.get("/api/videos/{aid}")
 def video_page(aid: str, request: Request):
     """Página do vídeo: momentos achados pela IA e o estado de cada corte."""
