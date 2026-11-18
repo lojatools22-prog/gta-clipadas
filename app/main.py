@@ -532,7 +532,7 @@ def upload_start(b: UpStartIn, request: Request):
     if b.size > lim * 1048576:
         raise HTTPException(413, f"Vídeo acima de {lim // 1024} GB no seu plano. Cole o link da live e marque o trecho.")
     free = shutil.disk_usage(UPLOADS).free
-    if b.size > free - 2 * 1073741824:
+    if b.size * 1.15 + 150 * 1048576 > free:  # espaço pro arquivo + a margem do corte
         log.error("Disco quase cheio: %s livres, envio de %s", free, b.size)
         raise HTTPException(507, "Estamos com muitos vídeos sendo processados agora. Tente em alguns minutos ou cole o link.")
     uid = _s.token_hex(10)

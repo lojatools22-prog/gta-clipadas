@@ -34,7 +34,29 @@ def _worker():
             _q.task_done()
 
 
-for _ in range(int(os.getenv("WORKERS", "2"))):
+def _auto_workers() -> int:
+    """Quantos cortes montar ao mesmo tempo: ~1 por 2 GB de memória do container (máx. 4)."""
+    v = os.getenv("WORKERS", "auto").strip().lower()
+    if v.isdigit() and v != "0":
+        return int(v)
+    mem = 0
+    for f in ("/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"):
+        try:
+            t = open(f).read().strip()
+            if t.isdigit() and int(t) < 1 << 50:
+                mem = int(t); break
+        except OSError:
+            pass
+    if not mem:
+        try:
+            mem = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
+        except (ValueError, OSError):
+            mem = 2 << 30
+    return max(1, min(int(os.getenv("WORKERS_MAX", "4")), mem // (2 << 30)))
+
+
+WORKERS = _auto_workers()
+for _ in range(WORKERS):
     threading.Thread(target=_worker, daemon=True).start()
 
 
@@ -497,7 +519,7 @@ def _selftest():
         v = _run(["ffmpeg", "-version"]).splitlines()[0]
         render(assets.OUT / "sample.mp4", d, {"template": "vice-cam-cima", "caption": "pesada-karaoke", "title": "AUTOTESTE"}, (0.0, 3.0),
                [{"word": "teste", "start": 0.2, "end": 0.8}])
-        log.info("Autoteste de corte OK (%s, %s bytes)", v, (d / "corte.mp4").stat().st_size)
+        log.info("Autoteste de corte OK (%s, %s bytes, %s corte(s) ao mesmo tempo)", v, (d / "corte.mp4").stat().st_size, WORKERS)
         t0 = time.time()
         transcribe(assets.OUT / "sample.mp4", d, (0.0, 3.0))  # já baixa/carrega o modelo de legenda
         log.info("Autoteste de legenda OK (%.1fs, %s)", time.time() - t0, "API" if (GROQ_KEY or OPENAI_KEY) else f"local {LOCAL_MODEL}")
