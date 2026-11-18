@@ -156,7 +156,7 @@ def _finish_phone(uid: int, device: str) -> dict:
 def _send_sms_code(user_id: int, phone: str, purpose: str, extra: str = "") -> dict:
     _rate(phone)
     oid, code = _new_otp(user_id, purpose, extra)
-    notify.send_sms(phone, f"GTA Clipadas: seu código é {code}. Vale por 10 minutos. Não passe pra ninguém.")
+    notify.send_sms(phone, f"GTA6 Clips: seu código é {code}. Vale por 10 minutos. Não passe pra ninguém.")
     out = {"challenge": oid, "phone_hint": phone[:-4].replace(phone[3:-4], "•" * len(phone[3:-4])) + phone[-4:]}
     if DEV_SHOW_CODES:
         out["dev_code"] = code
@@ -236,7 +236,7 @@ def forgot(email: str) -> dict:
         raise AuthError("Recuperação de senha indisponível agora. Fale com a gente no WhatsApp.")
     _rate(email)
     oid, code = _new_otp(u["id"], "reset")
-    notify.send_email(email, "Seu código do GTA Clipadas", f"<p>Seu código para criar uma nova senha é <b>{code}</b>. Vale por 10 minutos.</p>")
+    notify.send_email(email, "Seu código do GTA6 Clips", f"<p>Seu código para criar uma nova senha é <b>{code}</b>. Vale por 10 minutos.</p>")
     out = {"via": "email", "challenge": oid}
     if DEV_SHOW_CODES:
         out["dev_code"] = code

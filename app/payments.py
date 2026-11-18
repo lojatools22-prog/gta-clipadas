@@ -38,7 +38,7 @@ def valid_cpf(cpf: str) -> str:
 
 
 def _asaas(method, path, **kw):
-    r = httpx.request(method, ASAAS_API + path, headers={"access_token": ASAAS_KEY, "User-Agent": "gtaclipadas"}, timeout=20, **kw)
+    r = httpx.request(method, ASAAS_API + path, headers={"access_token": ASAAS_KEY, "User-Agent": "gta6clips"}, timeout=20, **kw)
     if r.status_code >= 300:
         log.error("Asaas %s %s falhou: %s %s", method, path, r.status_code, r.text[:400])
         raise RuntimeError("Não deu pra abrir o pagamento agora. Tente de novo.")
@@ -57,7 +57,7 @@ def asaas_checkout(user, plan: str, customer_id: str) -> str:
     P = PLANS[plan]
     body = {"customer": customer_id, "billingType": "UNDEFINED", "value": P["price"],
             "dueDate": (_dt.date.today() + _dt.timedelta(days=1)).isoformat(),
-            "description": f"GTA Clipadas — plano {P['name']}", "externalReference": f"{user['id']}:{plan}",
+            "description": f"GTA6 Clips — plano {P['name']}", "externalReference": f"{user['id']}:{plan}",
             "callback": {"successUrl": f"{PUBLIC_URL}/?pagamento=success#planos", "autoRedirect": True}}
     try:
         pay = _asaas("POST", "/payments", json=body)
@@ -75,7 +75,7 @@ def asaas_charge(user, plan: str, customer_id: str, method: str) -> dict:
     P = PLANS[plan]
     body = {"customer": customer_id, "billingType": "PIX" if method == "pix" else "CREDIT_CARD", "value": P["price"],
             "dueDate": (_dt.date.today() + _dt.timedelta(days=1)).isoformat(),
-            "description": f"GTA Clipadas — {P['name']}", "externalReference": f"{user['id']}:{plan}"}
+            "description": f"GTA6 Clips — {P['name']}", "externalReference": f"{user['id']}:{plan}"}
     if method != "pix":
         body["callback"] = {"successUrl": f"{PUBLIC_URL}/?pagamento=success#planos", "autoRedirect": True}
     try:
@@ -102,13 +102,13 @@ def asaas_payment(pid: str) -> dict:
 def create_checkout(user, plan: str) -> str:
     P = PLANS[plan]
     body = {
-        "items": [{"id": plan, "title": f"GTA Clipadas — plano {P['name']}", "quantity": 1, "currency_id": "BRL", "unit_price": P["price"]}],
+        "items": [{"id": plan, "title": f"GTA6 Clips — plano {P['name']}", "quantity": 1, "currency_id": "BRL", "unit_price": P["price"]}],
         "payer": {"email": user["email"], "name": user["name"]},
         "external_reference": f"{user['id']}:{plan}",
         "notification_url": f"{PUBLIC_URL}/api/pay/webhook",
         "back_urls": {k: f"{PUBLIC_URL}/?pagamento={k}#planos" for k in ("success", "pending", "failure")},
         "auto_return": "approved",
-        "statement_descriptor": "GTACLIPADAS",
+        "statement_descriptor": "GTA6CLIPS",
     }
     r = httpx.post(f"{API}/checkout/preferences", json=body, headers={"Authorization": f"Bearer {MP_TOKEN}"}, timeout=20)
     if r.status_code >= 300:
@@ -136,7 +136,7 @@ def fetch_payment(pid: str) -> dict:
 
 
 def ensure_asaas_webhook(data_dir, email: str = ""):
-    """Cadastra (ou atualiza) sozinho o webhook do GTA Clipadas no Asaas, com um token gerado aqui.
+    """Cadastra (ou atualiza) sozinho o webhook do GTA6 Clips no Asaas, com um token gerado aqui.
     Assim ninguém precisa copiar senha entre o painel do Asaas e o Railway."""
     global ASAAS_TOKEN
     if not (ASAAS_KEY and PUBLIC_URL):
@@ -149,7 +149,7 @@ def ensure_asaas_webhook(data_dir, email: str = ""):
             f.write_text(secrets.token_urlsafe(36))
         ASAAS_TOKEN = f.read_text().strip()
     url = PUBLIC_URL + "/api/pay/asaas"
-    body = {"name": "GTA Clipadas", "url": url, "email": email or None, "enabled": True, "interrupted": False,
+    body = {"name": "GTA6 Clips", "url": url, "email": email or None, "enabled": True, "interrupted": False,
             "apiVersion": 3, "authToken": ASAAS_TOKEN, "sendType": "SEQUENTIALLY",
             "events": ["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED", "PAYMENT_REFUNDED", "PAYMENT_CHARGEBACK_REQUESTED"]}
     body = {k: v for k, v in body.items() if v is not None}

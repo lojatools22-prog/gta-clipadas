@@ -3,10 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GTA Clipadas — cortes de GTA 6 em 1 minuto</title>
+<title>GTA6 Clips — cortes de GTA 6 com IA</title>
 <meta name="description" content="Cole o link da live, escolha o visual e saia com o corte vertical pronto, com legenda e capa.">
 <meta name="theme-color" content="#12051f">
-<link rel="icon" href="/static/logo.jpg">
+<link rel="icon" href="/static/icon-64.png">
+<link rel="apple-touch-icon" href="/static/icon-180.png">
+<meta name="theme-color" content="#09090b">
+<meta property="og:title" content="GTA6 Clips — cortes de GTA 6 com IA">
+<meta property="og:description" content="Cole o link da live e a IA entrega os melhores cortes prontos pro TikTok, Reels e Shorts.">
+<meta property="og:image" content="/static/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 @font-face{font-family:Inter;src:url(/static/inter-400.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:Inter;src:url(/static/inter-500.woff2) format("woff2");font-weight:500;font-display:swap}
@@ -28,7 +34,7 @@ a{color:var(--text)}
 header{position:sticky;top:0;z-index:30;background:rgba(9,9,11,.78);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line)}
 .top{display:flex;align-items:center;gap:10px;height:64px}
 .brandL{display:flex;align-items:center;gap:10px;cursor:pointer;background:none;border:0;padding:0;color:inherit}
-.logo{width:34px;height:34px;border-radius:50%;box-shadow:0 0 0 1px var(--line2)}
+.logo{width:34px;height:34px;border-radius:50%;box-shadow:0 0 0 1px var(--line2)}.brandimg{height:44px;width:auto;display:block}
 .brand{font-family:"Bowlby One",Impact,sans-serif;font-size:16px;letter-spacing:.01em;color:#fff;white-space:nowrap;transform:skewX(-6deg)}.brand span{color:var(--pink)}
 .nav{display:none;gap:4px;margin-left:24px}
 .nav button,.link{background:none;border:0;color:var(--mute);font:600 14px Inter,sans-serif;cursor:pointer;padding:8px 12px;border-radius:9px;transition:color .15s,background .15s;white-space:nowrap}
@@ -367,7 +373,7 @@ input,select,textarea{font-size:16px!important}
 </head>
 <body>
 <header><div class="wrap top">
-  <button class="brandL" onclick="home()" aria-label="Início"><img class="logo" src="/static/logo.jpg" alt=""><span class="brand">GTA <span>CLIPADAS</span></span></button>
+  <button class="brandL" onclick="home()" aria-label="Início"><img class="brandimg" src="/static/logo-sm.png" alt="GTA6 Clips" width="104" height="44"></button>
   <nav class="nav"><button data-go="home" class="on">Cortar</button><button data-go="virais">Virais</button><button data-go="auto">Automação</button><button data-go="planos">Planos</button><button data-go="conta">Conta</button></nav>
   <span class="spacer"></span>
   <button class="link" data-go="mine" id="mineBtn" hidden>Meus cortes</button>
@@ -629,7 +635,7 @@ input,select,textarea{font-size:16px!important}
 
 <div class="sheet" id="sheet" onclick="if(event.target.id==='sheet')this.classList.remove('on')"><div id="sheetIn"></div></div>
 <div class="toast" id="toast"></div>
-<footer><div class="wrap"><span>© GTA Clipadas · Projeto de fãs, sem afiliação com a Rockstar Games ou a Twitch. Corte só quem libera cortes e dê os créditos.</span><span><a href="/termos" target="_blank">Termos de uso</a> &nbsp;·&nbsp; <a href="/privacidade" target="_blank">Privacidade</a></span></div></footer>
+<footer><div class="wrap"><span>© GTA6 Clips · Projeto de fãs, sem afiliação com a Rockstar Games ou a Twitch. Corte só quem libera cortes e dê os créditos.</span><span><a href="/termos" target="_blank">Termos de uso</a> &nbsp;·&nbsp; <a href="/privacidade" target="_blank">Privacidade</a></span></div></footer>
 
 <script>
 const $=s=>document.querySelector(s);
@@ -855,14 +861,14 @@ function renderVid(){const el=$('#vid');if(!VID){el.innerHTML='<div class="empty
     const media=ok?`<video src="${c.video}" poster="${c.cover||c.thumb}" controls playsinline preload="none"></video>`:`<img src="/previews/tpl-${esc(autoOpts().template)}.jpg" alt="" style="filter:blur(3px) brightness(.5)"><div class="wait">${err?'⚠️ Não deu certo':`<i></i>${LBL[c.status]||'Na fila…'}`}</div>`;
     return `<div class="clip ${sel?'sel':''}"><div class="m">${media}${ok?`<span class="ck" onclick="vToggle('${c.id}')">${sel?'✓':''}</span>`:''}<span class="score ${m.score>=80?'hot':''}">🔥 ${m.score}</span></div>
       <div class="b"><h4>${esc(m.title||'Corte')}</h4><p>${esc(m.reason||'')}</p><span class="t">${mmss(m.start)} – ${mmss(m.end)} · ${m.end-m.start}s</span>
-      ${ok?`<div class="acts"><a class="sm" href="${c.video}" download="gta-clipadas-${c.id}.mp4">Baixar</a>${navigator.share?`<button class="sm g" onclick="shareCut('${c.video}','${c.id}')">Postar</button>`:''}</div>`:''}</div></div>`}).join('');
+      ${ok?`<div class="acts"><a class="sm" href="${c.video}" download="gta6clips-${c.id}.mp4">Baixar</a>${navigator.share?`<button class="sm g" onclick="shareCut('${c.video}','${c.id}')">Postar</button>`:''}</div>`:''}</div></div>`}).join('');
   const rest=VID.moments.filter(m=>!m.clip);
   const more=rest.length?`<div class="more"><h3>Mais ${rest.length} momento${rest.length>1?'s':''} que a IA achou</h3><p class="lead" style="font-size:13px;margin:0 0 10px">Cada um gasta 1 corte do seu plano.</p>${rest.map(m=>`<div class="mrow"><span class="pill">🔥 ${m.score}</span><b>${esc(m.title||'Momento')}</b><small style="color:var(--mute)">${mmss(m.start)}</small><button class="sm" onclick="vGen(${m.start})">Gerar</button></div>`).join('')}</div>`:'';
   el.innerHTML=head+note+bar+`<div class="cgrid">${cards}</div>`+more}
 function vToggle(id){VSEL.has(id)?VSEL.delete(id):VSEL.add(id);renderVid()}
 function vSelAll(on){VSEL.clear();if(on)VID.moments.forEach(m=>m.clip&&m.clip.status==='pronto'&&VSEL.add(m.clip.id));renderVid()}
 async function vDownload(){const cs=VID.moments.filter(m=>m.clip&&VSEL.has(m.clip.id)&&m.clip.video);toast(`Baixando ${cs.length} corte${cs.length>1?'s':''}…`);
-  for(const m of cs){const a=document.createElement('a');a.href=m.clip.video;a.download=`gta-clipadas-${m.clip.id}.mp4`;document.body.appendChild(a);a.click();a.remove();await new Promise(r=>setTimeout(r,700))}}
+  for(const m of cs){const a=document.createElement('a');a.href=m.clip.video;a.download=`gta6clips-${m.clip.id}.mp4`;document.body.appendChild(a);a.click();a.remove();await new Promise(r=>setTimeout(r,700))}}
 async function vDelete(){const ids=[...VSEL];if(!confirm(`Apagar ${ids.length} corte${ids.length>1?'s':''} desse vídeo?`))return;
   try{await post(`/api/videos/${VID.id}/batch`,{jobs:ids,action:'apagar'});VSEL.clear();toast('Cortes apagados');watchVid()}catch(e){toast(e.message)}}
 async function vGen(start){try{const r=await post(`/api/videos/${VID.id}/batch`,{jobs:[],action:'gerar',starts:[start]});if(r.user){ME=r.user;refreshAcct()}toast('Gerando o corte…');watchVid()}catch(e){toast(e.message);if(e.status===402)view('planos')}}
@@ -903,7 +909,7 @@ function renderGen(){const el=$('#gen');if(!GEN){el.innerHTML='<div class="empty
   const note=done?'':GEN.phase==='up'?`<div class="gen-note warn">📤 <b>Mantenha esta página aberta</b> só até o envio terminar (${GEN.up}%). Depois disso pode sair.</div>`
     :`<div class="gen-note free">✅ <b>Pode sair do site.</b> Seu corte continua sendo feito e aparece pronto quando você voltar, em Meus cortes.</div>`;
   const bell=!done&&GEN.phase==='job'&&'Notification' in window&&Notification.permission==='default'?`<button class="go ghost" onclick="Notification.requestPermission().then(()=>renderGen())">🔔 Me avisar quando ficar pronto</button>`:'';
-  const btns=done?(ready.length===1&&n===1?`<a class="go" href="${ready[0].video}" download="gta-clipadas-${GEN.ids[0]}.mp4" style="text-decoration:none">Baixar vídeo</a>${navigator.share?`<button class="go ghost" onclick="shareCut('${ready[0].video}','${GEN.ids[0]}')">Compartilhar</button>`:''}${ready[0].cover?`<a class="go ghost" href="${ready[0].cover}" download="capa-${GEN.ids[0]}.jpg" style="text-decoration:none">Baixar capa</a>`:''}`:`<button class="go" onclick="view('mine')">Ver meus cortes</button>`)+`<button class="go ghost" onclick="GEN=null;home()">Fazer outro corte</button>`
+  const btns=done?(ready.length===1&&n===1?`<a class="go" href="${ready[0].video}" download="gta6clips-${GEN.ids[0]}.mp4" style="text-decoration:none">Baixar vídeo</a>${navigator.share?`<button class="go ghost" onclick="shareCut('${ready[0].video}','${GEN.ids[0]}')">Compartilhar</button>`:''}${ready[0].cover?`<a class="go ghost" href="${ready[0].cover}" download="capa-${GEN.ids[0]}.jpg" style="text-decoration:none">Baixar capa</a>`:''}`:`<button class="go" onclick="view('mine')">Ver meus cortes</button>`)+`<button class="go ghost" onclick="GEN=null;home()">Fazer outro corte</button>`
     :rev?`<button class="go" onclick="openReview('${rev}')">✏️ Revisar legenda</button>`:`${bell}<button class="go ghost" onclick="home()">Fazer outro corte enquanto isso</button><button class="alt" onclick="view('mine')">Ver meus cortes</button>`;
   el.innerHTML=`<div class="gen">${vis}<h2 class="disp">${title}</h2><p class="lead">${sub}</p>
    ${note}${done?'':`<div class="gen-bar"><i style="width:${pct}%"></i></div><ul class="gen-steps">${steps.map(([k,l],i)=>`<li class="${i<idx?'ok':i===idx?'now':''}"><i>${i<idx?'✓':''}</i>${l}${i===idx&&k==='up'?`<small>${GEN.up}%</small>`:i===idx&&k==='fila'&&pos>1?`<small>${pos}º da fila</small>`:''}</li>`).join('')}</ul>`}
@@ -918,14 +924,14 @@ async function watchJobs(){clearTimeout(WT);const ids=PEND();if(!ids.length||!TO
     if(['pronto','erro','expirado'].includes(j.status)){dropPending(id);if(j.status==='pronto')cutReady(id,j)}else left++}
   if(GEN&&!$('#v-gen').hidden)renderGen();else updPill();
   if(!$('#v-mine').hidden)renderJobs();
-  document.title=left?'⏳ Gerando corte… · GTA Clipadas':document.title.startsWith('⏳')?T0:document.title;
+  document.title=left?'⏳ Gerando corte… · GTA6 Clips':document.title.startsWith('⏳')?T0:document.title;
   if(GEN&&GEN.boot){GEN.boot=false;if(genStage()==='pronto')view('gen')}
   if(left)WT=setTimeout(watchJobs,document.hidden?6000:2500)}
-function cutReady(id,j){if(!document.title.startsWith('✅'))document.title='✅ Corte pronto · GTA Clipadas';
+function cutReady(id,j){if(!document.title.startsWith('✅'))document.title='✅ Corte pronto · GTA6 Clips';
   try{if(document.hidden&&'Notification' in window&&Notification.permission==='granted')new Notification('Seu corte ficou pronto! 🎬',{body:'Toque pra baixar e postar.',icon:j.thumb})}catch(e){}
   if(GEN&&GEN.ids.includes(id))return;  // a tela de geração já mostra
   sheet(`<div style="text-align:center"><div class="gen-vis done" style="width:170px;margin:0 auto 16px"><video src="${j.video}" poster="${j.cover||j.thumb}" controls playsinline muted></video></div><h2 class="disp" style="margin:0 0 6px">Seu corte ficou pronto!</h2><p class="lead">Ele foi gerado enquanto você estava fora.</p>
-  <a class="go" href="${j.video}" download="gta-clipadas-${id}.mp4" style="text-decoration:none">Baixar vídeo</a><button class="alt" onclick="closeSheet();view('mine')">Ver meus cortes</button></div>`)}
+  <a class="go" href="${j.video}" download="gta6clips-${id}.mp4" style="text-decoration:none">Baixar vídeo</a><button class="alt" onclick="closeSheet();view('mine')">Ver meus cortes</button></div>`)}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(document.title.startsWith('✅'))document.title=T0;if(PEND().length)watchJobs()}});
 
 /* virais */
@@ -957,7 +963,7 @@ async function saveReview(){const out=[];RV.g.forEach((x,i)=>{const t=document.q
     if(t.length===x.length)t.forEach((w,k)=>out.push({word:w,start:x[k].start,end:x[k].end}));
     else{const a=x[0].start,b=x[x.length-1].end,d=(b-a)/t.length;t.forEach((w,k)=>out.push({word:w,start:a+k*d,end:a+(k+1)*d}))}});
   try{await api('/api/jobs/'+RV.id+'/captions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({words:out})});closeSheet();toast('Montando o corte com a legenda corrigida');renderJobs()}catch(e){toast(e.message)}}
-async function shareCut(u,id){try{const b=await fetch(u).then(r=>r.blob());const f=new File([b],`gta-clipadas-${id}.mp4`,{type:'video/mp4'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:'Corte GTA Clipadas'});else await navigator.share({url:location.origin+u})}catch(e){if(e.name!=='AbortError')toast('Não deu pra compartilhar. Use o Baixar vídeo.')}}
+async function shareCut(u,id){try{const b=await fetch(u).then(r=>r.blob());const f=new File([b],`gta6clips-${id}.mp4`,{type:'video/mp4'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:'Corte GTA6 Clips'});else await navigator.share({url:location.origin+u})}catch(e){if(e.name!=='AbortError')toast('Não deu pra compartilhar. Use o Baixar vídeo.')}}
 let poll;async function renderJobs(){clearTimeout(poll);const el=$('#jobs');
   if(!ME){el.innerHTML='<div class="empty">Entre na sua conta pra ver seus cortes.<br><br><button class="go" onclick="openAuth(\'login\')">Entrar</button></div>';return}
   let rs=[];try{rs=await api('/api/my/jobs')}catch(e){el.innerHTML=`<div class="empty">${esc(e.message)}</div>`;return}
@@ -965,7 +971,7 @@ let poll;async function renderJobs(){clearTimeout(poll);const el=$('#jobs');
   let pending=false;const ids=rs;
   el.innerHTML=rs.map((j,i)=>{if(!['pronto','erro','expirado','revisar'].includes(j.status))pending=true;
    const media=j.status==='pronto'?`<video src="${j.video}" poster="${j.cover||j.thumb}" controls playsinline preload="none"></video>`:`<div class="ph">${j.status==='erro'?'⚠️':'⏳'}</div>`;
-   const body=j.status==='revisar'?`<button class="sm" onclick="openReview('${j.id}')">✏️ Revisar legenda</button>`:j.status==='pronto'?`<a class="sm" href="${j.video}" download="gta-clipadas-${j.id}.mp4">Baixar vídeo</a>${j.cover?`<a class="sm g" href="${j.cover}" download="capa-${j.id}.jpg">Capa</a>`:''}`:j.status==='erro'?'<span style="color:var(--mute);font-size:13px">Não deu certo e o corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.</span>':j.status==='expirado'?'':`<div class="prog"><i style="width:${j.progress||5}%"></i></div>`;
+   const body=j.status==='revisar'?`<button class="sm" onclick="openReview('${j.id}')">✏️ Revisar legenda</button>`:j.status==='pronto'?`<a class="sm" href="${j.video}" download="gta6clips-${j.id}.mp4">Baixar vídeo</a>${j.cover?`<a class="sm g" href="${j.cover}" download="capa-${j.id}.jpg">Capa</a>`:''}`:j.status==='erro'?'<span style="color:var(--mute);font-size:13px">Não deu certo e o corte voltou pra sua conta. Confira o vídeo e o trecho e tente de novo.</span>':j.status==='expirado'?'':`<div class="prog"><i style="width:${j.progress||5}%"></i></div>`;
    const tt=ids[i].title&&ids[i].title!=='Corte GTA'?ids[i].title:'Corte',dt=ids[i].created?new Date(ids[i].created*1000).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
    const sh=j.status==='pronto'&&navigator.share?`<button class="sm g" onclick="shareCut('${j.video}','${j.id}')">Compartilhar</button>`:'';
    return `<div class="job">${media}<div><h3>${esc(tt)}</h3><p style="margin:0 0 2px;font-size:12px;color:var(--dim)">${dt}</p><p>${j.status==='na fila'&&j.position>1?`Na fila: ${j.position}º · já já começa`:(LBL[j.status]||'Expirou')}</p>${body}${sh}</div></div>`}).join('');

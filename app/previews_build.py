@@ -61,7 +61,7 @@ def build(only=None):
         start_card = any(c["at"] == "start" for c in t["cards"])
         end_card = any(c["at"] == "end" for c in t["cards"])
         video.render(SAMPLE, d, {"template": t["id"], "caption": "pesada-karaoke", "title": "ele não acreditou no que viu",
-                                 "watermark": True, "cover": False}, (0.0, 3.0), WORDS)
+                                 "watermark": False, "cover": False, "corner": "top-left"}, (0.0, 3.0), WORDS)
         frame(d, 0.8 if start_card else (2.6 if end_card else 1.0), OUT / f"tpl-{t['id']}.jpg")
     cap_tpl = templates.BY_ID["vice-sem-cam"]
     for c in templates.CAPTION_STYLES:
@@ -69,7 +69,7 @@ def build(only=None):
             continue
         d = work / ("cap-" + c["id"]); d.mkdir()
         video.render(SAMPLE, d, {"template": "retro-revista" if False else "vice-sem-cam", "caption": c["id"], "title": "",
-                                 "watermark": False, "cover": False}, (0.0, 1.6), WORDS)
+                                 "watermark": False, "cover": False, "corner": "top-left"}, (0.0, 1.6), WORDS)
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "0.45", "-i", str(d / "corte.mp4"), "-frames:v", "1",
                         "-vf", "crop=1080:420:0:1240,scale=540:210", "-q:v", "4", str(OUT / f"cap-{c['id']}.jpg")], check=True)
     shutil.rmtree(work)
