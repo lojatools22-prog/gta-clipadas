@@ -326,32 +326,41 @@ def redeem(u, code: str, codes_by_plan: dict) -> dict:
     return activate(u["id"], plan, "codigo")
 
 
-def charge(u) -> str:
-    """Desconta 1 corte da cota do plano (ou dos grátis). Devolve de onde saiu."""
+def charge(u, n: int = 1) -> str:
+    """Desconta n cortes da cota do plano (ou dos grátis). Devolve de onde saiu ("coluna" ou "coluna:n")."""
     if is_admin(u):
         return "admin"
     p = active_plan(u)
     col = "credits" if p == "gratis" else "quota_left"
     with _lock, _conn() as c:
-        if c.execute(f"UPDATE users SET {col}={col}-1 WHERE id=? AND {col}>0", (u["id"],)).rowcount == 0:
+        if c.execute(f"UPDATE users SET {col}={col}-? WHERE id=? AND {col}>=?", (n, u["id"], n)).rowcount == 0:
+            if n > 1 and c.execute(f"SELECT {col} FROM users WHERE id=?", (u["id"],)).fetchone()[0] > 0:
+                raise AuthError(f"Corte com mais de 1 minuto usa {n} cortes e você só tem 1. Escolha um trecho de até 1 minuto.")
             raise AuthError("Seus cortes grátis acabaram. Escolha um plano pra continuar." if p == "gratis"
                             else f"Você usou todos os cortes do plano {PLANS[p]['name']}. Renove ou suba de plano.")
-    return col
+    return col if n == 1 else f"{col}:{n}"
 
 
-def refund(user_id: int, col: str):
+def _split(charged: str):
+    col, _, n = (charged or "").partition(":")
+    return col, int(n or 1)
+
+
+def refund(user_id: int, charged: str):
+    col, n = _split(charged)
     if col in ("credits", "quota_left"):
         with _lock, _conn() as c:
-            c.execute(f"UPDATE users SET {col}={col}+1 WHERE id=?", (user_id,))
+            c.execute(f"UPDATE users SET {col}={col}+? WHERE id=?", (n, user_id))
 
 
 def refund_job(job_id) -> bool:
     """Devolve o corte de um trabalho que falhou, uma vez só."""
     with _lock, _conn() as c:
         r = c.execute("SELECT user_id, charged FROM jobs WHERE id=?", (job_id,)).fetchone()
-        if not r or r["charged"] not in ("credits", "quota_left"):
+        col, n = _split(r["charged"] if r else "")
+        if not r or col not in ("credits", "quota_left"):
             return False
-        c.execute(f"UPDATE users SET {r['charged']}={r['charged']}+1 WHERE id=?", (r["user_id"],))
+        c.execute(f"UPDATE users SET {col}={col}+? WHERE id=?", (n, r["user_id"]))
         c.execute("UPDATE jobs SET charged='devolvido' WHERE id=?", (job_id,))
     return True
 

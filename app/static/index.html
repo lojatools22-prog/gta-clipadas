@@ -327,6 +327,16 @@ input,select,textarea{font-size:16px!important}
 .mk:active{transform:scale(.97)}.mk .i{width:20px;height:20px}
 .howto{margin:0 0 14px;padding:12px 14px 12px 34px;background:var(--s2);border:1px solid var(--line2);border-radius:12px;font-size:14px;line-height:1.55;color:var(--mute)}
 .howto b{color:#fff}
+.wheel{position:relative;display:flex;justify-content:center;align-items:center;gap:4px;height:156px;margin:0 0 18px;background:var(--s2);border:1px solid var(--line2);border-radius:16px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
+.wband{position:absolute;left:10px;right:10px;top:50%;height:52px;margin-top:-26px;border-radius:12px;background:rgba(255,31,168,.16);border:1px solid rgba(255,31,168,.45);pointer-events:none}
+.wcol{position:relative;width:76px;height:156px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.wcol::-webkit-scrollbar{display:none}
+.wcol div{height:52px;line-height:52px;text-align:center;scroll-snap-align:center;font:700 30px Inter,sans-serif;font-variant-numeric:tabular-nums;color:var(--dim)}
+.wcol div.on{color:#fff}.wcol div.pad{scroll-snap-align:none}
+.wsep{font:800 28px Inter,sans-serif;color:var(--dim)}
+.durhint{font-size:13px;color:var(--mute);margin:-8px 0 14px;line-height:1.45}
+.durs button small{display:block;font-size:10px;font-weight:700;opacity:.8;margin-top:2px}
 .durs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
 .durs button{flex:1;min-width:56px;background:var(--s2);border:1px solid var(--line2);color:#fff;border-radius:999px;padding:9px 0;font:700 13px Inter,sans-serif;cursor:pointer}
 .durs button.on{background:var(--pinkbg);border-color:var(--pink);color:#ffb3e0}
@@ -549,12 +559,17 @@ details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--d
           <div class="tr-len" id="rL">45s</div>
           <div style="text-align:right"><small>Termina</small><b id="rE">0:45</b></div>
         </div>
+        <div class="tr-lbl"><span>Começa em (role pra escolher)</span><span id="durL2"></span></div>
+        <div class="wheel" id="wheel"><div class="wband"></div>
+          <div class="wcol" data-u="h"></div><b class="wsep" data-u="h">:</b><div class="wcol" data-u="m"></div><b class="wsep">:</b><div class="wcol" data-u="s"></div>
+        </div>
         <div class="tr-lbl"><span>Duração do corte</span></div>
         <div class="durs" id="durs"></div>
-        <div class="tr-lbl"><span>Arraste o meio pra mover, as bordas pra ajustar</span><span id="fineL"></span></div>
-        <div class="fine" id="fine"><div class="f-sel" id="fSel"></div><div class="hd" id="hS" role="slider" aria-label="Início do corte" tabindex="0"><i></i></div><div class="hd" id="hE" role="slider" aria-label="Fim do corte" tabindex="0"><i></i></div></div>
+        <p class="durhint" id="durHint"></p>
         <button class="go ghost prev" type="button" id="prevBtn" onclick="previewSel()" hidden><svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Assistir o trecho escolhido</button>
         <details class="more"><summary>Mais ajustes</summary>
+          <div class="tr-lbl"><span>Arraste o meio pra mover, as bordas pra ajustar</span><span id="fineL"></span></div>
+          <div class="fine" id="fine"><div class="f-sel" id="fSel"></div><div class="hd" id="hS" role="slider" aria-label="Início do corte" tabindex="0"><i></i></div><div class="hd" id="hE" role="slider" aria-label="Fim do corte" tabindex="0"><i></i></div></div>
           <div class="nudge">
             <div><span>Começa</span><button type="button" data-n="s,-5">−5s</button><button type="button" data-n="s,-1">−1s</button><button type="button" data-n="s,1">+1s</button><button type="button" data-n="s,5">+5s</button></div>
             <div><span>Termina</span><button type="button" data-n="e,-5">−5s</button><button type="button" data-n="e,-1">−1s</button><button type="button" data-n="e,1">+1s</button><button type="button" data-n="e,5">+5s</button></div>
@@ -714,11 +729,11 @@ function setTrim(s,e,o={}){const M=MAXLEN();s=Math.round(s);e=Math.round(e);
   if(o.keep){const len=e-s;s=Math.min(Math.max(0,s),DUR-len);e=s+len}
   s=Math.max(0,Math.min(s,DUR-1));e=Math.max(s+1,Math.min(e,DUR));
   if(e-s>M){if(o.fix)o.side==='s'?s=e-M:e=s+M;else if(o.side==='s')e=s+M;else s=e-M}
-  TS=s;TE=e;if(o.refine!==false)fineRange();drawTrim();if(o.seek!=null)seekTo(o.seek==='e'?TE:TS)}
+  TS=s;TE=e;if(o.refine!==false)fineRange();WSKIP+=o.fromWheel?1:0;drawTrim();if(o.fromWheel)setTimeout(()=>WSKIP--,50);if(o.seek!=null)seekTo(o.seek==='e'?TE:TS)}
 let _sk;function seekTo(t){clearTimeout(_sk);_sk=setTimeout(()=>{try{if(src.kind==='file'){const p=$('#player');p.currentTime=t}else if(ytp&&ytReady)ytp.seekTo(t,true)}catch{}},60)}
 function initTrim(d,s,e){DUR=Math.floor(d);if(!(DUR>1)){$('#trim').hidden=true;$('#typeBox').open=true;return}
-  $('#trim').hidden=false;$('#typeBox').open=false;$('#durL').textContent=tshort(DUR);const M=MAXLEN();
-  if(s==null){s=0;e=DUR<=M?DUR:Math.min(DUR,45)}if(e==null)e=s+45;setTrim(s,e,{refine:true})}
+  $('#trim').hidden=false;$('#typeBox').open=false;$('#durL').textContent=tshort(DUR);const M=MAXLEN();setTimeout(buildWheel,0);
+  if(s==null){s=0;e=DUR<=M?Math.min(DUR,65):Math.min(DUR,65)}if(e==null)e=s+65;setTrim(s,e,{refine:true})}
 function curTime(){if(src.kind==='file')return $('#player').currentTime;if(ytp&&ytReady&&ytp.getCurrentTime)return ytp.getCurrentTime();return null}
 function mark(k){const t=curTime();if(t==null)return;if(!DUR){$('#'+k).value=hms(t);updLen();return}
   if(k==='start')setTrim(t,Math.max(t+1,TE>t?TE:t+45),{side:'s'});else setTrim(Math.min(TS,t-1),t,{side:'e'})}
@@ -732,8 +747,22 @@ setInterval(()=>{if(!EDGEK||!EDGE||!DUR)return;const w=FB-FA,st=Math.max(3,w*.06
   if(EDGE<0&&FA>0){FA=Math.max(0,FA-st);FB=FA+w}else if(EDGE>0&&FB<DUR){FB=Math.min(DUR,FB+st);FA=FB-w}else return;
   if(EDGEK==='m'){const len=TE-TS;const ns=EDGE<0?Math.max(0,FA):Math.max(0,Math.min(DUR-len,FB-len));setTrim(ns,ns+len,{keep:true,refine:false,seek:'s'})}else if(EDGEK==='s')setTrim(EDGE<0?FA:Math.min(FB,TE-1),TE,{side:'s',refine:false,seek:'s',fix:true});else setTrim(TS,EDGE>0?FB:Math.max(FA,TS+1),{side:'e',refine:false,seek:'e',fix:true});
   $('#fineL').textContent=tshort(FA)+' – '+tshort(FB)},90);
-const DURS=[15,30,45,60,90,120,180];
-function renderDurs(){const M=MAXLEN(),len=TE-TS;$('#durs').innerHTML=DURS.filter(d=>d<=M&&d<=DUR).map(d=>`<button type="button" data-d="${d}" class="${Math.round(len)===d?'on':''}">${d<60?d+'s':d%60?Math.floor(d/60)+'min'+(d%60):(d/60)+' min'}</button>`).join('')}
+const DURS=[10,30,65];
+function renderDurs(){const M=MAXLEN(),len=Math.round(TE-TS);$('#durs').innerHTML=DURS.filter(d=>d<=M&&d<=DUR).map(d=>`<button type="button" data-d="${d}" class="${len===d?'on':''}">${d===65?'1min05<small>monetiza no TikTok</small>':d+'s'}</button>`).join('');
+  $('#durHint').textContent=len>60?`Corte de ${tdur(len)}: passa de 1 minuto, o mínimo pra monetizar no TikTok. Usa 2 cortes.`:`Corte de ${tdur(len)}: usa 1 corte. Pra monetizar no TikTok, escolha 1min05.`;syncWheel()}
+const tdur=s=>s<60?s+'s':Math.floor(s/60)+'min'+(s%60?String(s%60).padStart(2,'0'):'');
+/* roleta estilo alarme do iPhone: horas, minutos e segundos do início */
+let WH=0,WSKIP=0;
+function buildWheel(){const hasH=DUR>=3600;document.querySelectorAll('#wheel [data-u="h"]').forEach(e=>e.style.display=hasH?'':'none');
+  const mk=(n)=>'<div class="pad"></div>'+Array.from({length:n},(_,i)=>`<div>${String(i).padStart(2,'0')}</div>`).join('')+'<div class="pad"></div>';
+  const cols=$('#wheel').querySelectorAll('.wcol');cols[0].innerHTML=mk(Math.floor(DUR/3600)+1);cols[1].innerHTML=mk(hasH?60:Math.min(60,Math.floor(DUR/60)+1));cols[2].innerHTML=mk(60);
+  cols.forEach(c=>{c.onscroll=()=>{if(WSKIP)return;clearTimeout(c._t);c._t=setTimeout(readWheel,120);mark1(c)}});$('#durL2').textContent='vídeo de '+tshort(DUR);syncWheel(true)}
+function mark1(c){const i=Math.round(c.scrollTop/52);[...c.children].forEach((d,k)=>d.classList.toggle('on',k===i+1))}
+function readWheel(){const v=[...$('#wheel').querySelectorAll('.wcol')].map(c=>Math.round(c.scrollTop/52));let t=v[0]*3600+v[1]*60+v[2];
+  const len=TE-TS;t=Math.max(0,Math.min(t,DUR-len));setTrim(t,t+len,{keep:true,seek:'s',fromWheel:true})}
+function syncWheel(force){if(!$('#wheel')||!DUR)return;const cols=$('#wheel').querySelectorAll('.wcol');if(!cols[2].children.length)return;
+  const v=[Math.floor(TS/3600),Math.floor(TS%3600/60),Math.floor(TS%60)];if(DUR<3600)v[1]=Math.floor(TS/60);
+  WSKIP++;cols.forEach((c,i)=>{const y=v[i]*52;if(force||Math.abs(c.scrollTop-y)>2)c.scrollTop=y;mark1(c)});setTimeout(()=>WSKIP--,180)}
 $('#durs').onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;const d=+b.dataset.d;let s=TS,e2=TS+d;if(e2>DUR){e2=DUR;s=Math.max(0,DUR-d)}setTrim(s,e2,{side:'s'})};
 let _pv=null;function previewSel(){clearInterval(_pv);seekTo(TS);setTimeout(()=>{try{if(src.kind==='file'){const p=$('#player');p.currentTime=TS;p.play()}else if(ytp&&ytReady){ytp.seekTo(TS,true);ytp.playVideo()}}catch{}
   _pv=setInterval(()=>{const t=curTime();if(t!=null&&t>=TE){clearInterval(_pv);try{src.kind==='file'?$('#player').pause():ytp.pauseVideo()}catch{}}},250)},120)}

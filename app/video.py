@@ -1,5 +1,5 @@
 """Pipeline de corte: baixa o trecho, transcreve, monta 9:16 com template GTA e legenda."""
-import os, json, uuid, time, shutil, subprocess, threading, logging, traceback
+import os, re, json, uuid, time, shutil, subprocess, threading, logging, traceback
 from pathlib import Path
 import httpx
 
@@ -302,9 +302,27 @@ def _cookies_file():
     if txt:
         f = SCRATCH / "yt_cookies.txt"
         if not f.exists():
-            f.write_text(txt.replace("\\n", "\n").replace("\\t", "\t"))
+            f.write_text(_fix_cookies(txt))
         return f
     return None
+
+
+_CK_REC = re.compile(r"((?:#HttpOnly_)?(?:\.|www\.|m\.|music\.|accounts\.)?(?:youtube\.com|google\.com(?:\.br)?|youtu\.be))\t(TRUE|FALSE)\t([^\t]*)\t(TRUE|FALSE)\t(\d+)\t([^\t]+)\t")
+
+
+def _fix_cookies(txt: str) -> str:
+    """Remonta o cookies.txt (formato Netscape). Campos de uma linha só (como o do Railway) engolem as quebras de linha."""
+    txt = txt.replace("\\n", "\n").replace("\\t", "\t").replace("\r", "")
+    ms = list(_CK_REC.finditer(txt))
+    if not ms:
+        return txt
+    lines = ["# Netscape HTTP Cookie File"]
+    for i, m in enumerate(ms):
+        end = ms[i + 1].start() if i + 1 < len(ms) else len(txt)
+        val = txt[m.end():end].split("\n")[0].strip()
+        lines.append("\t".join(m.groups()) + "\t" + val)
+    log.info("Cookies do YouTube carregados: %d", len(lines) - 1)
+    return "\n".join(lines) + "\n"
 
 
 def friendly_error(msg: str) -> str:

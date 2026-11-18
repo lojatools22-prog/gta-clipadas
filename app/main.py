@@ -498,7 +498,9 @@ def _start_for(u, raw: dict, upload: Path | None = None, cam: Path | None = None
             if ttl:
                 o["title"] = ttl
             try:
-                col = accounts.charge(accounts._user(u["id"]))
+                # corte manual com mais de 1 minuto (o que monetiza no TikTok) usa 2 cortes
+                cost = 2 if (not raw.get("analysis") and a is not None and b is not None and b - a > LONG_CLIP) else 1
+                col = accounts.charge(accounts._user(u["id"]), cost)
             except accounts.AuthError as e:
                 if not out:
                     raise HTTPException(402, str(e))
@@ -529,7 +531,8 @@ def _refund_failed(jid: str):
 
 video.ON_FAIL = _refund_failed
 
-AUTO_MAX = int(os.getenv("AUTO_CLIPS", "10"))  # quantos cortes a IA gera sozinha por vídeo
+AUTO_MAX = int(os.getenv("AUTO_CLIPS", "10"))
+LONG_CLIP = 60  # acima disso o corte manual custa 2
 
 
 def _auto_cut(aid: str):
@@ -650,7 +653,7 @@ _boot_asaas()
 def _job_state(jid: str) -> dict:
     j = video.JOBS.get(jid)
     if j:
-        out = {k: v for k, v in video.public(j).items() if k in ("status", "progress", "video", "thumb", "cover")
+        out = {k: v for k, v in video.public(j).items() if k in ("status", "progress", "video", "thumb", "cover", "hint")
                or (k == "words" and j.get("status") == "revisar")}
         if j.get("status") == "na fila":
             out["position"] = video.queue_position(jid)
