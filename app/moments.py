@@ -415,7 +415,7 @@ def _work(aid: str):
         for m in moments:  # live no ar: os tempos da análise contam do começo do trecho baixado
             m["start"] += round(off); m["end"] += round(off)
         if not moments:
-            raise RuntimeError("Não achamos momentos fortes nesse vídeo. Tente outro ou escolha o trecho na mão.")
+            raise RuntimeError("Não achamos momentos fortes nesse vídeo (pode ter pouca fala ou som). Tente outro vídeo, envie o arquivo ou escolha o trecho na mão.")
         if st.get("auto") and ON_READY:
             _set(aid, status="cortando", progress=99, moments=moments)
             try:
@@ -432,7 +432,7 @@ def _work(aid: str):
         if "código" in msg or "Traceback" in msg or len(msg) > 200:
             log.error("Momentos %s falhou: %s", aid, msg[-800:])
             fe = video.friendly_error(msg)
-            msg = fe if not fe.startswith("Algo deu errado") else "Não conseguimos analisar esse vídeo. Confira se o link é público ou tente subir o arquivo."
+            msg = fe
         _set(aid, status="erro", error=msg)
 
 

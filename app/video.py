@@ -330,19 +330,19 @@ def friendly_error(msg: str) -> str:
     if "not a bot" in m or "429" in m or "Sign in" in m:
         return "O YouTube bloqueou o download desse vídeo agora. Tente de novo em alguns minutos, use um link da Twitch ou Kick, ou envie o arquivo do vídeo."
     if "Private video" in m or "private" in m.lower():
-        return "Esse vídeo é privado. Use um vídeo público."
+        return "Esse vídeo é privado, então não dá pra baixar pelo link. Grave a tela do trecho ou baixe o vídeo e envie o arquivo aqui."
     if "claimed content" in m or "in your country" in m:
         return ("Essa live tem música com direitos autorais e o YouTube bloqueia o download dela. Solução: grave a tela do trecho "
                 "que você quer (ou baixe o vídeo) e envie o arquivo aqui. A IA corta igualzinho.")
     if "is not available" in m or "unavailable" in m.lower() or "404" in m:
-        return "Esse vídeo não está disponível. Confira o link."
+        return "Esse vídeo não está disponível pelo link (pode ter sido removido ou ter restrição). Grave a tela do trecho ou baixe o vídeo e envie o arquivo aqui."
     if "live event will begin" in m:
         return "Essa live ainda não começou."
     if "is_live" in m or "live-from-start" in m or "This live event" in m:
         return "Não deu pra pegar esse trecho da live ao vivo. Tente um trecho mais recente (o YouTube guarda só as últimas horas) ou use o VOD quando acabar."
     if "Disco" in m or "No space" in m:
         return "O servidor está cheio agora. Tente de novo em alguns minutos."
-    return "Algo deu errado ao montar o vídeo. Tente de novo; se repetir, tente outro trecho."
+    return "Não conseguimos baixar ou montar esse vídeo pelo link. O jeito mais garantido: baixe o vídeo (ou grave a tela do trecho) e envie o arquivo aqui."
 
 
 def _geo_proxy(px):
