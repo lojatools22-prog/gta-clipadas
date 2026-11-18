@@ -37,7 +37,8 @@ def get(fid):
 
 
 def public(st):
-    return {k: st.get(k) for k in ("id", "url", "title", "status", "minutes", "started", "until", "blocks", "videos", "error", "note")}
+    return {k: st.get(k) for k in ("id", "url", "title", "status", "minutes", "started", "until", "blocks", "videos", "error", "note",
+                                    "rec_since", "rec_secs")}
 
 
 def list_for(user_id, limit=10):
@@ -126,14 +127,14 @@ def _run(fid, left_fn):
         if not info.get("live"):
             raise RuntimeError("Esse link não está ao vivo agora. Pra vídeo que já acabou, use o corte normal.")
         _set(fid, title=info.get("title") or "Live", status="gravando")
-        n = 0
+        n = len(get(fid).get("videos") or [])
         while time.time() < get(fid)["until"]:
             if left_fn(st["user_id"]) <= 0:
                 _set(fid, note="Seus cortes acabaram, então parei de acompanhar a live.")
                 break
             secs = int(min(CHUNK, max(60, get(fid)["until"] - time.time())))
             t0 = time.strftime("%H:%M", time.localtime(time.time() - 3 * 3600))  # horário de Brasília
-            _set(fid, status="gravando")
+            _set(fid, status="gravando", rec_since=time.time(), rec_secs=secs)
             try:
                 blk = _record(st["url"], secs, video.SCRATCH / "aovivo" / fid / f"b{n}")
             except Exception as e:
@@ -236,4 +237,32 @@ def demo():
         log.error("Demo ao vivo FALHOU: %s", str(e)[-800:])
 
 
+LEFT_FN = None  # main.py liga: quantos cortes o usuário ainda tem
+
+
+def _resume():
+    """O servidor reiniciou (atualização): retoma as lives que ainda estavam sendo acompanhadas. Se o horário já passou,
+    fecha com um aviso claro em vez de ficar "gravando" pra sempre."""
+    time.sleep(45)
+    for f in DIR.glob("*.json"):
+        try:
+            st = json.loads(f.read_text())
+        except Exception:
+            continue
+        if st.get("status") not in ("na fila", "gravando", "analisando"):
+            continue
+        fid = st["id"]
+        STATE[fid] = st
+        if st.get("until", 0) > time.time() + 120 and LEFT_FN:
+            log.info("Ao vivo %s: retomando depois do reinício", fid)
+            _set(fid, note="O servidor foi atualizado e a gravação continuou de onde estava.")
+            threading.Thread(target=_run, args=(fid, LEFT_FN), daemon=True).start()
+        elif st.get("videos"):
+            _set(fid, status="pronto", note="Acompanhamento terminado.")
+        else:
+            _set(fid, status="erro", error="A gravação foi interrompida porque o servidor reiniciou antes do primeiro bloco ficar pronto. "
+                                           "Isso não gastou seus cortes. Comece de novo pela live.")
+
+
+threading.Thread(target=_resume, daemon=True).start()
 threading.Thread(target=lambda: (time.sleep(90), demo()), daemon=True).start()

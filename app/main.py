@@ -598,6 +598,7 @@ def _test_job(jid):
 
 
 video.TEST_JOB = _test_job
+livefollow.LEFT_FN = lambda uid: accounts.public(accounts._user(uid))["left"]
 
 
 @app.get("/api/demo-aovivo.mp4")
