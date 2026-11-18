@@ -298,20 +298,21 @@ document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>view(b.dataset.g
 function home(){view('home')}
 function step(n){view('make');[1,2,3].forEach(i=>$('#s'+i).hidden=i!==n);document.querySelectorAll('.steps i').forEach((e,i)=>e.classList.toggle('on',i<n));if(n===2)renderTpls();if(n===3)renderCaps();scrollTo(0,0)}
 
-function toggleLink(){$('#linkBox').hidden=!$('#linkBox').hidden;if(!$('#linkBox').hidden)$('#url').focus()}
+function needAcc(fn,msg){if(ME)return false;openAuth('signup',msg||('Crie sua conta grátis pra fazer seu corte. Você ganha '+(STATUS.free_clips||3)+' cortes grátis.'),fn);return true}
+function toggleLink(){if(needAcc(()=>{$('#linkBox').hidden=false;$('#url').focus()}))return;$('#linkBox').hidden=!$('#linkBox').hidden;if(!$('#linkBox').hidden)$('#url').focus()}
 const MAXLEN=()=>STATUS.max_len||180;
 function secs(v){if(!v)return null;return String(v).split(':').reduce((a,b)=>a*60+(+b||0),0)}
 function updLen(){const a=secs($('#start').value),b=secs($('#end').value),el=$('#lenInfo');if(a==null||b==null){el.textContent=`Marque o início e o fim do corte (até ${MAXLEN()} segundos).`;return}
   const d=b-a;el.textContent=d<=0?'O fim precisa ser depois do início.':d>MAXLEN()?`Corte de ${d}s: o máximo é ${MAXLEN()}s.`:`Corte de ${d} segundos ✓`}
 function mark(k){const t=Math.floor($('#player').currentTime);$('#'+k).value=hms(t);if(k==='start'&&!$('#end').value)$('#end').value=hms(Math.min(t+45,Math.floor($('#player').duration||t+45)));updLen()}
 ['#start','#end'].forEach(id=>document.addEventListener('input',e=>{if(e.target.matches(id))updLen()}));
-function startFromLink(){const u=$('#url').value.trim();if(!u)return toast('Cole o link do momento');if(!/^https?:\/\//.test(u))return toast('Esse link não parece certo');src={kind:'link',url:u};$('#srcLabel').textContent='Link: '+u;$('#playerBox').hidden=true;$('#blankHint').hidden=false;step(1)}
-function pickFile(){$('#file').click()}
+function startFromLink(){if(needAcc(startFromLink))return;const u=$('#url').value.trim();if(!u)return toast('Cole o link do momento');if(!/^https?:\/\//.test(u))return toast('Esse link não parece certo');src={kind:'link',url:u};$('#srcLabel').textContent='Link: '+u;$('#playerBox').hidden=true;$('#blankHint').hidden=false;step(1)}
+function pickFile(){if(needAcc(()=>sheet(`<h2 class="disp" style="margin:0 0 6px">CONTA PRONTA ✅</h2><p class="lead">Agora é só escolher o vídeo da live ou do clipe.</p><button class="go" onclick="closeSheet();$('#file').click()">⬆️ Escolher vídeo</button>`)))return;$('#file').click()}
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const mb=f.size/1048576,max=(ME&&ME.max_mb)||1024;
   if(mb>max){e.target.value='';$('#linkBox').hidden=false;$('#url').focus();return toast(`Esse vídeo tem ${(mb/1024).toFixed(1)} GB e o limite do seu plano é ${Math.round(max/1024)} GB${max<3072?' (3 GB no Pro)':''}. Cole o link da live aqui embaixo e marque o tempo do corte.`)}
   src={kind:'file',file:f};$('#srcLabel').textContent='';$('#blankHint').hidden=true;const pl=$('#player');try{URL.revokeObjectURL(pl.src)}catch{}pl.src=URL.createObjectURL(f);$('#playerBox').hidden=false;
   $('#start').value='';$('#end').value='';pl.onloadedmetadata=()=>{if(pl.duration<=MAXLEN()){$('#start').value=hms(0);$('#end').value=hms(Math.floor(pl.duration))}updLen()};step(1)};
-function useMoment(o){src={kind:'link',url:o.url};$('#playerBox').hidden=true;$('#blankHint').hidden=false;$('#url').value=o.url;$('#srcLabel').textContent='Link: '+o.url;$('#start').value=o.start!=null?hms(o.start):'';$('#end').value=o.end!=null?hms(o.end):'';if(o.title)$('#title').value=o.title.slice(0,80).toUpperCase();$('#sheet').classList.remove('on');step(1)}
+function useMoment(o){if(needAcc(()=>useMoment(o)))return;src={kind:'link',url:o.url};$('#playerBox').hidden=true;$('#blankHint').hidden=false;$('#url').value=o.url;$('#srcLabel').textContent='Link: '+o.url;$('#start').value=o.start!=null?hms(o.start):'';$('#end').value=o.end!=null?hms(o.end):'';if(o.title)$('#title').value=o.title.slice(0,80).toUpperCase();$('#sheet').classList.remove('on');step(1)}
 
 let SEGS=[];
 function addSeg(){if(!(ME&&ME.batch))return locked(2);const a=$('#start').value.trim(),b=$('#end').value.trim();if(!a||!b)return toast('Marque início e fim deste trecho primeiro');SEGS.push([a,b]);$('#start').value='';$('#end').value='';renderSegs();updLen&&updLen()}
@@ -357,7 +358,7 @@ async function loadVirais(){const el=$('#vlist');el.innerHTML='<p class="lead">C
   const d=await api('/api/clips?hours='+vmode);el.innerHTML=d.length?d.map(c=>`<button class="vc" onclick='useMoment(${JSON.stringify({url:c.url,title:c.title})})'><div class="th" style="background-image:url('${esc(c.thumb)}')"><i>👁 ${fmt(c.views)} · ${Math.round(c.duration)}s</i></div><div class="tx"><b>${esc(c.title)}</b>${esc(c.creator)}</div></button>`).join(''):'<p class="lead">Nada por aqui ainda.</p>'}
   catch(e){el.innerHTML=`<p class="lead">${esc(e.message)}</p>`}}
 $('#vtabs').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;vmode=b.dataset.v;document.querySelectorAll('#vtabs .tab').forEach(x=>x.classList.toggle('on',x===b));loadVirais()};
-async function openStreamer(login,name){$('#sheet').classList.add('on');const s=$('#sheetIn');s.innerHTML=`<h2 class="disp" style="margin:0 0 6px">${esc(name)}</h2><p class="lead">Carregando…</p>`;
+async function openStreamer(login,name){if(needAcc(()=>openStreamer(login,name)))return;$('#sheet').classList.add('on');const s=$('#sheetIn');s.innerHTML=`<h2 class="disp" style="margin:0 0 6px">${esc(name)}</h2><p class="lead">Carregando…</p>`;
   try{const [v,c]=await Promise.all([api('/api/vods/'+login),api('/api/clips?hours=168&login='+login)]);
   const items=[...c.slice(0,5).map(x=>({img:x.thumb,t:x.title,sub:fmt(x.views)+' views',o:{url:x.url,title:x.title}})),...v.slice(0,5).map(x=>({img:x.thumb,t:x.title,sub:'Live gravada · '+x.duration,o:{url:x.url}}))];
   s.innerHTML=`<h2 class="disp" style="margin:0 0 6px">${esc(name)}</h2><p class="lead">Escolha o que cortar:</p>`+(items.length?items.map(i=>`<div class="li"><img src="${esc(i.img)}" alt=""><div><b>${esc(i.t)}</b><br><span style="color:var(--mute)">${esc(i.sub)}</span></div><button class="sm" onclick='useMoment(${JSON.stringify(i.o)})'>Cortar</button></div>`).join(''):'<p class="lead">Nada disponível ainda.</p>')}
@@ -403,7 +404,7 @@ function openAuth(mode='signup',msg='',then){if(then!==undefined)afterAuth=then;
   sheet(`<h2 class="disp" style="margin:0 0 6px">${su?'CRIAR CONTA':'ENTRAR'}</h2><p class="lead">${esc(msg||(su?'Ganhe '+fc+' cortes grátis.':'Bem-vindo de volta!'))}</p>
   <form id="authF">${su?'<label class="field"><span>Nome</span><input id="aName" required maxlength="60" autocomplete="name"></label>':''}
   <label class="field"><span>E-mail</span><input id="aEmail" type="email" required autocomplete="email"></label>
-  ${su?'<label class="field"><span>Celular${STATUS.sms?' (vamos mandar um código por SMS)':''}</span><input id="aPhone" required inputmode="tel" maxlength="20" autocomplete="tel" placeholder="(11) 99999-9999"></label>':''}
+  ${su?'<label class="field"><span>Celular'+(STATUS.sms?' (vamos mandar um código por SMS)':'')+'</span><input id="aPhone" required inputmode="tel" maxlength="20" autocomplete="tel" placeholder="(11) 99999-9999"></label>':''}
   <label class="field"><span>Senha</span><input id="aPw" type="password" required minlength="6" autocomplete="${su?'new-password':'current-password'}" placeholder="${su?'Mínimo de 6 caracteres':''}"></label>
   ${su?'<label class="tg" style="font-size:13px;color:var(--mute)"><span>Li e aceito os <a href="/termos" target="_blank">termos</a> e a <a href="/privacidade" target="_blank">política de privacidade</a></span><input id="aOk" type="checkbox" required></label>':''}
   <button class="go" type="submit">${su?'Criar conta':'Entrar'}</button></form>
