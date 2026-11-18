@@ -33,7 +33,7 @@ def _end_of(groups, gi, i):
     return max(g[i]["start"] + 0.08, min(g[i]["end"] + 0.35, nxt))
 
 
-def build(words, duration, tpl, cap, color_key="auto", title="") -> str:
+def build(words, duration, tpl, cap, color_key="auto", title="", wm="") -> str:
     active = C[tpl["active"]] if color_key in ("auto", None, "") else C.get(color_key, C["amarelo"])
     shadow = C[tpl["shadow"]]
     tcolor, tshadow = C[tpl["title_color"]], C[tpl["title_shadow"]]
@@ -52,12 +52,15 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
 Style: Cap,{cap['font']},{cap['size']},&H00FFFFFF,&H000000FF,&H00000000,{shadow},0,0,0,0,100,100,0,0,1,7,6,5,70,70,0,1
 Style: Title,Bowlby One,{int(tpl['title_size'] * 1.12)},&H00FFFFFF,&H000000FF,{tbox},&H00000000,0,0,0,0,100,100,0,0,3,16,0,5,70,70,0,1
 Style: Card,Bowlby One,110,&H00FFFFFF,&H000000FF,&H00000000,&H00A81FFF,0,0,0,0,100,100,1,0,1,9,8,5,40,40,0,1
+Style: Wm,Anton,58,&H22FFFFFF,&H000000FF,&H00000000,&H66000000,1,0,0,0,100,100,1,0,1,3,2,9,40,40,48,1
 Style: Sub,Bowlby One,56,&H00FFFFFF,&H000000FF,&H00000000,&H00A81FFF,0,0,0,0,100,100,0,0,1,6,5,5,40,40,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     ev = []
+    if wm.strip():  # marca d'água em texto (@ do clipador), em cima à direita o vídeo todo
+        ev.append(f"Dialogue: 3,{ts(0)},{ts(duration)},Wm,,0,0,0,,{esc(wm.strip()[:30])}")
     if title.strip():
         txt = esc((tpl.get("title_prefix", "") + title).upper())
         ev.append(f"Dialogue: 2,{ts(0)},{ts(duration)},Title,,0,0,0,,{{\\pos({tx},{ty})\\fad(200,0)\\fax-0.10}}{txt}")

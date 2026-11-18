@@ -437,6 +437,7 @@ def _opts(d: dict, P: dict) -> dict:
         raise HTTPException(400, "Preencha início e fim, ou deixe os dois vazios")
     d["cam_size"] = min(max(float(d.get("cam_size") or 0.3), 0.15), 0.5)
     d["title"] = (d.get("title") or "")[:80]
+    d["wm_text"] = "".join(ch for ch in str(d.get("wm_text") or "") if ch.isalnum() or ch in "@._- ")[:30].strip()
     if d.get("template") not in templates.BY_ID:
         d["template"] = templates.TEMPLATES[0]["id"]
     if d.get("caption") not in templates.CAPTION_BY_ID:
@@ -535,7 +536,7 @@ AUTO_MAX = int(os.getenv("AUTO_CLIPS", "10"))
 LONG_CLIP = 60  # acima disso o corte manual custa 2
 
 
-FREE_SHOWCASE = [("capa-praia", "pesada-karaoke"), ("capa-cidade", "condensada-pop"), ("capa-estrada", "neon-quique")]
+FREE_SHOWCASE = [("capa-praia", "pesada-karaoke"), ("capa-cidade", "condensada-pop"), ("capa-estrada", "neon-quique")]  # o principal: jogo + arte, sem facecam
 
 
 def _auto_cut(aid: str):
@@ -804,7 +805,7 @@ _th.Thread(target=_upload_cleanup, daemon=True).start()
 
 @app.post("/api/jobs/upload")
 async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), analysis: str = Form(""), upload_id: str = Form(""), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
-                     template: str = Form("basico-legenda"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
+                     template: str = Form("capa-praia"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
                      corner: str = Form("auto"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
                      watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None), logo: bool = Form(True), review: bool = Form(False)):
     u = current_user(request)
@@ -859,7 +860,7 @@ def get_job(jid: str):
 
 @app.post("/api/moments")
 async def new_moments(request: Request, file: UploadFile | None = File(None), url: str = Form(""), upload_id: str = Form(""),
-                      auto: str = Form(""), template: str = Form("basico-legenda"), caption: str = Form("pesada-karaoke"),
+                      auto: str = Form(""), template: str = Form("capa-praia"), caption: str = Form("pesada-karaoke"),
                       caption_color: str = Form("auto"), captions: str = Form("true"), cover: str = Form("true"), n: int = Form(10),
                       logo: str = Form("true")):
     u = current_user(request)

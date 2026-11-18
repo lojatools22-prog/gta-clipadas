@@ -25,13 +25,16 @@ def _t(id, name, family, layout, overlays=(), title=(540, 608), caption=(540, 14
 TEMPLATES = []
 # ---- Básicos: corte limpo, só a legenda (sem arte por cima) ----
 TEMPLATES += [
+    _t("capa-praia", "Capa GTA: praia", "basico", {"kind": "gtacapa", "bg": "praia", "cam": False}, title=(540, 500), caption=(540, 1430), shadow="preto", title_shadow="rosa", pro=False),
+    _t("capa-cidade", "Capa GTA: cidade", "basico", {"kind": "gtacapa", "bg": "cidade", "cam": False}, title=(540, 500), caption=(540, 1430), shadow="preto", title_shadow="rosa", pro=False),
+    _t("capa-estrada", "Capa GTA: estrada", "basico", {"kind": "gtacapa", "bg": "estrada", "cam": False}, title=(540, 500), caption=(540, 1430), shadow="preto", title_shadow="rosa", pro=False),
+    _t("capa-cam-praia", "Capa GTA + facecam: praia", "basico", {"kind": "gtacapa", "bg": "praia"}, title=(540, 175), caption=(540, 1430), shadow="preto", title_shadow="rosa", pro=False),
+    _t("capa-cam-cidade", "Capa GTA + facecam: cidade", "basico", {"kind": "gtacapa", "bg": "cidade"}, title=(540, 175), caption=(540, 1430), shadow="preto", title_shadow="rosa", pro=False),
+    _t("capa-cam-estrada", "Capa GTA + facecam: estrada", "basico", {"kind": "gtacapa", "bg": "estrada"}, title=(540, 175), caption=(540, 1430), shadow="preto", title_shadow="rosa", pro=False),
     _t("basico-legenda", "Só legenda", "basico", {"kind": "crop"}, title=(540, 300), caption=(540, 1400), shadow="preto", title_shadow="preto", pro=False),
     _t("basico-desfocado", "Fundo desfocado", "basico", {"kind": "blur_plain"}, title=(540, 470), caption=(540, 1440), shadow="preto", title_shadow="preto", pro=False),
     _t("basico-facecam", "Facecam + jogo", "basico", {"kind": "cam_top"}, title=(540, 608), caption=(540, 1400), shadow="preto", title_shadow="preto", pro=False),
     _t("basico-faixas", "Faixas pretas", "basico", {"kind": "letterbox"}, title=(540, 560), caption=(540, 1390), shadow="preto", title_shadow="preto", pro=False),
-    _t("capa-praia", "Capa GTA: praia", "basico", {"kind": "gtacapa", "bg": "praia"}, title=(540, 175), caption=(540, 1430), shadow="preto", title_shadow="rosa", pro=False),
-    _t("capa-cidade", "Capa GTA: cidade", "basico", {"kind": "gtacapa", "bg": "cidade"}, title=(540, 175), caption=(540, 1430), shadow="preto", title_shadow="rosa", pro=False),
-    _t("capa-estrada", "Capa GTA: estrada", "basico", {"kind": "gtacapa", "bg": "estrada"}, title=(540, 175), caption=(540, 1430), shadow="preto", title_shadow="rosa", pro=False),
     _t("basico-fundo-orla", "Fundo GTA: orla", "basico", {"kind": "gtabg", "bg": "aereo"}, ["gtabg_aereo"], title=(540, 470), caption=(540, 1390), shadow="preto", title_shadow="preto", pro=False),
     _t("basico-fundo-cidade", "Fundo GTA: cidade", "basico", {"kind": "gtabg", "bg": "skyline"}, ["gtabg_skyline"], title=(540, 470), caption=(540, 1390), shadow="preto", title_shadow="preto", pro=False),
     _t("basico-fundo-asfalto", "Fundo GTA: asfalto", "basico", {"kind": "gtabg", "bg": "asfalto"}, ["gtabg_asfalto"], title=(540, 470), caption=(540, 1390), shadow="preto", title_shadow="preto", pro=False),
@@ -92,7 +95,7 @@ TEMPLATES += [
     _t("retro-outdoor", "Outdoor", "retro", {"kind": "inset", "rect": [80, 560, 1000, 1078], "bg": "none"}, ["outdoor"], title=(540, 330), caption=(540, 1300), title_size=64),
     _t("retro-revista", "Capa de revista", "retro", {"kind": "crop"}, ["revista"], title=(540, 1520), caption=(540, 1100), title_size=70),
 ]
-assert len(TEMPLATES) == 52, len(TEMPLATES)
+assert len(TEMPLATES) == 55, len(TEMPLATES)
 # Níveis: 0 = grátis, 1 = Iniciante, 2 = Clipador/Pro/Passe
 TIER1_T = {"vice-cam-flutuante", "vice-sem-cam", "neon-roxo", "neon-verde", "procurado-3", "missao-falhou", "missao-nova", "celular-chamada", "retro-tv"}
 for t in TEMPLATES:
@@ -100,7 +103,7 @@ for t in TEMPLATES:
 LAYOUT_DESC = {"cam_top": "Facecam em cima, jogo embaixo", "cam_bottom": "Jogo em cima, facecam embaixo",
                "float": "Jogo em tela cheia, facecam no canto", "blur": "Vídeo inteiro, fundo desfocado",
                "blur_plain": "Vídeo inteiro, fundo desfocado", "split": "Tela dividida 50/50", "crop": "Tela cheia",
-               "moldura": "Vídeo com moldura", "inset": "Vídeo dentro de um objeto", "letterbox": "Vídeo inteiro, faixas pretas", "gtabg": "Vídeo inteiro numa janela neon", "gtacapa": "Arte estilo GTA, jogo de ponta a ponta e facecam em cima"}
+               "moldura": "Vídeo com moldura", "inset": "Vídeo dentro de um objeto", "letterbox": "Vídeo inteiro, faixas pretas", "gtabg": "Vídeo inteiro numa janela neon", "gtacapa": "Arte estilo GTA com o jogo de ponta a ponta"}
 FAMILY_FX = {"basico": "só legenda, sem efeitos", "fundo": "fundo de cidade estilo GTA", "vice": "arte de praia Vice City", "neon": "borda neon",
              "procurado": "estrelas de procurado", "missao": "cartela de missão", "celular": "dentro de um celular",
              "retro": "efeito retrô"}

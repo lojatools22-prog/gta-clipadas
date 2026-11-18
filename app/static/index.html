@@ -336,6 +336,7 @@ input,select,textarea{font-size:16px!important}
 .wcol div.on{color:#fff}.wcol div.pad{scroll-snap-align:none}
 .wsep{font:800 28px Inter,sans-serif;color:var(--dim)}
 .sig{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}.sig span{font-size:11px;font-weight:800;color:#ffb3e0;background:var(--pinkbg);border:1px solid rgba(255,31,168,.35);border-radius:999px;padding:3px 8px}
+.wmin{width:100%;background:var(--s2);border:1px solid var(--line2);border-radius:10px;color:#fff;padding:12px 14px;font:600 15px Inter,sans-serif}
 .durhint{font-size:13px;color:var(--mute);margin:-8px 0 14px;line-height:1.45}
 .durs button small{display:block;font-size:10px;font-weight:700;opacity:.8;margin-top:2px}
 .durs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
@@ -689,7 +690,7 @@ const fmt=n=>n>=1000?(n/1000).toFixed(n>=10000?0:1).replace('.',',')+' mil':Stri
 const hms=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return `${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`};
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._);t._=setTimeout(()=>t.style.display='none',3200)}
 const MEM={};const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return MEM[k]??d}},set(k,v){MEM[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
-let CAT=null,STATUS={},src={kind:'link'},sel={tpl:'basico-legenda',cap:'pesada-karaoke',color:'auto'},fam='basico',sub='todos',font='destaques';
+let CAT=null,STATUS={},src={kind:'link'},sel={tpl:'capa-praia',cap:'pesada-karaoke',color:'auto'},fam='basico',sub='todos',font='destaques';
 const FEAT_T=['vice-cam-cima','neon-rosa','missao-cumprida','procurado-3','celular-chat','retro-vhs','vice-sem-cam','retro-outdoor','celular-pix'];
 const FEAT_C=['pesada-karaoke','pesada-pop','neon-karaoke','neon-pop','condensada-karaoke','redonda-pop'];
 let ME=null,WIZ=false;const isPro=()=>!!(ME&&ME.pro);const myTier=()=>ME?ME.tier:0;const TIERN={1:'INICIANTE',2:'CLIPADOR'};
@@ -870,7 +871,7 @@ $('#go').onclick=()=>{if(!ME)return openAuth('signup','Crie sua conta grátis pr
 async function generate(){const go=$('#go');go.disabled=true;go.textContent='Enviando…';
   GEN={ids:[],file:src.kind==='file'&&!(AN&&AN.status==='pronto'&&SELM.size>0),link:src.kind!=='file',up:0,phase:'send',tpl:sel.tpl,st:{}};view('gen');
   const segs=[...SEGS];if($('#start').value.trim()&&$('#end').value.trim()&&segs.length)segs.push([$('#start').value.trim(),$('#end').value.trim()]);
-  const o={start:$('#start').value.trim(),end:$('#end').value.trim(),segments:segs.length>1?JSON.stringify(segs):'',template:sel.tpl,caption:sel.cap,caption_color:sel.color,corner:$('#corner').value,cam_size:$('#cam_size').value/100,title:$('#title').value,captions:$('#captions').checked,cover:$('#cover').checked,watermark:false,logo:$('#logo').checked,review:$('#review').checked};
+  const o={start:$('#start').value.trim(),end:$('#end').value.trim(),segments:segs.length>1?JSON.stringify(segs):'',template:sel.tpl,caption:sel.cap,caption_color:sel.color,wm_text:(PREFS().wm||''),corner:$('#corner').value,cam_size:$('#cam_size').value/100,title:$('#title').value,captions:$('#captions').checked,cover:$('#cover').checked,watermark:false,logo:$('#logo').checked,review:$('#review').checked};
   if(CAMF)o.react_pos=reactPos;
   const useAI=AN&&AN.status==='pronto'&&SELM.size>0;
   if(useAI){o.analysis=AN.id;o.segments=JSON.stringify(aiSegs());o.start='';o.end='';o.title=''}
@@ -892,7 +893,7 @@ function goLink(){if(needAcc(goLink))return;const u=$('#url').value.trim();if(!u
   autoUpsell(()=>startFromLink())}
 function autoUpsell(manual){sheet(`<h2 class="disp" style="margin:0 0 6px">Quer que a IA faça os cortes?</h2><p class="lead">No <b style="color:#fff">Clipador</b> a IA assiste o vídeo inteiro e entrega os <b style="color:#fff">10 melhores cortes</b> prontos, com nota de viral. No seu plano você escolhe o trecho na mão.</p>
   <button class="go" onclick="closeSheet();WIZ=false;view('planos')">Ver o Clipador</button><button class="alt" onclick="closeSheet();(${manual.toString()})()">Escolher o trecho na mão</button>`)}
-function autoOpts(){const p=PREFS();return {template:p.tpl||'basico-legenda',caption:p.cap||'pesada-karaoke',caption_color:'auto',captions:p.captions!==false,cover:p.cover!==false,logo:p.logo!==false}}
+function autoOpts(){const p=PREFS();return {template:p.tpl||'capa-praia',caption:p.cap||'pesada-karaoke',wm_text:p.wm||'',caption_color:'auto',captions:p.captions!==false,cover:p.cover!==false,logo:p.logo!==false}}
 async function startAuto({url,file}){VID={id:null,status:'enviando',up:0,name:url||file.name,moments:[]};VSEL.clear();view('video');renderVid();
   try{const fd=new FormData();const o=autoOpts();for(const k in o)fd.append(k,o[k]);fd.append('auto','1');fd.append('n','10');
     if(file){const id=await upFile(file,p=>{VID.up=p;renderVid()});fd.append('upload_id',id)}else fd.append('url',url);
@@ -1157,12 +1158,14 @@ function slotAvail(){const t=CAT&&CAT.templates.find(x=>x.id===sel.tpl),ok=!!(t&
 function clearReact(){CAMF=null;$('#camFile').value='';$('#camBtn').textContent='Adicionar meu react';$('#reactOpts').hidden=true}
 /* conta */
 const PREFS=()=>LS.get('cgta_prefs',{captions:true,cover:true});
-function wmRender(){const el=$('#wmBox');if(!el)return;const can=!!(ME&&ME.own_logo),has=!!(ME&&ME.has_logo),on=PREFS().logo!==false;
+function wmRender(){const el=$('#wmBox');if(!el)return;const has=!!(ME&&ME.has_logo),on=PREFS().logo!==false,wm=PREFS().wm||'';
   if(has&&!ME.logo_url&&!wmRender.busy){wmRender.busy=1;api('/api/my/stats').then(d=>{ME.logo_url=d.logo;wmRender.busy=0;wmRender()}).catch(()=>{})}
-  const th=has&&ME.logo_url?`<img src="${ME.logo_url}" alt="">`:I(can?'image':'lock');
-  el.innerHTML=!can?`<div class="th">${th}</div><div class="tx"><b>Sua marca d'água</b><small>Coloque a sua logo em todos os cortes. Disponível no Clipador e no Pro.</small></div><button class="sm g" onclick="WIZ=true;view('planos')">Ver planos</button><input id="logo" type="checkbox" hidden>`
-   :!has?`<div class="th">${th}</div><div class="tx"><b>Sua marca d'água</b><small>Envie a sua logo (PNG sem fundo fica melhor). Ela entra pequena no canto de todos os cortes.</small></div><button class="sm" onclick="$('#logoFile').click()">Enviar logo</button><input id="logo" type="checkbox" hidden>`
-   :`<div class="th">${th}</div><div class="tx"><b>Sua marca d'água</b><small>Pequena, no canto do vídeo. <a href="#" onclick="$('#logoFile').click();return false" style="color:#fff">Trocar logo</a></small></div><input id="logo" type="checkbox" ${on?'checked':''} onchange="const p=PREFS();p.logo=this.checked;LS.set('cgta_prefs',p)" aria-label="Usar minha marca d'água">`}
+  const th=has&&ME.logo_url?`<img src="${ME.logo_url}" alt="">`:I('image');
+  el.innerHTML=`<div style="flex:1;min-width:0"><b style="display:block;margin-bottom:4px">Sua marca d'água</b><small style="color:var(--mute);display:block;margin-bottom:10px">Seu @ e a sua logo aparecem em cima, em todos os cortes. Assim ninguém rouba seu corte.</small>
+    <input class="wmin" id="wmText" maxlength="30" placeholder="@seuperfil" value="${esc(wm)}" oninput="const p=PREFS();p.wm=this.value.trim();LS.set('cgta_prefs',p)">
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px"><div class="th">${th}</div>
+    ${has?`<label style="display:flex;align-items:center;gap:8px;font-size:13px"><input id="logo" type="checkbox" ${on?'checked':''} onchange="const p=PREFS();p.logo=this.checked;LS.set('cgta_prefs',p)"> Usar minha logo</label><a href="#" onclick="$('#logoFile').click();return false" style="color:#fff;font-size:13px">Trocar</a>`
+      :`<button class="sm" type="button" onclick="if(needAcc(wmRender))return;$('#logoFile').click()">Enviar logo (opcional)</button><input id="logo" type="checkbox" hidden>`}</div></div>`}
 function applyPrefs(){const p=PREFS();$('#captions').checked=p.captions!==false;$('#cover').checked=p.cover!==false;if(p.tpl)sel.tpl=p.tpl;if(p.cap)sel.cap=p.cap}
 function setPref(k,v){const p=PREFS();p[k]=v;LS.set('cgta_prefs',p);applyPrefs();toast('Preferência salva')}
 async function renderConta(){const el=$('#conta');
@@ -1192,7 +1195,7 @@ async function renderConta(){const el=$('#conta');
 $('#logoFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const fd=new FormData();fd.append('file',f);try{const r=await api('/api/my/logo',{method:'POST',body:fd});if(ME){ME.has_logo=true;ME.logo_url=r.logo}const p=PREFS();p.logo=true;LS.set('cgta_prefs',p);wmRender();toast('Logo salva. Ela entra nos próximos cortes.');if(!$('#v-conta').hidden)renderConta()}catch(err){toast(err.message)}};
 async function delLogo(){try{await api('/api/my/logo',{method:'DELETE'});if(ME){ME.has_logo=false;ME.logo_url=null}wmRender();toast('Logo removida');renderConta()}catch(err){toast(err.message)}}
 
-const GAL=['basico-legenda','basico-desfocado','vice-cam-cima','neon-rosa','procurado-3','celular-chat'];
+const GAL=['capa-praia','capa-cidade','capa-estrada','capa-cam-praia','vice-cam-cima','neon-rosa','procurado-3','celular-chat'];
 function renderGal(){const el=$('#gal');if(!el)return;el.innerHTML=GAL.map(id=>{const t=CAT&&CAT.templates.find(x=>x.id===id);return `<button data-t="${id}"><img loading="lazy" src="/previews/tpl-${id}.jpg" alt=""><span>${esc(t?t.name:'')}</span></button>`}).join('')}
 $('#gal').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const t=CAT&&CAT.templates.find(x=>x.id===b.dataset.t);if(t&&t.tier<=myTier())sel.tpl=t.id;pickFile()};
 (()=>{const d=$('#drop');['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('over')}));['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('over')}));
@@ -1205,7 +1208,7 @@ $('#gal').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const t=
   renderGal();applyPrefs();
   if(TOK())api('/api/me').then(u=>{ME=u;refreshAcct();
     const vid=LS.get('cgta_vid',null);if(vid&&!VID){VID={id:vid,status:'carregando',moments:[]};watchVid()}
-    const pend=PEND();if(pend.length){GEN={boot:true,ids:pend,file:false,link:false,up:100,phase:'job',tpl:(PREFS().tpl||'basico-legenda'),st:{}};watchJobs()}}).catch(e=>{if(e.status===401)logoutLocal()});
+    const pend=PEND();if(pend.length){GEN={boot:true,ids:pend,file:false,link:false,up:100,phase:'job',tpl:(PREFS().tpl||'capa-praia'),st:{}};watchJobs()}}).catch(e=>{if(e.status===401)logoutLocal()});
   const pg=new URLSearchParams(location.search).get('pagamento');if(pg){history.replaceState(null,'',location.pathname);view('planos');
     toast(pg==='success'?'Pagamento aprovado! Seu plano já está liberado.':pg==='pending'?'Pagamento em análise. Assim que aprovar, o plano libera sozinho.':'O pagamento não foi concluído.');setTimeout(()=>TOK()&&api('/api/me').then(u=>{ME=u;refreshAcct()}),2500)}
   if(location.hash==='#planos')view('planos');

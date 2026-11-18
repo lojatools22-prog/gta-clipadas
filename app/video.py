@@ -201,7 +201,7 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
     if tpl["layout"]["kind"] == "gtacapa" and not opts.get("_portrait"):
         # capa estilo GTA: arte de fundo, jogo de ponta a ponta no meio com linhas neon e a facecam (se tiver) numa janela acima
         bgv = inp(Path(__file__).parent / "assets" / "gtacapa" / f"{tpl['layout']['bg']}.jpg")
-        face = (opts.get("_frame") or {}).get("cam")
+        face = (opts.get("_frame") or {}).get("cam") if tpl["layout"].get("cam", True) else None
         gy, gh = 640, 608
         vf = (f"{bgv}scale={W}:{H},setsar=1,loop=loop=-1:size=1:start=0,fps=30,setpts=N/30/TB[bgl];"
               f"[0:v]split=2[g0][c0];[g0]{_cover(W, gh)}[game];[bgl][game]overlay=0:{gy}:shortest=1[b1];")
@@ -235,8 +235,8 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
     if "crt" in tpl["fx"]:
         o = nxt(); vf += f";{cur}noise=alls=6:allf=t{o}"; cur = o
     if opts.get("_logo") and Path(opts["_logo"]).exists():  # logo do próprio clipador, pequena no canto
-        o = nxt(); vf += (f";{inp(Path(opts['_logo']))}format=rgba,scale=w='min(150,iw)':h='min(150,ih)':force_original_aspect_ratio=decrease,"
-                          f"colorchannelmixer=aa=0.9[lg];{cur}[lg]overlay=W-w-40:H-h-190{o}"); cur = o
+        o = nxt(); vf += (f";{inp(Path(opts['_logo']))}format=rgba,scale=w='min(130,iw)':h='min(130,ih)':force_original_aspect_ratio=decrease,"
+                          f"colorchannelmixer=aa=0.9[lg];{cur}[lg]overlay=36:36{o}"); cur = o
     if "gray_end" in tpl["fx"]:
         o = nxt(); vf += f";{cur}hue=s=0:enable='gte(t,{max(0, dur - 1.8):.2f})'{o}"; cur = o
     if cam_ref and not slot:
@@ -571,7 +571,8 @@ def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list
             log.error("Enquadramento automático falhou: %s", e)
     if opts.get("punch", True):
         opts["_punch"] = punch_points(src, trim, dur)
-    (job_dir / "subs.ass").write_text(captions.build(words, dur, tpl, cap, opts.get("caption_color", "auto"), opts.get("title", "")), encoding="utf-8")
+    (job_dir / "subs.ass").write_text(captions.build(words, dur, tpl, cap, opts.get("caption_color", "auto"), opts.get("title", ""),
+                                                     wm=opts.get("wm_text", "")), encoding="utf-8")
     vf, extra = build_filter(tpl, opts, dur, cam=cam)
     pre = ["-ss", f"{trim[0]:.2f}", "-t", f"{dur:.2f}"] if trim else []
     ins = pre + ["-i", str(src)]
