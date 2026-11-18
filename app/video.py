@@ -353,6 +353,9 @@ def friendly_error(msg: str) -> str:
         return "O YouTube bloqueou o download desse vídeo agora. Tente de novo em alguns minutos, use um link da Twitch ou Kick, ou envie o arquivo do vídeo."
     if "Private video" in m or "private" in m.lower():
         return "Esse vídeo é privado, então não dá pra baixar pelo link. Grave a tela do trecho ou baixe o vídeo e envie o arquivo aqui."
+    if "recording is not available" in m:
+        return ("Essa live não deixa voltar no tempo (o streamer desligou a opção de voltar a transmissão no YouTube). "
+                "Dá pra cortar quando ela acabar e virar vídeo, ou grave a tela do trecho e envie o arquivo aqui.")
     if "claimed content" in m or "in your country" in m:
         return ("Essa live tem música com direitos autorais e o YouTube bloqueia o download dela. Solução: grave a tela do trecho "
                 "que você quer (ou baixe o vídeo) e envie o arquivo aqui. A IA corta igualzinho.")
@@ -844,7 +847,7 @@ def _selftest():
 
 def _live_selftest():
     """Testa corte de live AO VIVO: baixa 20 s de um trecho que já passou. Só registra no log."""
-    url = os.getenv("YT_LIVE_TEST_URL", "https://www.youtube.com/watch?v=jfKfPfyJRdk")
+    url = os.getenv("YT_LIVE_TEST_URL", "")
     if not url:
         return
     d = Path("/tmp/autoteste_live")
