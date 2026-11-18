@@ -69,12 +69,18 @@ def _record(url: str, secs: int, dest: Path) -> Path:
         k = len(parts)
         need = int(secs - got)
         try:
-            video.ytdlp(["--no-playlist", "--no-live-from-start", "-f", "best[height<=720]/best",
+            video.ytdlp(["--no-playlist", "--no-live-from-start", "-f", "best[height<=720]/best", "--hls-use-mpegts",
                          "--downloader", "ffmpeg", "--downloader-args", f"ffmpeg:-t {need}",
-                         "--no-part", "-o", str(dest / f"p{k}.%(ext)s")], url, timeout=need + 300)
+                         "--no-part", "-o", str(dest / f"p{k}.%(ext)s")], url, timeout=need + 180)
         except Exception as e:
-            if not parts:
+            f = next(iter(sorted(dest.glob(f"p{k}.*"))), None)
+            if f and f.stat().st_size > 200_000 and "demorou" in str(e):
+                pass  # gravou devagar e foi interrompido: o arquivo (mpegts) já vale com o que tem
+            elif not parts:
                 raise
+            else:
+                log.warning("Ao vivo: gravação parou (%s), seguindo com o que tem", str(e)[-200:])
+                break
             log.warning("Ao vivo: gravação parou (%s), seguindo com o que tem", str(e)[-200:])
             break
         f = next(iter(sorted(dest.glob(f"p{k}.*"))), None)

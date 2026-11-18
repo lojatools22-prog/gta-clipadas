@@ -260,6 +260,11 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
 FF_THREADS = os.getenv("FFMPEG_THREADS", "2")
 
 
+def _redact(t: str) -> str:
+    """Tira usuário/senha de URLs (proxy) de mensagens que vão pro log ou pra tela."""
+    return re.sub(r"://[^/@\s:]+:[^/@\s]+@", "://***@", t or "")
+
+
 def _run(cmd, cwd=None, timeout=1800):
     if cmd and cmd[0] == "ffmpeg":
         # o container enxerga todos os núcleos da máquina física; sem limite o x264 abre dezenas de
@@ -269,9 +274,12 @@ def _run(cmd, cwd=None, timeout=1800):
         if "libx264" in cmd:
             i = cmd.index("libx264") + 1
             cmd = cmd[:i] + ["-threads", FF_THREADS, "-x264-params", f"threads={FF_THREADS}:lookahead_threads=1"] + cmd[i:]
-    p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    try:
+        p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"{cmd[0]} demorou mais de {timeout}s e foi interrompido") from None
     if p.returncode != 0:
-        err = (p.stderr or p.stdout or "")
+        err = _redact(p.stderr or p.stdout or "")
         key = [l for l in err.splitlines() if any(w in l.lower() for w in ("error", "invalid", "no such", "killed", "cannot", "failed", "warning"))]
         raise RuntimeError(f"código {p.returncode}: " + (" | ".join(key[-6:]) or err[-600:])[-1500:])
     return p.stdout
@@ -393,6 +401,17 @@ _BLOCK = ("not a bot", "Sign in", "403", "429", "Requested format is not availab
           "recording is not available", "live stream", "No video formats found")
 
 
+def _px(px, args) -> list:
+    """--proxy pro yt-dlp. Quando a gravação é feita pelo ffmpeg (live), o ffmpeg NÃO usa o proxy do yt-dlp em links https:
+    os pedaços da live saíam direto do servidor, com IP diferente do que pediu o link, e o YouTube travava. Passa o proxy pra ele também."""
+    if not px:
+        return []
+    out = ["--proxy", px]
+    if "--downloader" in args and "ffmpeg" in args:
+        out += ["--downloader-args", f"ffmpeg_i:-http_proxy {px}"]
+    return out
+
+
 def ytdlp(args: list, url: str, timeout: int):
     """Roda o yt-dlp. No YouTube tenta primeiro direto (de graça); se o YouTube barrar, passa pelo proxy residencial
     (YTDLP_PROXY, pago por GB) e tenta outros clientes do player. Depois de um bloqueio, vai direto pro proxy por 30 min."""
@@ -412,7 +431,7 @@ def ytdlp(args: list, url: str, timeout: int):
         plan += [(None, c) for c in YT_CLIENTS if c != _YT_OK["client"]]
     last = None
     for px, c in plan:
-        extra = (["--proxy", px] if px else []) + (["--extractor-args", f"youtube:player_client={c}"] if c else [])
+        extra = _px(px, args) + (["--extractor-args", f"youtube:player_client={c}"] if c else [])
         try:
             out = _run(base + extra + args + [url], timeout=timeout)
             _YT_OK["client"] = c
@@ -430,7 +449,7 @@ def ytdlp(args: list, url: str, timeout: int):
         # algumas lives não saem com a conta logada (cookies): tenta sem eles
         for px in ([_geo_proxy(os.getenv("YTDLP_PROXY"))] if os.getenv("YTDLP_PROXY") else []) + [None]:
             try:
-                out = _run(["yt-dlp"] + (["--proxy", px] if px else []) + args + [url], timeout=timeout)
+                out = _run(["yt-dlp"] + _px(px, args) + args + [url], timeout=timeout)
                 log.info("yt-dlp: live saiu sem cookies%s", " (proxy)" if px else "")
                 return out
             except Exception as e:
