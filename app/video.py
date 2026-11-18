@@ -709,6 +709,28 @@ def _selftest():
         log.info("Autoteste de legenda OK (%.1fs, %s)", time.time() - t0, "API" if (GROQ_KEY or OPENAI_KEY) else f"local {LOCAL_MODEL}")
     except Exception as e:
         log.error("Autoteste de corte FALHOU: %s", str(e)[-1500:])
+    _yt_selftest()
+
+
+def _yt_selftest():
+    """Teste ponta a ponta com um vídeo real do YouTube: baixa 12s, legenda e monta o corte. Só registra no log."""
+    url = os.getenv("YT_TEST_URL", "https://youtu.be/hhM2RLXk4kk")
+    if not url:
+        return
+    d = Path("/tmp/autoteste_yt")
+    shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True)
+    t0 = time.time()
+    try:
+        info = probe_url(url)
+        a = min(60.0, max(0.0, info["duration"] / 3))
+        src = download(url, a, a + 12, d)
+        words = transcribe(src, d, None)
+        render(src, d, {"template": "fundo-skyline", "caption": "pesada-karaoke", "title": "AUTOTESTE YOUTUBE"}, None, words)
+        log.info("Autoteste do YouTube OK: '%s' baixado, legendado (%d palavras) e cortado em %.0fs (%s bytes)",
+                 info["title"][:60], len(words), time.time() - t0, (d / "corte.mp4").stat().st_size)
+    except Exception as e:
+        log.error("Autoteste do YouTube FALHOU: %s", friendly_error(str(e)) + " | " + str(e)[-400:])
 
 
 try:
