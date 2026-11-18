@@ -939,6 +939,8 @@ def live_follow(b: FollowIn, request: Request):
     """Cortar AO VIVO: acompanha a live e vai entregando os melhores cortes a cada bloco."""
     u = current_user(request)
     P = accounts.plan_info(u)
+    if not P.get("live"):
+        raise HTTPException(402, "Cortar live ao vivo é dos planos Clipador e Pro (e dá pra testar nos 3 cortes grátis). Assine pra liberar.")
     if accounts.public(u)["left"] <= 0:
         raise HTTPException(402, "Seus cortes acabaram. Assine um plano pra cortar ao vivo.")
     if not b.url.startswith(ALLOWED):

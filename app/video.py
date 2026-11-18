@@ -461,6 +461,8 @@ def friendly_error(msg: str) -> str:
         return "Essa live ainda não começou."
     if "is_live" in m or "live-from-start" in m or "This live event" in m:
         return "Não deu pra pegar esse trecho da live ao vivo. Tente um trecho mais recente (o YouTube guarda só as últimas horas) ou use o VOD quando acabar."
+    if "demorou" in m:
+        return "A conexão com a live ficou lenta demais e a gravação parou. Tente de novo em alguns minutos ou envie o arquivo do vídeo."
     if "Disco" in m or "No space" in m:
         return "O servidor está cheio agora. Tente de novo em alguns minutos."
     return "Não conseguimos baixar ou montar esse vídeo pelo link. O jeito mais garantido: baixe o vídeo (ou grave a tela do trecho) e envie o arquivo aqui."

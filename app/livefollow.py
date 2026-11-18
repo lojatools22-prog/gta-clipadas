@@ -145,8 +145,14 @@ def _run(fid, left_fn):
                     _set(fid, note="A live acabou.")
                     break
                 log.error("Ao vivo %s: bloco %d falhou: %s", fid, n, str(e)[-400:])
+                fails = get(fid).get("fails", 0) + 1
+                why = video.friendly_error(str(e)) if ("código" in str(e) or "demorou" in str(e)) else str(e)
+                if fails >= 3:
+                    raise RuntimeError(f"Não conseguimos gravar essa live 3 vezes seguidas. Motivo: {why}")
+                _set(fid, fails=fails, note=f"Um trecho da live falhou ({why}). Tentando de novo…")
                 time.sleep(20)
                 continue
+            _set(fid, fails=0, note=None)
             n += 1
             auto = {**st["auto"], "n": int(st["auto"].get("n_bloco", 2))}
             m = moments.create(st["user_id"], upload=blk, auto=auto, name=f"{get(fid)['title'][:80]} · ao vivo {t0}")
@@ -158,7 +164,7 @@ def _run(fid, left_fn):
         _set(fid, status="pronto")
     except Exception as e:
         log.error("Ao vivo %s falhou: %s", fid, str(e)[-600:])
-        _set(fid, status="erro", error=video.friendly_error(str(e)) if "código" in str(e) else str(e))
+        _set(fid, status="erro", error=video.friendly_error(str(e)) if ("código" in str(e) or "demorou" in str(e)) else str(e))
     finally:
         shutil.rmtree(video.SCRATCH / "aovivo" / fid, ignore_errors=True)
 

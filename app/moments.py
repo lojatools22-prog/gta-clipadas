@@ -433,7 +433,7 @@ def _work(aid: str):
         log.info("Momentos %s: %s achados em %.0f min de vídeo", aid, len(moments), dur / 60)
     except Exception as e:
         msg = str(e)
-        if "código" in msg or "Traceback" in msg or len(msg) > 200:
+        if "código" in msg or "Traceback" in msg or "demorou" in msg or len(msg) > 200:
             log.error("Momentos %s falhou: %s", aid, msg[-800:])
             fe = video.friendly_error(msg)
             msg = fe
