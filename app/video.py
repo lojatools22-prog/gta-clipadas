@@ -228,6 +228,13 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
         o = nxt()
         vf += (f";{cam_ref}{_cover(380, 380)},pad=392:392:6:6:color=0xff1fa8[rc];"
                f"{cur}[rc]overlay={W - 392 - 36}:{150}:eof_action=repeat{o}"); cur = o
+    if opts.get("_punch"):  # zoom rápido + tremida nos picos de reação (grito, risada, explosão)
+        z = "+".join(f"0.11*exp(-pow((t-{p:.2f})/0.22,2))" for p in opts["_punch"])
+        sh = "+".join(f"14*sin(t*55)*exp(-pow((t-{p:.2f})/0.18,2))" for p in opts["_punch"])
+        o = nxt()
+        vf += (f";{cur}scale=w='trunc({W}*(1+{z})/2)*2':h='trunc({H}*(1+{z})/2)*2':eval=frame,"
+               f"crop={W}:{H}:x='(iw-{W})/2+({sh})':y='(ih-{H})/2'{o}")
+        cur = o
     if with_text:
         vf += f";{cur}ass=subs.ass:fontsdir={FONTS}[v]"
     else:
@@ -479,6 +486,62 @@ def transcribe(src: Path, job_dir: Path, trim: tuple | None = None) -> list[dict
     return _local_words(audio)
 
 
+def _silences(src: Path, a: float, d: float, noise="-33dB", mind=0.6):
+    out = subprocess.run(["ffmpeg", "-hide_banner", "-ss", f"{a:.2f}", "-t", f"{d:.2f}", "-i", str(src), "-vn",
+                          "-af", f"silencedetect=noise={noise}:d={mind}", "-f", "null", "-"], capture_output=True, text=True, timeout=300).stderr
+    st = [float(x) for x in re.findall(r"silence_start: ([\d.]+)", out)]
+    en = [float(x) for x in re.findall(r"silence_end: ([\d.]+)", out)]
+    return list(zip(st, en + [d] * (len(st) - len(en))))
+
+
+def tighten(src: Path, trim, job_dir: Path):
+    """Corte seco nos silêncios (pausas > 0,6 s viram 0,15 s): deixa o corte com ritmo de edição feita à mão."""
+    a = trim[0] if trim else 0.0
+    d = (trim[1] - trim[0]) if trim else probe_duration(src)
+    if not has_audio(src):
+        return src, trim
+    sil = [(max(0, s0), min(d, s1)) for s0, s1 in _silences(src, a, d) if s1 - s0 > 0.6]
+    cut = sum(s1 - s0 - 0.15 for s0, s1 in sil)
+    if cut < 0.8 or cut > d * 0.5:  # quase nada a cortar, ou o vídeo é quase todo silêncio (não mexe)
+        return src, trim
+    keep, t = [], 0.0
+    for s0, s1 in sil:
+        keep.append((t, s0 + 0.08)); t = s1 - 0.07
+    keep.append((t, d))
+    keep = [(x, y) for x, y in keep if y - x > 0.05]
+    sel = "+".join(f"between(t,{x:.3f},{y:.3f})" for x, y in keep)
+    out = job_dir / "tight.mp4"
+    _run(["ffmpeg", "-y", "-ss", f"{a:.2f}", "-t", f"{d:.2f}", "-i", str(src), "-filter_complex",
+          f"[0:v]select='{sel}',setpts=N/FRAME_RATE/TB[v];[0:a]aselect='{sel}',asetpts=N/SR/TB[a]",
+          "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-preset", "veryfast", "-crf", "17", "-c:a", "aac", "-b:a", "192k", str(out)], timeout=900)
+    log.info("Corte seco: %.1fs de silêncio removidos (%d pausas)", cut, len(sil))
+    return out, None
+
+
+def punch_points(src: Path, trim, dur: float) -> list[float]:
+    """Momentos de pico de volume no corte (onde entra o zoom)."""
+    a = trim[0] if trim else 0.0
+    try:
+        p = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{a:.2f}", "-t", f"{dur:.2f}", "-i", str(src), "-vn", "-ac", "1", "-ar", "8000",
+                            "-af", "asetnsamples=800,astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level:file=-",
+                            "-f", "null", "-"], capture_output=True, text=True, timeout=300)
+        vals = [float(m) if m != "-inf" else -99 for m in re.findall(r"RMS_level=(-?[\d.]+|-inf)", p.stdout)]
+    except Exception:
+        return []
+    if len(vals) < 20:
+        return []
+    srt = sorted(vals)
+    thr = max(srt[int(len(srt) * 0.93)], sum(vals) / len(vals) + 9)
+    pts = []
+    for i, v in sorted(enumerate(vals), key=lambda x: -x[1]):
+        t = i * 0.1
+        if v < thr or len(pts) >= max(2, int(dur // 8)):
+            break
+        if 0.6 < t < dur - 0.4 and all(abs(t - q) > 2.5 for q in pts):
+            pts.append(t)
+    return sorted(pts)
+
+
 def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list[dict], cam: Path | None = None) -> Path:
     tpl = templates.BY_ID.get(opts.get("template"), templates.TEMPLATES[0])
     cap = templates.CAPTION_BY_ID.get(opts.get("caption"), templates.CAPTION_STYLES[0])
@@ -491,6 +554,8 @@ def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list
             opts["_frame"] = framing.analyze(src, a, a + dur)
         except Exception as e:
             log.error("Enquadramento automático falhou: %s", e)
+    if opts.get("punch", True):
+        opts["_punch"] = punch_points(src, trim, dur)
     (job_dir / "subs.ass").write_text(captions.build(words, dur, tpl, cap, opts.get("caption_color", "auto"), opts.get("title", "")), encoding="utf-8")
     vf, extra = build_filter(tpl, opts, dur, cam=cam)
     pre = ["-ss", f"{trim[0]:.2f}", "-t", f"{dur:.2f}"] if trim else []
@@ -639,6 +704,12 @@ def _work(jid: str):
             trim = None
         if trim is None and probe_duration(src) > MAX_LEN + 1:
             trim = (0.0, float(MAX_LEN))
+        if o.get("tight", True) and not j.get("reviewed") and not j.get("tightened"):
+            try:
+                src, trim = tighten(src, trim, scratch(jid))
+                _set(jid, src_path=str(src), tightened=True)
+            except Exception as e:
+                log.error("Corte seco falhou (segue sem): %s", str(e)[-300:])
         words = []
         if j.get("reviewed"):
             words = j.get("words") or []

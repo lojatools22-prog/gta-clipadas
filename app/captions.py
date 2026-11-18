@@ -37,6 +37,7 @@ def build(words, duration, tpl, cap, color_key="auto", title="") -> str:
     active = C[tpl["active"]] if color_key in ("auto", None, "") else C.get(color_key, C["amarelo"])
     shadow = C[tpl["shadow"]]
     tcolor, tshadow = C[tpl["title_color"]], C[tpl["title_shadow"]]
+    tbox = C["rosa"] if tpl["title_shadow"] in ("preto", "branco") else tshadow  # manchete: caixa colorida atrás do título
     (tx, ty), (cx, cy) = tpl["title"], tpl["caption"]
     fax = "\\fax-0.12" if cap["font_key"] in ("pesada", "condensada", "redonda") else ""
     head = f"""[Script Info]
@@ -49,7 +50,7 @@ ScaledBorderAndShadow: yes
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Cap,{cap['font']},{cap['size']},&H00FFFFFF,&H000000FF,&H00000000,{shadow},0,0,0,0,100,100,0,0,1,7,6,5,70,70,0,1
-Style: Title,Bowlby One,{tpl['title_size']},{tcolor},&H000000FF,&H00000000,{tshadow},0,0,0,0,100,100,0,0,1,6,5,5,90,90,0,1
+Style: Title,Bowlby One,{int(tpl['title_size'] * 1.12)},&H00FFFFFF,&H000000FF,{tbox},&H00000000,0,0,0,0,100,100,0,0,3,16,0,5,70,70,0,1
 Style: Card,Bowlby One,110,&H00FFFFFF,&H000000FF,&H00000000,&H00A81FFF,0,0,0,0,100,100,1,0,1,9,8,5,40,40,0,1
 Style: Sub,Bowlby One,56,&H00FFFFFF,&H000000FF,&H00000000,&H00A81FFF,0,0,0,0,100,100,0,0,1,6,5,5,40,40,0,1
 
