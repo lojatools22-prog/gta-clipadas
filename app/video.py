@@ -333,8 +333,10 @@ def friendly_error(msg: str) -> str:
         return "Esse vídeo é privado. Use um vídeo público."
     if "is not available" in m or "unavailable" in m.lower() or "404" in m:
         return "Esse vídeo não está disponível. Confira o link."
-    if "live event will begin" in m or "is_live" in m:
-        return "A live ainda está no ar. Use o link do VOD quando ela acabar."
+    if "live event will begin" in m:
+        return "Essa live ainda não começou."
+    if "is_live" in m or "live-from-start" in m or "This live event" in m:
+        return "Não deu pra pegar esse trecho da live ao vivo. Tente um trecho mais recente (o YouTube guarda só as últimas horas) ou use o VOD quando acabar."
     if "Disco" in m or "No space" in m:
         return "O servidor está cheio agora. Tente de novo em alguns minutos."
     return "Algo deu errado ao montar o vídeo. Tente de novo; se repetir, tente outro trecho."
@@ -382,15 +384,18 @@ def ytdlp(args: list, url: str, timeout: int):
 def probe_url(url: str) -> dict:
     """Duração, título e thumb de um link (YouTube, Twitch, Kick) sem baixar o vídeo."""
     hit = _PROBE.get(url)
-    if hit and time.time() - hit[0] < 3600:
+    if hit and time.time() - hit[0] < (60 if hit[1].get("live") else 3600):
         return hit[1]
     out = ytdlp(["-J", "--no-playlist", "--skip-download", "--no-warnings"], url, timeout=40)
     j = json.loads(out)
     info = {"duration": float(j.get("duration") or 0), "title": (j.get("title") or "")[:140],
             "thumb": j.get("thumbnail") or "", "live": bool(j.get("is_live")),
+            "live_start": float(j.get("release_timestamp") or j.get("timestamp") or 0),
             "extractor": (j.get("extractor_key") or "").lower(), "id": j.get("id") or "",
             # gráfico "mais repetidos" do YouTube: onde o público voltou pra rever
             "heatmap": [(float(h.get("start_time", 0)), float(h.get("end_time", 0)), float(h.get("value", 0))) for h in (j.get("heatmap") or [])]}
+    if info["live"] and info["live_start"]:
+        info["duration"] = max(0.0, time.time() - info["live_start"] - 30)  # o que já passou da live (folga de 30 s)
     if len(_PROBE) > 500:
         _PROBE.clear()
     _PROBE[url] = (time.time(), info)
@@ -402,6 +407,12 @@ def download(url: str, start: float | None, end: float | None, dest: Path) -> Pa
            "--merge-output-format", "mp4", "-o", str(dest / "src.%(ext)s")]
     if start is not None and end is not None:
         cmd += ["--download-sections", f"*{start:.2f}-{end:.2f}"]
+    if True:
+        try:
+            if probe_url(url).get("live"):  # live ainda no ar: o YouTube guarda o que já passou (DVR); os tempos contam do início
+                cmd += ["--live-from-start"]
+        except Exception:
+            pass
     ytdlp(cmd, url, timeout=900)
     files = sorted(dest.glob("src.*"))
     if not files:

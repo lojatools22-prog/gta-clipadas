@@ -785,7 +785,7 @@ function resetMedia(){clearReact();aiReset();aiBtn();$('#lenInfo').textContent='
 async function probeLink(url,s,e){const seq=++probeSeq;$('#probeLoad').hidden=false;$('#typeBox').open=false;
   try{const d=await api('/api/probe?url='+encodeURIComponent(url));if(seq!==probeSeq)return;$('#probeLoad').hidden=true;
     if(d.title)$('#srcLabel').textContent=d.title;
-    if(d.live){$('#typeBox').open=true;$('#blankHint').hidden=false;toast('Essa live ainda está no ar. Use o link do VOD quando ela acabar, ou digite os tempos.');return}
+    if(d.live)toast('Live ao vivo: dá pra cortar qualquer trecho que já passou.');
     const id=ytId(url);if(id)loadYT(id,s);else if(d.thumb){$('#thumb').src=d.thumb;$('#thumbBox').hidden=false}
     initTrim(d.duration,s,e)}
   catch(err){if(seq!==probeSeq)return;$('#probeLoad').hidden=true;const yid=ytId(url);if(yid){loadYT(yid,s,d=>{if(seq===probeSeq)initTrim(d,s,e)});return}$('#typeBox').open=true;$('#blankHint').hidden=false;toast(err.message)}}
