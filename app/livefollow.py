@@ -265,4 +265,5 @@ def _resume():
 
 
 threading.Thread(target=_resume, daemon=True).start()
-threading.Thread(target=lambda: (time.sleep(90), demo()), daemon=True).start()
+if os.getenv("LIVE_DEMO_RUN") == "1":  # teste caro (grava 5 min pelo proxy): só quando ligado de propósito
+    threading.Thread(target=lambda: (time.sleep(90), demo()), daemon=True).start()
