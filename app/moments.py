@@ -227,6 +227,46 @@ def _heat_peaks(st: dict) -> list[float]:
     return sorted(h[0] for h in top if h[2] >= 0.5)
 
 
+CHAT_MODELS = [MODEL, "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "openai/gpt-oss-20b", "llama-3.1-8b-instant"]
+_MODEL_OK = {"m": None}
+
+
+def _chat(messages):
+    """Pede a escolha à IA. Se um modelo não existir mais na conta (404/400), tenta o próximo e lembra o que funcionou."""
+    order = ([_MODEL_OK["m"]] if _MODEL_OK["m"] else []) + [m for m in dict.fromkeys(CHAT_MODELS) if m != _MODEL_OK["m"]]
+    last = None
+    for m in order:
+        body = {"model": m, "temperature": 0.3, "messages": messages, "response_format": {"type": "json_object"}}
+        try:
+            j = _post("/chat/completions", json=body)
+            if _MODEL_OK["m"] != m:
+                log.info("Momentos: usando o modelo %s", m)
+            _MODEL_OK["m"] = m
+            return j
+        except httpx.HTTPStatusError as e:
+            last = e
+            if e.response.status_code in (400, 403, 404):
+                log.warning("Momentos: modelo %s indisponível (%s): %s", m, e.response.status_code, e.response.text[:200])
+                continue
+            raise
+    raise last
+
+
+def _fallback(segs, peaks, dur, chat=(), heat=()):
+    """Se a IA não escolher nada, monta os cortes pelos sinais: chat, mais repetidos e picos de áudio."""
+    cands = [(p, 90, "O chat explodiu nesse momento") for p, _ in chat] + [(p, 80, "Parte que o público mais reviu") for p in heat] + \
+            [(p, 65, "Pico de reação no áudio") for p in peaks]
+    out = []
+    for p, score, why in cands:
+        a = max(0, p - 15); b = min(dur, a + 40)
+        if b - a < 12 or any(not (b <= o["start"] or a >= o["end"]) for o in out):
+            continue
+        txt = " ".join(s["text"] for s in segs if a <= s["start"] < b)[:60].strip()
+        out.append({"start": round(a), "end": round(b), "title": (txt.upper()[:40] or "MOMENTO DA LIVE"), "score": score, "reason": why})
+    out.sort(key=lambda m: -m["score"])
+    return out[:12]
+
+
 def _fmt(s):
     s = int(s)
     return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}"
@@ -275,8 +315,7 @@ def _pick(segs: list[dict], peaks: list[float], dur: float, aid: str, chat=(), h
                 lines.append(f"[{_fmt(p)}] [MAIS REPETIDO]")
         lines.sort()
         try:
-            j = _post("/chat/completions", json={"model": MODEL, "temperature": 0.3, "response_format": {"type": "json_object"},
-                                                  "messages": [{"role": "user", "content": PROMPT.format(n=2, texto="\n".join(lines)[:14000])}]})
+            j = _chat([{"role": "user", "content": PROMPT.format(n=2, texto="\n".join(lines)[:14000])}])
             data = json.loads(j["choices"][0]["message"]["content"])
         except Exception as e:
             log.warning("Momentos: janela %s falhou: %s", wi, str(e)[:200])
@@ -327,7 +366,7 @@ def _work(aid: str):
         audio.unlink(missing_ok=True)
         chat = [] if st.get("live") else _chat_peaks(st, d, dur)  # chat de live no ar não termina de baixar
         heat = _heat_peaks(st)
-        moments = _pick(segs, peaks, dur, aid, chat, heat)
+        moments = _pick(segs, peaks, dur, aid, chat, heat) or _fallback(segs, peaks, dur, chat, heat)
         off = st.get("offset") or 0
         for m in moments:  # live no ar: os tempos da análise contam do começo do trecho baixado
             m["start"] += round(off); m["end"] += round(off)
