@@ -340,30 +340,42 @@ def friendly_error(msg: str) -> str:
     return "Algo deu errado ao montar o vídeo. Tente de novo; se repetir, tente outro trecho."
 
 
+_BLOCK = ("not a bot", "Sign in", "403", "429", "Requested format is not available", "player response")
+
+
 def ytdlp(args: list, url: str, timeout: int):
-    """Roda o yt-dlp; no YouTube, se cair na checagem de robô, tenta os outros clientes (começando pelo último que funcionou)."""
+    """Roda o yt-dlp. No YouTube tenta primeiro direto (de graça); se o YouTube barrar, passa pelo proxy residencial
+    (YTDLP_PROXY, pago por GB) e tenta outros clientes do player. Depois de um bloqueio, vai direto pro proxy por 30 min."""
     base = ["yt-dlp"]
     ck = _cookies_file()
     if ck:
         base += ["--cookies", str(ck)]
-    if os.getenv("YTDLP_PROXY") and _is_yt(url):  # proxy residencial: o YouTube barra IP de servidor
-        base += ["--proxy", os.environ["YTDLP_PROXY"]]
     if not _is_yt(url):
         return _run(base + args + [url], timeout=timeout)
-    order = [_YT_OK["client"]] + [c for c in YT_CLIENTS if c != _YT_OK["client"]]
+    proxy = os.getenv("YTDLP_PROXY")
+    plan = []
+    if not proxy or _YT_OK.get("blocked_until", 0) < time.time():
+        plan.append((None, _YT_OK["client"]))
+    if proxy:
+        plan += [(proxy, c) for c in [_YT_OK["client"]] + [c for c in YT_CLIENTS if c != _YT_OK["client"]]]
+    else:
+        plan += [(None, c) for c in YT_CLIENTS if c != _YT_OK["client"]]
     last = None
-    for c in order:
-        extra = ["--extractor-args", f"youtube:player_client={c}"] if c else []
+    for px, c in plan:
+        extra = (["--proxy", px] if px else []) + (["--extractor-args", f"youtube:player_client={c}"] if c else [])
         try:
             out = _run(base + extra + args + [url], timeout=timeout)
             _YT_OK["client"] = c
+            if px:
+                log.info("yt-dlp: YouTube via proxy residencial")
             return out
         except Exception as e:
             last = e
-            msg = str(e)
-            if not any(k in msg for k in ("not a bot", "Sign in", "403", "Requested format is not available", "player response")):
+            if not any(k in str(e) for k in _BLOCK):
                 raise
-            log.warning("yt-dlp: cliente %s barrado, tentando o próximo", c or "padrão")
+            if not px:
+                _YT_OK["blocked_until"] = time.time() + 1800
+            log.warning("yt-dlp: %s cliente %s barrado, tentando o próximo", "proxy" if px else "direto", c or "padrão")
     raise last
 
 
