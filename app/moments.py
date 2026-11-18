@@ -36,9 +36,10 @@ def get(aid: str) -> dict | None:
     st = STATE.get(aid)
     if st is None and (DIR / aid / "estado.json").exists():
         st = json.loads((DIR / aid / "estado.json").read_text())
-        if st.get("status") not in ("pronto", "erro"):  # o servidor reiniciou no meio da análise
-            st.update(status="erro", error="A análise foi interrompida. Toque em analisar de novo.")
         STATE[aid] = st
+        if st.get("status") not in ("pronto", "erro", "cortando"):  # o servidor reiniciou no meio da análise: recomeça sozinho
+            st.update(status="na fila", progress=1)
+            _q.put(aid)
     return st
 
 
@@ -461,5 +462,23 @@ def _cleanup():
         time.sleep(3 * 3600)
 
 
+def _resume():
+    """Depois de um reinício, retoma as análises que estavam em andamento (ninguém perde o vídeo)."""
+    try:
+        n = 0
+        for f in DIR.glob("*/estado.json"):
+            try:
+                st = json.loads(f.read_text())
+            except Exception:
+                continue
+            if st.get("status") not in ("pronto", "erro", "cortando") and time.time() - f.stat().st_mtime < 6 * 3600:
+                get(f.parent.name); n += 1
+        if n:
+            log.info("Momentos: retomando %d análise(s) depois do reinício", n)
+    except Exception as e:
+        log.error("Momentos: falha ao retomar: %s", e)
+
+
+threading.Thread(target=_resume, daemon=True).start()
 threading.Thread(target=_worker, daemon=True).start()
 threading.Thread(target=_cleanup, daemon=True).start()
