@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import httpx
 
-from . import twitch, video, templates, accounts, plans, payments, notify
+from . import twitch, video, templates, accounts, plans, payments, notify, moments
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("app")
@@ -328,7 +328,8 @@ async def clips(login: str | None = None, hours: int = 48):
 
 # ---------------- cortes ----------------
 class JobIn(BaseModel):
-    url: str
+    url: str = ""
+    analysis: str = ""
     start: str | float | None = None
     end: str | float | None = None
     segments: list = []
@@ -373,11 +374,12 @@ def _segments(raw: dict, P: dict) -> list:
             segs = json.loads(segs or "[]")
         except ValueError:
             raise HTTPException(400, "Trechos inválidos")
-    segs = [(secs(a), secs(b)) for a, b in segs] if segs else [(secs(raw.get("start")), secs(raw.get("end")))]
-    if len(segs) > 1 and not P["batch"]:
+    segs = [(secs(x[0]), secs(x[1]), (str(x[2])[:80] if len(x) > 2 else "")) for x in segs] if segs \
+        else [(secs(raw.get("start")), secs(raw.get("end")), "")]
+    if len(segs) > 1 and not P["batch"] and not (raw.get("analysis") and P.get("auto_moments")):
         raise HTTPException(402, "Corte em lote é do plano Pro.")
-    if len(segs) > 10:
-        raise HTTPException(400, "No máximo 10 trechos por vez")
+    if len(segs) > 12:
+        raise HTTPException(400, "No máximo 12 trechos por vez")
     return segs
 
 
@@ -389,12 +391,24 @@ def _start(request: Request, raw: dict, upload: Path | None = None, cam: Path | 
     lp = accounts.logo_path(u["id"])
     if P.get("own_logo") and lp.exists() and str(raw.get("logo", True)).lower() not in ("false", "0", ""):
         base["_logo"] = str(lp)
+    keep = upload is not None and len(segs) > 1
+    if raw.get("analysis"):  # cortes a partir do vídeo já enviado para o corte automático
+        st = moments.get(raw["analysis"])
+        if not st or st.get("user_id") != u["id"]:
+            raise HTTPException(404, "Análise não encontrada")
+        src = moments.source_of(raw["analysis"])
+        if src:
+            upload, keep = src, True
+        elif st.get("url"):
+            base["url"] = st["url"]
+        else:
+            raise HTTPException(410, "O vídeo dessa análise expirou. Envie de novo.")
     out = []
     try:
-        for i, (a, b) in enumerate(segs):
+        for i, (a, b, ttl) in enumerate(segs):
             o = {**base, "start": a, "end": b}
-            if len(segs) > 1 and base["title"]:
-                o["title"] = base["title"]
+            if ttl:
+                o["title"] = ttl
             try:
                 col = accounts.charge(accounts._user(u["id"]))
             except accounts.AuthError as e:
@@ -402,14 +416,14 @@ def _start(request: Request, raw: dict, upload: Path | None = None, cam: Path | 
                     raise HTTPException(402, str(e))
                 break  # cota acabou no meio do lote: gera os que deu
             try:
-                job = video.create_job(o, upload=upload, priority=P["priority"], keep_upload=upload is not None and len(segs) > 1, cam=cam)
+                job = video.create_job(o, upload=upload, priority=P["priority"], keep_upload=keep, cam=cam)
             except ValueError as e:
                 accounts.refund(u["id"], col)
                 raise HTTPException(400, str(e))
-            accounts.add_job(job["id"], u["id"], (o["title"] or "Corte GTA") + (f" ({i + 1})" if len(segs) > 1 else ""), col)
+            accounts.add_job(job["id"], u["id"], (o["title"] or "Corte GTA") + (f" ({i + 1})" if len(segs) > 1 and not ttl else ""), col)
             out.append(job)
     finally:
-        if upload is not None and len(segs) > 1:
+        if upload is not None and len(segs) > 1 and not raw.get("analysis"):
             upload.unlink(missing_ok=True)
     return {**out[0], "jobs": [j["id"] for j in out], "user": accounts.public(accounts._user(u["id"]))}
 
@@ -454,19 +468,21 @@ ALLOWED = ("https://www.twitch.tv/", "https://twitch.tv/", "https://m.twitch.tv/
 
 @app.post("/api/jobs")
 def new_job(j: JobIn, request: Request):
+    if j.analysis:
+        return _start(request, j.model_dump())
     if not j.url.startswith(ALLOWED):
         raise HTTPException(400, "Link precisa ser da Twitch, YouTube ou Kick")
     return _start(request, j.model_dump())
 
 
 @app.post("/api/jobs/upload")
-async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
+async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), analysis: str = Form(""), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
                      template: str = Form("vice-cam-cima"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
                      corner: str = Form("top-left"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
                      watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None), logo: bool = Form(True)):
     u = current_user(request)
     max_mb = accounts.plan_info(u)["max_mb"]
-    if file is None or not file.filename:
+    if (file is None or not file.filename) and not analysis:
         if not url.startswith(ALLOWED):
             raise HTTPException(400, "Envie um vídeo ou um link da Twitch, YouTube ou Kick")
         if cam is None or not cam.filename:
@@ -494,7 +510,7 @@ async def new_upload(request: Request, file: UploadFile | None = File(None), url
                     raise HTTPException(413, "O vídeo do react pode ter até 1 GB.")
                 f.write(chunk)
     try:
-        return _start(request, {"url": url if tmp is None else "upload", "react_pos": react_pos, "start": start, "end": end, "segments": segments, "template": template, "caption": caption,
+        return _start(request, {"url": url if tmp is None else "upload", "analysis": analysis, "react_pos": react_pos, "start": start, "end": end, "segments": segments, "template": template, "caption": caption,
                                 "caption_color": caption_color, "corner": corner, "cam_size": cam_size, "title": title,
                                 "captions": captions, "watermark": watermark, "cover": cover, "logo": logo}, upload=tmp, cam=cam_tmp)
     except HTTPException:
@@ -512,6 +528,42 @@ def get_job(jid: str):
     if st["status"] == "expirado" and not accounts.job_owner(jid):
         raise HTTPException(404, "Corte não encontrado")
     return {"id": jid, **st}
+
+
+@app.post("/api/moments")
+async def new_moments(request: Request, file: UploadFile | None = File(None), url: str = Form("")):
+    u = current_user(request)
+    P = accounts.plan_info(u)
+    if not P.get("auto_moments"):
+        raise HTTPException(402, "O corte automático com IA é dos planos Clipador e Pro.")
+    if not video.GROQ_KEY:
+        raise HTTPException(503, "O corte automático está em manutenção. Escolha o trecho na mão por enquanto.")
+    busy = [s for s in moments.STATE.values() if s.get("user_id") == u["id"] and s.get("status") not in ("pronto", "erro")]
+    if busy:
+        return moments.public(busy[0])
+    if file is not None and file.filename:
+        tmp = Path(tempfile.mkstemp(suffix=Path(file.filename).suffix or ".mp4", dir=video.DATA)[1])
+        size = 0
+        with open(tmp, "wb") as f:
+            while chunk := await file.read(1 << 20):
+                size += len(chunk)
+                if size > P["max_mb"] * 1048576:
+                    f.close(); tmp.unlink(missing_ok=True)
+                    raise HTTPException(413, f"Vídeo acima de {P['max_mb'] // 1024} GB no seu plano. Cole o link da live.")
+                f.write(chunk)
+        return moments.create(u["id"], upload=tmp)
+    if not url.startswith(ALLOWED):
+        raise HTTPException(400, "Envie um vídeo ou um link da Twitch, YouTube ou Kick")
+    return moments.create(u["id"], url=url)
+
+
+@app.get("/api/moments/{aid}")
+def get_moments(aid: str, request: Request):
+    u = current_user(request)
+    st = moments.get(aid)
+    if not st or st.get("user_id") != u["id"]:
+        raise HTTPException(404, "Análise não encontrada")
+    return moments.public(st)
 
 
 @app.get("/api/my/stats")

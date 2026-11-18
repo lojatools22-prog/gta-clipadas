@@ -290,7 +290,7 @@ def public(u) -> dict:
     return {"name": u["name"], "email": u["email"], "phone": u["phone"][:-4].replace(u["phone"][3:-4], "•" * len(u["phone"][3:-4])) + u["phone"][-4:],
             "plan": p, "plan_name": PLANS[p]["name"], "plan_until": u["plan_until"] if p != "gratis" else None,
             "left": left, "tier": PLANS[p]["tier"], "max_mb": PLANS[p]["max_mb"], "batch": PLANS[p]["batch"],
-            "watermark_off": PLANS[p]["watermark_off"], "own_logo": PLANS[p].get("own_logo", False), "has_logo": logo_path(u["id"]).exists(),
+            "watermark_off": PLANS[p]["watermark_off"], "own_logo": PLANS[p].get("own_logo", False), "auto_moments": PLANS[p].get("auto_moments", False), "has_logo": logo_path(u["id"]).exists(),
             "admin": is_admin(u), "has_billing": bool(u["asaas_customer"]),
             # compatibilidade com a interface
             "credits": left, "pro": p != "gratis"}

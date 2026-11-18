@@ -274,6 +274,20 @@ input,select,textarea{font-size:16px!important}
 .set .sm{margin:0}
 #reactPos .tab{flex:1;white-space:normal;font-size:12.5px}
 @media(max-width:899px){#mineBtn{display:none!important}}
+.ai{background:radial-gradient(120% 120% at 0% 0%,rgba(255,31,168,.16),transparent 55%),var(--s1);border:1px solid rgba(255,31,168,.35);border-radius:16px;padding:16px;margin-bottom:6px}
+.ai-h{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}.ai-h>div{flex:1}.ai-h b{display:block;font-size:16px}.ai-h small{color:var(--mute);font-size:13px}
+.ai-ic{width:38px;height:38px;border-radius:11px;background:var(--pinkbg);display:grid;place-items:center;font-size:18px;flex:none}
+.ai-st{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;margin-bottom:4px}.ai-st b{margin-left:auto;font-variant-numeric:tabular-nums}
+.mo{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;margin-top:8px;background:var(--s2);cursor:pointer;transition:border-color .15s,background .15s}
+.mo:hover{border-color:var(--line2)}.mo.on{border-color:var(--pink);background:rgba(255,31,168,.08)}
+.mo .ck{width:22px;height:22px;border-radius:7px;border:2px solid var(--line2);display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff}
+.mo.on .ck{background:var(--pink);border-color:var(--pink)}
+.mo b{display:block;font-size:14px;letter-spacing:-.01em}.mo small{color:var(--mute);font-size:12px;display:block}
+.mo .sc{font-size:12px;font-weight:800;padding:4px 8px;border-radius:8px;background:var(--s3);font-variant-numeric:tabular-nums}
+.mo .sc.hi{background:rgba(34,197,94,.15);color:#4ade80}
+.mo .pv{background:none;border:1px solid var(--line2);color:#fff;border-radius:8px;padding:5px 9px;font:600 12px Inter,sans-serif;cursor:pointer;margin-top:6px}
+.ai-acts{display:flex;justify-content:space-between;align-items:center;margin:12px 0 2px;font-size:13px;color:var(--mute)}
+.ai-acts button{background:none;border:0;color:#fff;font:600 13px Inter,sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 @media(min-width:640px){.feats{grid-template-columns:1fr 1fr}.gal{grid-template-columns:repeat(6,1fr)}.steps3{grid-template-columns:repeat(3,1fr)}.plans{grid-template-columns:1fr 1fr}.vgrid{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:900px){
  .nav{display:flex}.tabbar{display:none}
@@ -315,7 +329,7 @@ input,select,textarea{font-size:16px!important}
       <div>
         <span class="badge"><i></i>GTA 6 chega em 19/11 · corte desde o 1º dia</span>
         <h1>Transforme lives de GTA em <em>cortes virais</em></h1>
-        <p class="sub">Suba o vídeo da live ou cole o link. Em cerca de 1 minuto você baixa o corte vertical com legenda automática, visual de GTA e capa, pronto pro TikTok, Reels e Shorts.</p>
+        <p class="sub">Suba a live ou cole o link. A IA acha os melhores momentos e em cerca de 1 minuto você baixa os cortes verticais com legenda automática, visual de GTA e capa, prontos pro TikTok, Reels e Shorts.</p>
         <div class="upl">
           <button class="drop" id="drop" onclick="pickFile()">
             <span class="di"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg></span>
@@ -375,7 +389,7 @@ input,select,textarea{font-size:16px!important}
         <div class="card"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></div><b>Capa automática</b><p>Cada corte vem com uma capa 9:16 pra usar de thumbnail.</p></div>
         <div class="card"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg></div><b>Corte em lote</b><p>No Pro, marque vários trechos da mesma live e gere todos de uma vez.</p></div>
         <div class="card"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div><b>Rápido de verdade</b><p>O corte fica pronto em cerca de 1 minuto. No Pro, sua fila tem prioridade.</p></div>
-        <div class="card"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div><b>Momentos virais</b><p>Veja os clipes de GTA mais assistidos do dia e corte direto daqui.</p></div>
+        <div class="card"><div class="n">✨</div><b>Corte automático com IA</b><p>Suba a live inteira: a IA ouve tudo, acha os melhores momentos e já sugere o título. Você só escolhe e gera.</p></div>
       </div>
     </div>
 
@@ -435,6 +449,14 @@ input,select,textarea{font-size:16px!important}
     <div id="s1">
       <div class="wh"><button class="back" onclick="home()">←</button><h2 class="disp">Qual trecho?</h2></div>
       <p class="lead src" id="srcLabel"></p>
+      <div class="ai" id="aiBox">
+        <div class="ai-h"><span class="ai-ic">✨</span><div><b>Corte automático com IA</b><small>A IA ouve a live inteira e acha os melhores momentos pra você</small></div><span class="pill" id="aiPill" hidden>Clipador e Pro</span></div>
+        <button class="go" type="button" id="aiGo" onclick="startAI()">Achar os melhores momentos</button>
+        <div id="aiRun" hidden><div class="ai-st"><span class="spin"></span><span id="aiTxt">Preparando…</span><b id="aiPct"></b></div><div class="meter"><i id="aiBar" style="width:2%"></i></div><small style="color:var(--dim)">Deixe essa página aberta. Uma live de 1 hora leva uns 2 a 4 minutos.</small></div>
+        <div id="aiErr" hidden></div>
+        <div id="aiList" hidden></div>
+      </div>
+      <div class="or" id="aiOr">ou escolha o trecho você mesmo</div>
       <div class="media" id="media">
         <div id="playerBox" hidden><video id="player" playsinline controls></video></div>
         <div id="ytBox" hidden><div id="yt"></div></div>
@@ -473,7 +495,7 @@ input,select,textarea{font-size:16px!important}
         <button class="go ghost" type="button" onclick="addSeg()" style="margin-bottom:14px">＋ Adicionar outro trecho <span class="p" style="position:static;margin-left:6px;background:#fff;color:#12051f;border-radius:6px;padding:2px 6px;font-size:10px;font-weight:800">PRO</span></button>
       </div>
       <label class="field"><span>Frase de impacto no topo (opcional)</span><input id="title" maxlength="80" placeholder="Ex.: ELE NÃO ACREDITOU NO QUE VIU"></label>
-      <div class="bar"><button class="go" onclick="next1()">Escolher o visual →</button></div>
+      <div class="bar"><button class="go" id="next1Btn" onclick="next1()">Escolher o visual →</button></div>
     </div>
 
     <div id="s2" hidden>
@@ -527,8 +549,8 @@ input,select,textarea{font-size:16px!important}
     <div class="plans">
     <div class="plan pass"><h3>PASSE GTA 6 <small style="font:700 11px Inter;color:var(--pink);margin-left:6px">LANÇAMENTO</small></h3><div class="pr">R$ 9,90 <small>/7 dias</small></div><ul><li><b>30 cortes</b> em 7 dias</li><li>Todos os visuais e legendas</li><li>Legenda automática</li><li>Pagamento único no Pix</li></ul><button class="go ghost" onclick="buy('passe')">Quero o Passe</button></div>
     <div class="plan"><h3>INICIANTE</h3><div class="pr">R$ 19,90 <small>/mês</small></div><ul><li><b>30 cortes</b> por mês</li><li>18 visuais e 12 legendas</li><li>Legenda automática</li></ul><button class="go ghost" onclick="buy('iniciante')">Assinar Iniciante</button></div>
-    <div class="plan hot"><span class="best">MAIS ESCOLHIDO</span><h3>CLIPADOR</h3><div class="pr">R$ 39,90 <small>/mês</small></div><ul><li><b>150 cortes</b> por mês (uns 5 por dia)</li><li>Todos os 36 visuais e 36 legendas</li><li><b>Sua logo automática</b> em todos os cortes</li><li>Capa automática</li></ul><button class="go" onclick="buy('clipador')">Assinar Clipador</button></div>
-    <div class="plan"><h3>PRO</h3><div class="pr">R$ 79,90 <small>/mês</small></div><ul><li><b>300 cortes</b> por mês</li><li>Corte em lote: vários trechos de uma vez</li><li>Sua logo automática em todos os cortes</li><li>Fila prioritária e vídeos até 3 GB</li><li>Suporte no WhatsApp</li></ul><button class="go ghost" onclick="buy('pro')">Assinar Pro</button></div>
+    <div class="plan hot"><span class="best">MAIS ESCOLHIDO</span><h3>CLIPADOR</h3><div class="pr">R$ 39,90 <small>/mês</small></div><ul><li><b>150 cortes</b> por mês (uns 5 por dia)</li><li><b>✨ Corte automático com IA</b>: ela acha os melhores momentos da live</li><li>Todos os 36 visuais e 36 legendas</li><li><b>Sua logo automática</b> em todos os cortes</li><li>Capa automática</li></ul><button class="go" onclick="buy('clipador')">Assinar Clipador</button></div>
+    <div class="plan"><h3>PRO</h3><div class="pr">R$ 79,90 <small>/mês</small></div><ul><li><b>300 cortes</b> por mês</li><li><b>✨ Corte automático com IA</b></li><li>Corte em lote: vários trechos de uma vez</li><li>Sua logo automática em todos os cortes</li><li>Fila prioritária e vídeos até 3 GB</li><li>Suporte no WhatsApp</li></ul><button class="go ghost" onclick="buy('pro')">Assinar Pro</button></div>
     </div>
     <p class="lead" style="font-size:13px;text-align:center;margin-top:20px">Pagamento por Pix, cartão ou boleto. Cada compra libera 30 dias (7 no Passe). Os cortes ficam disponíveis por 30 dias pra baixar.</p>
     <details style="margin:6px auto 0;max-width:480px"><summary>Tenho um código</summary>
@@ -560,7 +582,7 @@ let ME=null,WIZ=false;const isPro=()=>!!(ME&&ME.pro);const myTier=()=>ME?ME.tier
 function view(v){document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===v||(v==='make'&&b.dataset.go==='home')));if(v==='mine')renderJobs();$('#backWiz').hidden=!(v==='planos'&&WIZ);if(v!=='planos'&&v!=='make')WIZ=false;if(v==='conta')renderConta();if(v==='virais')loadVirais();scrollTo(0,0)}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>view(b.dataset.go));
 function home(){view('home')}
-function step(n){view('make');[1,2,3].forEach(i=>$('#s'+i).hidden=i!==n);document.querySelectorAll('.steps i').forEach((e,i)=>e.classList.toggle('on',i<n));if(n===2)renderTpls();if(n===3)renderCaps();scrollTo(0,0)}
+function step(n){view('make');[1,2,3].forEach(i=>$('#s'+i).hidden=i!==n);document.querySelectorAll('.steps i').forEach((e,i)=>e.classList.toggle('on',i<n));if(n===3)$('#go').textContent=(AN&&AN.status==='pronto'&&SELM.size)?`✂️ Gerar ${SELM.size} corte${SELM.size>1?'s':''}`:'✂️ Gerar meu corte';if(n===2)renderTpls();if(n===3)renderCaps();scrollTo(0,0)}
 
 function needAcc(fn,msg){if(ME)return false;openAuth('signup',msg||('Crie sua conta grátis pra fazer seu corte. Você ganha '+(STATUS.free_clips||3)+' cortes grátis.'),fn);return true}
 function toggleLink(){if(needAcc(()=>{$('#linkBox').hidden=false;$('#url').focus()}))return;$('#linkBox').hidden=!$('#linkBox').hidden;if(!$('#linkBox').hidden)$('#url').focus()}
@@ -614,7 +636,7 @@ const ytId=u=>{const m=String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(
 function loadYT(id,start){$('#ytBox').hidden=false;ytReady=false;
   const mk=()=>{try{ytp&&ytp.destroy()}catch{}$('#ytBox').innerHTML='<div id="yt"></div>';ytp=new YT.Player('yt',{videoId:id,playerVars:{playsinline:1,rel:0,modestbranding:1,start:Math.floor(start||0)},events:{onReady:()=>{ytReady=true;$('#markRow').hidden=false}}})};
   if(window.YT&&YT.Player)return mk();window.onYouTubeIframeAPIReady=mk;if(!document.getElementById('ytapi')){const s=document.createElement('script');s.id='ytapi';s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s)}}
-function resetMedia(){clearReact();$('#lenInfo').textContent='';$('#title').value='';['#playerBox','#ytBox','#thumbBox','#probeLoad','#trim','#markRow'].forEach(s=>$(s).hidden=true);try{ytp&&ytp.destroy()}catch{}ytp=null;ytReady=false;DUR=0;$('#start').value='';$('#end').value='';$('#blankHint').hidden=true;SEGS=[];renderSegs()}
+function resetMedia(){clearReact();aiReset();aiBtn();$('#lenInfo').textContent='';$('#title').value='';['#playerBox','#ytBox','#thumbBox','#probeLoad','#trim','#markRow'].forEach(s=>$(s).hidden=true);try{ytp&&ytp.destroy()}catch{}ytp=null;ytReady=false;DUR=0;$('#start').value='';$('#end').value='';$('#blankHint').hidden=true;SEGS=[];renderSegs()}
 async function probeLink(url,s,e){const seq=++probeSeq;$('#probeLoad').hidden=false;$('#typeBox').open=false;
   try{const d=await api('/api/probe?url='+encodeURIComponent(url));if(seq!==probeSeq)return;$('#probeLoad').hidden=true;
     if(d.title)$('#srcLabel').textContent=d.title;
@@ -622,10 +644,38 @@ async function probeLink(url,s,e){const seq=++probeSeq;$('#probeLoad').hidden=fa
     const id=ytId(url);if(id)loadYT(id,s);else if(d.thumb){$('#thumb').src=d.thumb;$('#thumbBox').hidden=false}
     initTrim(d.duration,s,e)}
   catch(err){if(seq!==probeSeq)return;$('#probeLoad').hidden=true;$('#typeBox').open=true;$('#blankHint').hidden=false;toast(err.message)}}
+/* corte automático com IA */
+let AN=null,SELM=new Set(),aiPoll=null;
+const AISTEP={'na fila':'Na fila…','preparando':'Preparando o vídeo…','baixando':'Baixando a live…','ouvindo':'Ouvindo a live…','escolhendo':'Escolhendo os melhores momentos…'};
+function aiReset(){clearTimeout(aiPoll);AN=null;SELM=new Set();$('#aiGo').hidden=false;['#aiRun','#aiErr','#aiList'].forEach(x=>$(x).hidden=true);$('#aiPill').hidden=!!(ME&&ME.auto_moments);$('#aiGo').textContent=(ME&&ME.auto_moments)?'Achar os melhores momentos':'🔒 Achar os melhores momentos';$('#aiOr').textContent='ou escolha o trecho você mesmo'}
+async function startAI(){if(!(ME&&ME.auto_moments)){sheet(`<h2 class="disp" style="margin:0 0 6px">Corte automático com IA</h2><p class="lead">A IA ouve a live inteira e entrega os melhores momentos com título, prontos pra cortar de uma vez. Está nos planos <b style="color:#fff">Clipador</b> e <b style="color:#fff">Pro</b>.</p><button class="go" onclick="closeSheet();WIZ=true;view('planos')">Ver planos</button><button class="alt" onclick="closeSheet()">Agora não, escolho o trecho</button>`);return}
+  $('#aiGo').hidden=true;$('#aiErr').hidden=true;$('#aiRun').hidden=false;$('#aiTxt').textContent=src.kind==='file'?'Enviando o vídeo…':'Preparando…';$('#aiPct').textContent='';$('#aiBar').style.width='2%';
+  try{let r;if(src.kind==='file'){r=await upProgress('/api/moments',(()=>{const fd=new FormData();fd.append('file',src.file);return fd})(),p=>{$('#aiPct').textContent=p+'%';$('#aiBar').style.width=Math.max(2,p*0.08)+'%'})}
+    else{const fd=new FormData();fd.append('url',src.url);r=await api('/api/moments',{method:'POST',body:fd})}
+    AN=r;LS.set('cgta_an',{id:r.id,src:src.kind==='file'?{kind:'file',name:src.file.name}:{kind:'link',url:src.url}});aiTick()}
+  catch(e){aiFail(e.message)}}
+function upProgress(url,fd,onp){return new Promise((ok,bad)=>{const x=new XMLHttpRequest();x.open('POST',url);const t=TOK();if(t)x.setRequestHeader('Authorization','Bearer '+t);
+  x.upload.onprogress=e=>{if(e.lengthComputable)onp(Math.round(e.loaded/e.total*100))};x.onload=()=>{let j={};try{j=JSON.parse(x.responseText)}catch{}x.status<300?ok(j):bad(Object.assign(new Error(j.detail||'Algo deu errado'),{status:x.status}))};x.onerror=()=>bad(new Error('Falha na conexão. Tente de novo.'));x.send(fd)})}
+function aiFail(m){$('#aiRun').hidden=true;$('#aiGo').hidden=false;$('#aiGo').textContent='Tentar de novo';$('#aiErr').hidden=false;$('#aiErr').innerHTML=`<p class="lead" style="color:#fca5a5;font-size:14px;margin:10px 0 0">${esc(m)}</p>`}
+async function aiTick(){clearTimeout(aiPoll);if(!AN)return;
+  try{AN=await api('/api/moments/'+AN.id)}catch(e){return aiFail(e.message)}
+  if(AN.status==='erro')return aiFail(AN.error||'Não deu certo');
+  if(AN.status==='pronto'){$('#aiRun').hidden=true;renderMoments();return}
+  $('#aiTxt').textContent=AISTEP[AN.status]||'Analisando…';$('#aiPct').textContent=(AN.progress||0)+'%';$('#aiBar').style.width=Math.max(4,AN.progress||0)+'%';aiPoll=setTimeout(aiTick,2500)}
+function renderMoments(){const ms=AN.moments||[];if(!SELM.size)ms.slice(0,Math.min(5,ms.length)).forEach((m,i)=>SELM.add(i));
+  $('#aiList').hidden=false;$('#aiOr').textContent='ou ignore e escolha o trecho você mesmo';
+  $('#aiList').innerHTML=`<div class="ai-acts"><span><b style="color:#fff">${ms.length} momentos</b> encontrados · ${SELM.size} selecionados</span><button type="button" onclick="aiAll()">${SELM.size===ms.length?'Limpar':'Marcar todos'}</button></div>`+
+   (aiBtn(),'')+ms.map((m,i)=>`<div class="mo ${SELM.has(i)?'on':''}" onclick="aiToggle(${i})"><span class="ck">${SELM.has(i)?'✓':''}</span><div><b>${esc(m.title||'Momento '+(i+1))}</b><small>${tshort(m.start)} – ${tshort(m.end)} · ${m.end-m.start}s${m.reason?' · '+esc(m.reason):''}</small><button type="button" class="pv" onclick="event.stopPropagation();aiPreview(${i})">▶ Ver na prévia</button></div><span class="sc ${m.score>=80?'hi':''}">${m.score}</span></div>`).join('')}
+function aiBtn(){$('#next1Btn').textContent=(AN&&AN.status==='pronto'&&SELM.size)?`Cortar ${SELM.size} momento${SELM.size>1?'s':''} →`:'Escolher o visual →'}
+function aiToggle(i){SELM.has(i)?SELM.delete(i):SELM.add(i);if(SELM.size>12){SELM.delete(i);return toast('No máximo 12 por vez')}renderMoments()}
+function aiAll(){const n=(AN.moments||[]).length;if(SELM.size===n)SELM=new Set();else SELM=new Set([...Array(Math.min(n,12)).keys()]);renderMoments()}
+function aiPreview(i){const m=AN.moments[i];if(DUR)setTrim(m.start,m.end,{seek:'s'});else{$('#start').value=hms(m.start);$('#end').value=hms(m.end);updLen()}$('#media').scrollIntoView({behavior:'smooth',block:'center'});try{if(src.kind==='file')$('#player').play()}catch{}}
+const aiSegs=()=>[...SELM].sort((a,b)=>a-b).map(i=>{const m=AN.moments[i];return[m.start,m.end,m.title||'']});
+
 let SEGS=[];
 function addSeg(){if(!(ME&&ME.batch))return locked(2);const a=$('#start').value.trim(),b=$('#end').value.trim();if(!a||!b)return toast('Marque início e fim deste trecho primeiro');SEGS.push([a,b]);renderSegs();if(DUR&&TE<DUR-1)setTrim(TE,TE+45,{side:'s',seek:'s'});else{$('#start').value='';$('#end').value='';updLen()}toast('Trecho '+SEGS.length+' adicionado. Marque o próximo.')}
 function renderSegs(){$('#segList').innerHTML=SEGS.map((s,i)=>`<div class="seg"><div class="field"><span>Trecho ${i+1}</span><input value="${s[0]}" disabled></div><div class="field"><span>&nbsp;</span><input value="${s[1]}" disabled></div><button type="button" onclick="SEGS.splice(${i},1);renderSegs()">✕</button></div>`).join('')}
-function next1(){if(SEGS.length&&!$('#start').value&&!$('#end').value)return step(2);const a=secs($('#start').value),b=secs($('#end').value);
+function next1(){if(AN&&AN.status==='pronto'&&SELM.size)return step(2);if(SEGS.length&&!$('#start').value&&!$('#end').value)return step(2);const a=secs($('#start').value),b=secs($('#end').value);
   if(src.kind==='file'&&(a==null||b==null))return toast('Marque o início e o fim do corte');
   if(a!=null&&b!=null){if(b<=a)return toast('O fim precisa ser depois do início');if(b-a>MAXLEN())return toast(`O corte pode ter até ${MAXLEN()} segundos`)}
   step(2)}
@@ -654,7 +704,11 @@ async function generate(){const go=$('#go');go.disabled=true;go.textContent='Env
   const segs=[...SEGS];if($('#start').value.trim()&&$('#end').value.trim()&&segs.length)segs.push([$('#start').value.trim(),$('#end').value.trim()]);
   const o={start:$('#start').value.trim(),end:$('#end').value.trim(),segments:segs.length>1?JSON.stringify(segs):'',template:sel.tpl,caption:sel.cap,caption_color:sel.color,corner:$('#corner').value,cam_size:$('#cam_size').value/100,title:$('#title').value,captions:$('#captions').checked,cover:$('#cover').checked,watermark:false,logo:$('#logo').checked};
   if(CAMF)o.react_pos=reactPos;
-  try{let j;if(src.kind==='file'||CAMF){const fd=new FormData();if(src.kind==='file')fd.append('file',src.file);else fd.append('url',src.url);if(CAMF)fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
+  const useAI=AN&&AN.status==='pronto'&&SELM.size>0;
+  if(useAI){o.analysis=AN.id;o.segments=JSON.stringify(aiSegs());o.start='';o.end='';o.title=''}
+  try{let j;if(useAI&&!CAMF){j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,start:null,end:null,segments:aiSegs()})})}
+  else if(useAI&&CAMF){const fd=new FormData();fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
+  else if(src.kind==='file'||CAMF){const fd=new FormData();if(src.kind==='file')fd.append('file',src.file);else fd.append('url',src.url);if(CAMF)fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
   else{j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,url:src.url,start:o.start||null,end:o.end||null,segments:segs.length>1?segs:[]})})}
   if(j.user){ME=j.user;refreshAcct()}{const p=PREFS();p.tpl=sel.tpl;p.cap=sel.cap;LS.set('cgta_prefs',p)}SEGS=[];CAMF=null;renderSegs();view('mine');toast((j.jobs&&j.jobs.length>1)?j.jobs.length+' cortes sendo montados':'Seu corte está sendo montado')}
   catch(err){toast(err.message);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)WIZ=true,setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='✂️ Gerar meu corte'}}
