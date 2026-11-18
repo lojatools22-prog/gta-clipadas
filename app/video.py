@@ -3,7 +3,7 @@ import os, json, uuid, time, shutil, subprocess, threading, logging, traceback
 from pathlib import Path
 import httpx
 
-from . import assets, art, templates, captions
+from . import assets, art, templates, captions, framing
 
 DATA = Path(os.getenv("DATA_DIR", Path(__file__).parent.parent / "data"))
 JOBS_DIR = DATA / "jobs"
@@ -134,8 +134,20 @@ def _cover(w, h):
     return f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h}"
 
 
-def layout_filter(lay: dict, corner: str, cs: float, cam_ref: str | None = None) -> str:
+def layout_filter(lay: dict, corner: str, cs: float, cam_ref: str | None = None, fr: dict | None = None) -> str:
     k = lay["kind"]
+    face = (fr or {}).get("cam")
+    if corner == "auto" and fr is not None and not face and not cam_ref and k in ("cam_top", "cam_bottom", "split", "float"):
+        # a IA não achou facecam nesse vídeo: em vez de recortar um canto qualquer, mostra o vídeo inteiro
+        if k == "float":
+            return f"[0:v]{_cover(W, H)}[base]"
+        k = "blur_plain"
+
+    def camf(w, h):
+        if face:
+            return framing.cam_crop(face, w, h, (fr or {}).get("aspect", 16 / 9))
+        return f"{_cam('top-left' if corner == 'auto' else corner, cs)},{_cover(w, h)}"
+
     if cam_ref and k in ("cam_top", "cam_bottom", "split", "float"):
         # webcam enviada em arquivo separado: usa o vídeo inteiro dela como facecam
         if k == "float":
@@ -146,15 +158,17 @@ def layout_filter(lay: dict, corner: str, cs: float, cam_ref: str | None = None)
     if k in ("cam_top", "cam_bottom", "split"):
         ch = 960 if k == "split" else 608
         gh = H - ch
-        f = f"[0:v]split=2[a][b];[a]{_cam(corner, cs)},{_cover(W, ch)}[cam];[b]{_cover(W, gh)}[game];"
+        f = f"[0:v]split=2[a][b];[a]{camf(W, ch)}[cam];[b]{_cover(W, gh)}[game];"
         return f + ("[game][cam]" if k == "cam_bottom" else "[cam][game]") + "vstack=inputs=2[base]"
     if k == "float":
-        return (f"[0:v]split=2[a][b];[b]{_cover(W, H)}[game];[a]{_cam(corner, cs)},{_cover(424, 234)}[cam];"
+        return (f"[0:v]split=2[a][b];[b]{_cover(W, H)}[game];[a]{camf(424, 234)}[cam];"
                 f"[game][cam]overlay=48:198[base]")
     if k == "blur":
         return (f"[0:v]split=2[a][b];[a]{_cover(W, H)},boxblur=25:3,eq=brightness=-0.05,colorchannelmixer=rr=0.85:gg=0.45:bb=0.95[bg];"
                 f"[b]scale={W}:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2[base]")
     if k == "crop":
+        if (fr or {}).get("face_big"):  # live de câmera: o corte segue o rosto
+            return f"[0:v]{framing.focus_crop(fr['focus'], W, H)}[base]"
         return f"[0:v]{_cover(W, H)}[base]"
     if k == "blur_plain":  # vídeo inteiro no meio, o próprio vídeo desfocado atrás, sem tingir
         return (f"[0:v]split=2[a][b];[a]{_cover(W, H)},boxblur=30:4,eq=brightness=-0.12[bg];"
@@ -185,7 +199,8 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
     if opts.get("_portrait") and not slot:  # vídeo gravado em pé: ocupa a tela toda, sem recortar facecam
         vf = f"[0:v]{_cover(W, H)}[base]"
     else:
-        vf = layout_filter(tpl["layout"], opts.get("corner", "top-left"), float(opts.get("cam_size", 0.30)), cam_ref if slot else None)
+        vf = layout_filter(tpl["layout"], opts.get("corner", "top-left"), float(opts.get("cam_size", 0.30)), cam_ref if slot else None,
+                           opts.get("_frame"))
     cur, n = "[base]", 0
 
     def nxt():
@@ -343,6 +358,13 @@ def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list
     cap = templates.CAPTION_BY_ID.get(opts.get("caption"), templates.CAPTION_STYLES[0])
     dur = (trim[1] - trim[0]) if trim else probe_duration(src)
     opts = {**opts, "_portrait": is_portrait(src)}
+    if not opts["_portrait"] and opts.get("corner", "auto") == "auto":
+        opts["corner"] = "auto"
+        try:  # enquadramento automático: acha a facecam e o ponto de ação
+            a = trim[0] if trim else 0.0
+            opts["_frame"] = framing.analyze(src, a, a + dur)
+        except Exception as e:
+            log.error("Enquadramento automático falhou: %s", e)
     (job_dir / "subs.ass").write_text(captions.build(words, dur, tpl, cap, opts.get("caption_color", "auto"), opts.get("title", "")), encoding="utf-8")
     vf, extra = build_filter(tpl, opts, dur, cam=cam)
     pre = ["-ss", f"{trim[0]:.2f}", "-t", f"{dur:.2f}"] if trim else []

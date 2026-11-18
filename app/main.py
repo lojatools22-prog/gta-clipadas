@@ -423,7 +423,7 @@ class JobIn(BaseModel):
     watermark: bool = True
     logo: bool = True
     cover: bool = True
-    corner: str = "top-left"
+    corner: str = "auto"
     cam_size: float = 0.30
     title: str = ""
     captions: bool = True
@@ -785,7 +785,7 @@ _th.Thread(target=_upload_cleanup, daemon=True).start()
 @app.post("/api/jobs/upload")
 async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), analysis: str = Form(""), upload_id: str = Form(""), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
                      template: str = Form("basico-legenda"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
-                     corner: str = Form("top-left"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
+                     corner: str = Form("auto"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
                      watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None), logo: bool = Form(True), review: bool = Form(False)):
     u = current_user(request)
     max_mb = accounts.plan_info(u)["max_mb"]
