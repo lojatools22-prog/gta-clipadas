@@ -279,8 +279,11 @@ def plan_info(u) -> dict:
     return PLANS[active_plan(u)]
 
 
+ADMIN_IDS = {int(x) for x in os.getenv("ADMIN_IDS", "").replace(" ", "").split(",") if x.isdigit()}
+
+
 def is_admin(u) -> bool:
-    return bool(u) and (u["email"] or "").lower() in ADMIN_EMAILS
+    return bool(u) and ((u["email"] or "").lower() in ADMIN_EMAILS or int(u["id"]) in ADMIN_IDS)
 
 
 def logo_path(user_id) -> Path:
