@@ -48,11 +48,11 @@ def source_of(aid: str) -> Path | None:
     return None
 
 
-def create(user_id: int, url: str | None = None, upload: Path | None = None) -> dict:
+def create(user_id: int, url: str | None = None, upload: Path | None = None, auto: dict | None = None, name: str = "") -> dict:
     aid = uuid.uuid4().hex[:12]
     d = DIR / aid
     d.mkdir(parents=True)
-    st = {"id": aid, "user_id": user_id, "status": "na fila", "progress": 2, "url": url, "created": time.time(), "moments": []}
+    st = {"id": aid, "user_id": user_id, "status": "na fila", "progress": 2, "url": url, "created": time.time(), "moments": [], "auto": auto, "name": name[:120]}
     if upload:
         sd = video.SCRATCH / "analises" / aid
         sd.mkdir(parents=True, exist_ok=True)
@@ -65,8 +65,28 @@ def create(user_id: int, url: str | None = None, upload: Path | None = None) -> 
     return public(st)
 
 
+ON_READY = None  # chamado com o id da análise quando ela termina com "gerar sozinho" ligado (main cria os cortes)
+
+
 def public(st: dict) -> dict:
-    return {k: st.get(k) for k in ("id", "status", "progress", "moments", "error", "duration", "title")}
+    out = {k: st.get(k) for k in ("id", "status", "progress", "moments", "error", "duration", "title", "url", "created", "note")}
+    out["auto"] = bool(st.get("auto"))
+    out["name"] = st.get("title") or st.get("name") or (st.get("url") or "Vídeo enviado")
+    return out
+
+
+def list_for(user_id: int, limit: int = 30) -> list:
+    """Vídeos (projetos) do usuário, do mais novo pro mais velho."""
+    out = []
+    for f in DIR.glob("*/estado.json"):
+        try:
+            st = STATE.get(f.parent.name) or json.loads(f.read_text())
+        except Exception:
+            continue
+        if st.get("user_id") == user_id and st.get("auto"):
+            out.append(st)
+    out.sort(key=lambda s: -s.get("created", 0))
+    return [public(s) for s in out[:limit]]
 
 
 # ---------------- trabalho ----------------
@@ -241,7 +261,16 @@ def _work(aid: str):
         moments = _pick(segs, peaks, dur, aid)
         if not moments:
             raise RuntimeError("Não achamos momentos fortes nesse vídeo. Tente outro ou escolha o trecho na mão.")
-        _set(aid, status="pronto", progress=100, moments=moments)
+        if st.get("auto") and ON_READY:
+            _set(aid, status="cortando", progress=99, moments=moments)
+            try:
+                ON_READY(aid)
+            except Exception as e:
+                log.error("Cortes automáticos da análise %s falharam: %s", aid, e)
+                _set(aid, note=str(getattr(e, "detail", e))[:200])
+            _set(aid, status="pronto", progress=100)
+        else:
+            _set(aid, status="pronto", progress=100, moments=moments)
         log.info("Momentos %s: %s achados em %.0f min de vídeo", aid, len(moments), dur / 60)
     except Exception as e:
         msg = str(e)

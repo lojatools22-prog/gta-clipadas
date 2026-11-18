@@ -75,6 +75,31 @@ input:disabled{opacity:.7}
 .or{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:12px;font-weight:600;margin:12px 4px;text-transform:uppercase;letter-spacing:.06em}
 .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 .lrow{display:flex;gap:8px}
+.lrow.big{flex-direction:column}@media(min-width:620px){.lrow.big{flex-direction:row}}.lrow.big input{height:58px;font-size:16px;border-radius:14px}.lrow.big .go{height:58px;border-radius:14px;padding:0 22px;font-size:16px}
+.srcs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:12px 2px 0}.srcs span{font-size:12px;font-weight:600;color:var(--dim);padding:5px 10px;border-radius:99px;box-shadow:0 0 0 1px var(--line)}
+.srcs .ortxt{box-shadow:none;padding:0 2px;font-size:13px}.upbtn{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:#fff;font:600 14px Inter,sans-serif;padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 0 0 1px var(--line2)}.upbtn svg{width:16px;height:16px}.upbtn.over{background:var(--pinkbg)}
+.uphint{color:var(--dim);font-size:13px;margin:12px 2px 0}
+/* página do vídeo (projeto) */
+.vhead{display:flex;align-items:center;gap:12px;margin:10px 0 16px}.vhead h2{font-size:22px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vhead small{color:var(--mute);font-size:13px}
+.vbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px;position:sticky;top:64px;z-index:5;background:var(--bg,#09090b);padding:8px 0}
+.vbar label{white-space:nowrap;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}.vbar .sp{flex:1}
+.vbar .sm{white-space:nowrap}
+.cgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}@media(min-width:760px){.cgrid{grid-template-columns:repeat(3,1fr)}}
+.clip{background:var(--s1);border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px var(--line);position:relative}.clip.sel{box-shadow:0 0 0 2px var(--pink)}
+.clip .m{position:relative;aspect-ratio:9/16;background:#000}.clip .m video,.clip .m img{width:100%;height:100%;object-fit:cover;display:block}
+.clip .m .wait{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:8px;color:#fff;font-size:13px;font-weight:600;background:rgba(0,0,0,.45)}
+.clip .m .wait i{width:26px;height:26px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:var(--pink);animation:spin 1s linear infinite}
+.clip .score{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.75);color:#fff;font:800 12px Inter,sans-serif;padding:4px 8px;border-radius:99px}
+.clip .score.hot{background:var(--pink)}
+.clip .ck{position:absolute;top:8px;left:8px;width:24px;height:24px;border-radius:7px;border:2px solid #fff;background:rgba(0,0,0,.4);display:grid;place-items:center;color:#fff;font-size:13px;font-weight:800;cursor:pointer;z-index:2}
+.clip.sel .ck{background:var(--pink);border-color:var(--pink)}
+.clip .b{padding:10px 10px 12px}.clip h4{margin:0 0 4px;font-size:13px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.clip p{margin:0 0 8px;font-size:12px;color:var(--mute);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.clip .t{font-size:11px;color:var(--dim);font-weight:600}.clip .acts{display:flex;gap:6px;margin-top:8px}.clip .acts a,.clip .acts button{flex:1;text-align:center}
+.anl{text-align:center;padding:10px 0 20px}
+.more{margin-top:22px}.more h3{font-size:16px;margin:0 0 8px}.mrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;box-shadow:0 0 0 1px var(--line);margin-bottom:6px;font-size:14px}.mrow b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vlist{display:grid;gap:8px;margin-bottom:22px}.vitem{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--s1);box-shadow:0 0 0 1px var(--line);cursor:pointer;border:0;color:#fff;text-align:left;font:inherit;width:100%}
+.vitem b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vitem small{color:var(--mute);font-size:12px}.vitem>span{flex:1;min-width:0}.vitem .pill{flex:none}
 .lrow input{flex:1;min-width:0}
 .lrow .go{width:auto;padding:0 18px;flex:none;font-size:15px}
 .trust{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--mute);font-size:13px;margin-top:16px}
@@ -364,19 +389,15 @@ input,select,textarea{font-size:16px!important}
       <div>
         <span class="badge"><i></i>GTA 6 chega em 19/11 · corte desde o 1º dia</span>
         <h1>Transforme lives de GTA em <em>cortes virais</em></h1>
-        <p class="sub">Suba a live ou cole o link. A IA acha os melhores momentos e em cerca de 1 minuto você baixa os cortes verticais com legenda automática, visual de GTA e capa, prontos pro TikTok, Reels e Shorts.</p>
+        <p class="sub">Cole o link da live. A IA acha os melhores momentos e entrega os cortes verticais prontos, com legenda automática e visual de GTA, pro TikTok, Reels e Shorts.</p>
         <div class="upl">
-          <button class="drop" id="drop" onclick="pickFile()">
-            <span class="di"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg></span>
-            <b>Subir vídeo</b>
-            <small>Arraste aqui ou clique · MP4 ou MOV até <span id="maxMb">1 GB</span> (<span class="gbPro">3 GB</span> no Pro)</small>
-          </button>
-          <input id="file" type="file" accept="video/*" hidden>
-          <div class="or">ou cole um link</div>
-          <div class="lrow" id="linkBox">
-            <input id="url" placeholder="Link da Twitch, YouTube ou Kick" inputmode="url" onkeydown="if(event.key==='Enter')startFromLink()">
-            <button class="go" onclick="startFromLink()">Cortar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <div class="lrow big" id="linkBox">
+            <input id="url" placeholder="Cole o link da live ou do vídeo" inputmode="url" onkeydown="if(event.key==='Enter')goLink()">
+            <button class="go" onclick="goLink()">Gerar cortes <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
           </div>
+          <div class="srcs"><span class="ortxt">ou</span><button type="button" class="upbtn" id="drop" onclick="pickFile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>Enviar arquivo</button></div>
+          <input id="file" type="file" accept="video/*" hidden>
+          <p class="uphint">A IA assiste o vídeo inteiro, acha os melhores momentos e entrega os cortes prontos. Arquivo: MP4 ou MOV até <span id="maxMb">1 GB</span>.</p>
         </div>
         <div class="trust" id="gift">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b class="freeN">3</b> cortes grátis no cadastro</span></span>
@@ -575,6 +596,7 @@ input,select,textarea{font-size:16px!important}
   <!-- MEUS CORTES -->
   <section id="v-mine" class="narrow" hidden>
     <div class="wh" style="margin:10px 0 16px"><button class="back" onclick="home()">←</button><h2 class="disp">Meus cortes</h2></div>
+    <div id="vids"></div>
     <div id="jobs"></div>
   </section>
 
@@ -598,6 +620,8 @@ input,select,textarea{font-size:16px!important}
       <p class="lead" id="proStatus" style="margin-top:10px"></p>
     </details>
   </section>
+  <!-- VÍDEO (projeto: cortes que a IA gerou) -->
+  <section id="v-video" class="narrow" hidden><div id="vid"></div></section>
   <!-- GERANDO -->
   <section id="v-gen" class="narrow" hidden><div id="gen"></div></section>
 </main>
@@ -621,7 +645,7 @@ const FEAT_T=['vice-cam-cima','neon-rosa','missao-cumprida','procurado-3','celul
 const FEAT_C=['pesada-karaoke','pesada-pop','neon-karaoke','neon-pop','condensada-karaoke','redonda-pop'];
 let ME=null,WIZ=false;const isPro=()=>!!(ME&&ME.pro);const myTier=()=>ME?ME.tier:0;const TIERN={1:'INICIANTE',2:'CLIPADOR'};
 
-function view(v){document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===v||(v==='make'&&b.dataset.go==='home')));if(v==='mine')renderJobs();if(v==='gen')renderGen();if(typeof updPill==='function')setTimeout(updPill);$('#backWiz').hidden=!(v==='planos'&&WIZ);if(v!=='planos'&&v!=='make')WIZ=false;if(v==='conta')renderConta();if(v==='virais')loadVirais();scrollTo(0,0)}
+function view(v){document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===v||(v==='make'&&b.dataset.go==='home')));if(v==='mine'){renderJobs();renderVids()}if(v==='video'&&VID){VID.readyPill=0;renderVid()}if(v==='gen')renderGen();if(typeof updPill==='function')setTimeout(updPill);$('#backWiz').hidden=!(v==='planos'&&WIZ);if(v!=='planos'&&v!=='make')WIZ=false;if(v==='conta')renderConta();if(v==='virais')loadVirais();scrollTo(0,0)}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>view(b.dataset.go));
 function home(){view('home')}
 function step(n){view('make');[1,2,3].forEach(i=>$('#s'+i).hidden=i!==n);document.querySelectorAll('.steps i').forEach((e,i)=>e.classList.toggle('on',i<n));if(n===3)$('#go').textContent=(AN&&AN.status==='pronto'&&SELM.size)?`✂️ Gerar ${SELM.size} corte${SELM.size>1?'s':''}`:'✂️ Gerar meu corte';if(n===2)renderTpls();if(n===3)renderCaps();scrollTo(0,0)}
@@ -637,6 +661,9 @@ function startFromLink(){if(needAcc(startFromLink))return;const u=$('#url').valu
 function pickFile(){if(needAcc(()=>sheet(`<h2 class="disp" style="margin:0 0 6px">Conta pronta ✅</h2><p class="lead">Agora é só escolher o vídeo da live ou do clipe.</p><button class="go" onclick="closeSheet();$('#file').click()">⬆️ Escolher vídeo</button>`)))return;$('#file').click()}
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const mb=f.size/1048576,max=(ME&&ME.max_mb)||STATUS.mb_base||1024;
   if(mb>max){e.target.value='';$('#linkBox').hidden=false;$('#url').focus();return toast(`Esse vídeo tem ${(mb/1024).toFixed(1)} GB e o limite do seu plano é ${Math.round(max/1024)} GB${max<(STATUS.mb_pro||3072)?' ('+Math.round((STATUS.mb_pro||3072)/1024)+' GB no Pro)':''}. Cole o link da live aqui embaixo e marque o tempo do corte.`)}
+  if(ME&&ME.auto_moments&&!e.manual){e.target.value='';sheet(`<h2 class="disp" style="margin:0 0 6px">Como você quer cortar?</h2><p class="lead" style="font-size:14px">${esc(f.name)}</p>
+    <button class="go" id="fAuto">✨ A IA acha os 10 melhores cortes</button><button class="alt" id="fMan">Eu escolho o trecho</button>`);
+    $('#fAuto').onclick=()=>{closeSheet();startAuto({file:f})};$('#fMan').onclick=()=>{closeSheet();const dt=new DataTransfer();dt.items.add(f);$('#file').files=dt.files;$('#file').onchange({target:$('#file'),manual:true})};return}
   resetMedia();src={kind:'file',file:f};$('#srcLabel').textContent=f.name;const pl=$('#player');try{URL.revokeObjectURL(pl.src)}catch{}pl.src=URL.createObjectURL(f);$('#playerBox').hidden=false;$('#markRow').hidden=false;
   pl.onloadedmetadata=()=>initTrim(pl.duration);step(1);e.target.value=''};
 function useMoment(o){if(needAcc(()=>useMoment(o)))return;resetMedia();src={kind:'link',url:o.url};$('#url').value=o.url;$('#srcLabel').textContent=o.title||o.url;probeLink(o.url,o.start,o.end);if(o.title)$('#title').value=o.title.slice(0,80).toUpperCase();$('#sheet').classList.remove('on');step(1)}
@@ -780,6 +807,76 @@ async function generate(){const go=$('#go');go.disabled=true;go.textContent='Env
   GEN.ids=j.jobs||[j.id];GEN.phase='job';addPending(GEN.ids);renderGen();watchJobs()}
   catch(err){toast(err.message);if(!$('#v-gen').hidden)step(3);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)WIZ=true,setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='✂️ Gerar meu corte'}}
 
+
+/* ===== fluxo principal (igual Cut.Pro): cola o link → a IA gera os cortes sozinha → página do vídeo ===== */
+let VID=null,VT=null,VSEL=new Set();
+const mmss=t=>{t=Math.max(0,Math.round(t||0));const h=Math.floor(t/3600),m=Math.floor(t%3600/60),x=t%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0')};
+function goLink(){if(needAcc(goLink))return;const u=$('#url').value.trim();if(!u)return toast('Cole o link da live ou do vídeo');if(!/^https?:\/\//.test(u))return toast('Esse link não parece certo');
+  if(ME.auto_moments)return startAuto({url:u});
+  autoUpsell(()=>startFromLink())}
+function autoUpsell(manual){sheet(`<h2 class="disp" style="margin:0 0 6px">Quer que a IA faça os cortes?</h2><p class="lead">No <b style="color:#fff">Clipador</b> a IA assiste o vídeo inteiro e entrega os <b style="color:#fff">10 melhores cortes</b> prontos, com nota de viral. No seu plano você escolhe o trecho na mão.</p>
+  <button class="go" onclick="closeSheet();WIZ=false;view('planos')">Ver o Clipador</button><button class="alt" onclick="closeSheet();(${manual.toString()})()">Escolher o trecho na mão</button>`)}
+function autoOpts(){const p=PREFS();return {template:p.tpl||'basico-legenda',caption:p.cap||'pesada-karaoke',caption_color:'auto',captions:p.captions!==false,cover:p.cover!==false}}
+async function startAuto({url,file}){VID={id:null,status:'enviando',up:0,name:url||file.name,moments:[]};VSEL.clear();view('video');renderVid();
+  try{const fd=new FormData();const o=autoOpts();for(const k in o)fd.append(k,o[k]);fd.append('auto','1');fd.append('n','10');
+    if(file){const id=await upFile(file,p=>{VID.up=p;renderVid()});fd.append('upload_id',id)}else fd.append('url',url);
+    const r=await api('/api/moments',{method:'POST',body:fd});VID={...r,moments:[]};LS.set('cgta_vid',r.id);$('#url').value='';watchVid()}
+  catch(e){toast(e.message);VID=null;if(e.status===402){WIZ=false;view('planos')}else home()}}
+function openVideo(id){VID={id,status:'carregando',moments:[]};VSEL.clear();view('video');renderVid();watchVid()}
+async function watchVid(){clearTimeout(VT);if(!VID||!VID.id)return;
+  try{VID=await api('/api/videos/'+VID.id)}catch(e){if(e.status===404){VID=null;LS.set('cgta_vid',null);return renderVid()}VT=setTimeout(watchVid,5000);return}
+  if(!$('#v-video').hidden)renderVid();updVidPill();
+  const busy=!['pronto','erro'].includes(VID.status)||VID.moments.some(m=>m.clip&&!['pronto','erro','expirado'].includes(m.clip.status));
+  if(busy)VT=setTimeout(watchVid,document.hidden?7000:3000);else if(LS.get('cgta_vid')===VID.id&&VID.status!=='erro'){LS.set('cgta_vid',null);if($('#v-video').hidden)vidReady()}}
+function vidReady(){const n=VID.moments.filter(m=>m.clip&&m.clip.status==='pronto').length;if(!n)return;
+  try{if(document.hidden&&'Notification' in window&&Notification.permission==='granted')new Notification(`${n} cortes prontos! 🎬`,{body:'Toque pra ver e baixar.'})}catch(e){}
+  VID.readyPill=n;updVidPill()}
+function updVidPill(){const p=$('#genPill');if(!VID||!$('#v-video').hidden)return;const busy=!['pronto','erro'].includes(VID.status);
+  if(!busy&&!VID.readyPill)return;p.hidden=false;p.innerHTML=busy?'<i></i>A IA está cortando seu vídeo… ver':`✅ ${VID.readyPill} cortes prontos · ver`;p.onclick=()=>{p.hidden=true;p.onclick=()=>view('gen');view('video')}}
+const VSTEPS=[['enviando','Enviando o vídeo'],['baixando','Baixando o vídeo'],['ouvindo','Ouvindo tudo'],['escolhendo','Achando os melhores momentos'],['cortando','Montando os cortes']];
+function renderVid(){const el=$('#vid');if(!VID){el.innerHTML='<div class="empty">Esse vídeo não está mais disponível.<br><br><button class="go" onclick="home()">Gerar novos cortes</button></div>';return}
+  const head=`<div class="vhead"><button class="back" onclick="view('mine')">←</button><span style="min-width:0"><h2 class="disp">${esc(VID.name||'Seu vídeo')}</h2><small>${VID.duration?'Vídeo de '+mmss(VID.duration)+' · ':''}${VID.moments.length?VID.moments.length+' momentos achados':'Analisando'}</small></span></div>`;
+  if(VID.status==='erro'){el.innerHTML=head+`<div class="box anl"><div style="font-size:34px">⚠️</div><h3>Não deu pra cortar esse vídeo</h3><p class="lead" style="font-size:14px">${esc(VID.error||'Tente de novo.')}</p><button class="go" onclick="home()">Tentar outro link</button></div>`;return}
+  const clips=VID.moments.filter(m=>m.clip);
+  if(VID.status!=='pronto'&&!clips.length){
+    let st=VID.status==='na fila'||VID.status==='preparando'||VID.status==='carregando'?(VID.url?'baixando':'ouvindo'):VID.status;if(VID.status==='enviando')st='enviando';
+    const steps=VSTEPS.filter(([k])=>k!=='enviando'||VID.status==='enviando'||!VID.url).filter(([k])=>!(k==='baixando'&&VID.status!=='enviando'&&!VID.url)).filter(([k])=>!(k==='baixando'&&VID.status==='enviando'));
+    const idx=Math.max(0,steps.findIndex(([k])=>k===st));const pct=VID.status==='enviando'?Math.round((VID.up||0)*0.2):Math.max(3,VID.progress||3);
+    el.innerHTML=head+`<div class="gen anl"><div class="gen-vis"><img src="/previews/tpl-${esc(autoOpts().template)}.jpg" alt=""><div class="ring"><b>${pct}%</b></div></div>
+     <h2 class="disp">A IA está assistindo seu vídeo</h2><p class="lead">Ela acha os melhores momentos e já monta os cortes. Lives longas levam alguns minutos.</p>
+     ${VID.status==='enviando'?`<div class="gen-note warn">📤 <b>Mantenha esta página aberta</b> só até o envio terminar (${VID.up||0}%).</div>`:`<div class="gen-note free">✅ <b>Pode fechar a página.</b> Os cortes continuam sendo feitos e ficam aqui, em Meus cortes.</div>`}
+     <div class="gen-bar"><i style="width:${pct}%"></i></div><ul class="gen-steps">${steps.map(([k,l],i)=>`<li class="${i<idx?'ok':i===idx?'now':''}"><i>${i<idx?'✓':''}</i>${l}${i===idx&&k==='enviando'?`<small>${VID.up||0}%</small>`:''}</li>`).join('')}</ul>
+     <div class="gen-btns">${'Notification' in window&&Notification.permission==='default'&&VID.status!=='enviando'?`<button class="go ghost" onclick="Notification.requestPermission().then(renderVid)">🔔 Me avisar quando ficar pronto</button>`:''}<button class="alt" onclick="home()">Voltar pro início</button></div></div>`;return}
+  const all=clips.length&&clips.every(m=>VSEL.has(m.clip.id));const nsel=clips.filter(m=>VSEL.has(m.clip.id)).length;
+  const bar=`<div class="vbar"><label><input type="checkbox" ${all?'checked':''} onchange="vSelAll(this.checked)"> ${nsel?nsel+' selecionado'+(nsel>1?'s':''):clips.length+' cortes'}</label><span class="sp"></span>
+    ${nsel?`<button class="sm" onclick="vDownload()">Baixar</button><button class="sm g" onclick="vVisual()">Trocar visual</button><button class="sm g" onclick="vDelete()">Apagar</button>`:`<button class="sm g" onclick="vSelAll(true)">Selecionar todos</button>`}</div>`;
+  const note=VID.note?`<div class="gen-note warn" style="max-width:none">${esc(VID.note)} <a href="#" onclick="view('planos');return false" style="color:#fff;font-weight:700">Ver planos</a></div>`:'';
+  const cards=clips.map(m=>{const c=m.clip,ok=c.status==='pronto',err=c.status==='erro'||c.status==='expirado',sel=VSEL.has(c.id);
+    const media=ok?`<video src="${c.video}" poster="${c.cover||c.thumb}" controls playsinline preload="none"></video>`:`<img src="/previews/tpl-${esc(autoOpts().template)}.jpg" alt="" style="filter:blur(3px) brightness(.5)"><div class="wait">${err?'⚠️ Não deu certo':`<i></i>${LBL[c.status]||'Na fila…'}`}</div>`;
+    return `<div class="clip ${sel?'sel':''}"><div class="m">${media}${ok?`<span class="ck" onclick="vToggle('${c.id}')">${sel?'✓':''}</span>`:''}<span class="score ${m.score>=80?'hot':''}">🔥 ${m.score}</span></div>
+      <div class="b"><h4>${esc(m.title||'Corte')}</h4><p>${esc(m.reason||'')}</p><span class="t">${mmss(m.start)} – ${mmss(m.end)} · ${m.end-m.start}s</span>
+      ${ok?`<div class="acts"><a class="sm" href="${c.video}" download="gta-clipadas-${c.id}.mp4">Baixar</a>${navigator.share?`<button class="sm g" onclick="shareCut('${c.video}','${c.id}')">Postar</button>`:''}</div>`:''}</div></div>`}).join('');
+  const rest=VID.moments.filter(m=>!m.clip);
+  const more=rest.length?`<div class="more"><h3>Mais ${rest.length} momento${rest.length>1?'s':''} que a IA achou</h3><p class="lead" style="font-size:13px;margin:0 0 10px">Cada um gasta 1 corte do seu plano.</p>${rest.map(m=>`<div class="mrow"><span class="pill">🔥 ${m.score}</span><b>${esc(m.title||'Momento')}</b><small style="color:var(--mute)">${mmss(m.start)}</small><button class="sm" onclick="vGen(${m.start})">Gerar</button></div>`).join('')}</div>`:'';
+  el.innerHTML=head+note+bar+`<div class="cgrid">${cards}</div>`+more}
+function vToggle(id){VSEL.has(id)?VSEL.delete(id):VSEL.add(id);renderVid()}
+function vSelAll(on){VSEL.clear();if(on)VID.moments.forEach(m=>m.clip&&m.clip.status==='pronto'&&VSEL.add(m.clip.id));renderVid()}
+async function vDownload(){const cs=VID.moments.filter(m=>m.clip&&VSEL.has(m.clip.id)&&m.clip.video);toast(`Baixando ${cs.length} corte${cs.length>1?'s':''}…`);
+  for(const m of cs){const a=document.createElement('a');a.href=m.clip.video;a.download=`gta-clipadas-${m.clip.id}.mp4`;document.body.appendChild(a);a.click();a.remove();await new Promise(r=>setTimeout(r,700))}}
+async function vDelete(){const ids=[...VSEL];if(!confirm(`Apagar ${ids.length} corte${ids.length>1?'s':''} desse vídeo?`))return;
+  try{await post(`/api/videos/${VID.id}/batch`,{jobs:ids,action:'apagar'});VSEL.clear();toast('Cortes apagados');watchVid()}catch(e){toast(e.message)}}
+async function vGen(start){try{const r=await post(`/api/videos/${VID.id}/batch`,{jobs:[],action:'gerar',starts:[start]});if(r.user){ME=r.user;refreshAcct()}toast('Gerando o corte…');watchVid()}catch(e){toast(e.message);if(e.status===402)view('planos')}}
+function vVisual(){if(!CAT)return;let t=autoOpts().template,c=autoOpts().caption;
+  const tg=CAT.templates.filter(x=>x.tier<=myTier());
+  sheet(`<h2 class="disp" style="margin:0 0 4px">Trocar o visual</h2><p class="lead" style="font-size:14px;margin:0 0 12px">Aplica em ${VSEL.size} corte${VSEL.size>1?'s':''}. Não gasta cortes do plano.</p>
+   <div class="ck-lbl">Visual</div><div class="grid" id="vvT" style="max-height:44vh;overflow:auto">${tg.map(x=>`<button class="opt v ${x.id===t?'on':''}" data-id="${x.id}"><img loading="lazy" src="/previews/tpl-${x.id}.jpg" alt=""><span class="n">${esc(x.name)}</span></button>`).join('')}</div>
+   <div class="ck-lbl" style="margin-top:12px">Legenda</div><select id="vvC" class="field" style="width:100%;height:46px;border-radius:12px;background:var(--s2,#1c1c22);color:#fff;border:1px solid var(--line);padding:0 10px">${CAT.captions.filter(x=>x.tier<=myTier()).map(x=>`<option value="${x.id}" ${x.id===c?'selected':''}>${esc((CAT.caption_fonts.find(f=>f.id===x.font_key)||{name:''}).name+' · '+((CAT.caption_anims.find(a=>a.id===x.anim)||{}).name||''))}</option>`).join('')}</select>
+   <button class="go" id="vvGo" style="margin-top:14px">Aplicar nos cortes</button>`);
+  $('#vvT').onclick=e=>{const b=e.target.closest('[data-id]');if(!b)return;t=b.dataset.id;document.querySelectorAll('#vvT .opt').forEach(x=>x.classList.toggle('on',x===b))};
+  $('#vvGo').onclick=async()=>{c=$('#vvC').value;$('#vvGo').disabled=true;try{const r=await post(`/api/videos/${VID.id}/batch`,{jobs:[...VSEL],action:'visual',template:t,caption:c,caption_color:'auto'});const p=PREFS();p.tpl=t;p.cap=c;LS.set('cgta_prefs',p);VSEL.clear();closeSheet();toast(`Montando ${r.n} corte${r.n>1?'s':''} com o novo visual…`);watchVid()}catch(e){toast(e.message);$('#vvGo').disabled=false}}}
+async function renderVids(){const el=$('#vids');if(!el||!ME)return el&&(el.innerHTML='');let vs=[];try{vs=await api('/api/my/videos')}catch(e){}
+  el.innerHTML=vs.length?`<h3 style="font-size:16px;margin:0 0 8px">Seus vídeos</h3><div class="vlist">${vs.map(v=>`<button class="vitem" onclick="openVideo('${v.id}')"><span><b>${esc(v.name)}</b><small>${new Date((v.created||0)*1000).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}${v.duration?' · '+mmss(v.duration):''}</small></span><span class="pill">${v.status==='pronto'?(v.moments||[]).filter(m=>m.job&&!m.hidden).length+' cortes':v.status==='erro'?'erro':'cortando…'}</span></button>`).join('')}</div><h3 style="font-size:16px;margin:0 0 8px">Todos os cortes</h3>`:''}
+
 /* tela "gerando seu corte": abre na hora, mostra as etapas e deixa a pessoa sair */
 let GEN=null,WT=null;const T0=document.title;
 const PEND=()=>LS.get('cgta_pending',[]);
@@ -812,7 +909,7 @@ function renderGen(){const el=$('#gen');if(!GEN){el.innerHTML='<div class="empty
    ${note}${done?'':`<div class="gen-bar"><i style="width:${pct}%"></i></div><ul class="gen-steps">${steps.map(([k,l],i)=>`<li class="${i<idx?'ok':i===idx?'now':''}"><i>${i<idx?'✓':''}</i>${l}${i===idx&&k==='up'?`<small>${GEN.up}%</small>`:i===idx&&k==='fila'&&pos>1?`<small>${pos}º da fila</small>`:''}</li>`).join('')}</ul>`}
    <div class="gen-btns">${btns}</div></div>`;
   updPill()}
-function updPill(){const p=$('#genPill');if(GEN&&!$('#v-gen').hidden&&genStage()==='pronto')GEN.seen=true;
+function updPill(){const p=$('#genPill');if(!GEN||GEN.phase!=='job'){p.hidden=true;return updVidPill()}if(GEN&&!$('#v-gen').hidden&&genStage()==='pronto')GEN.seen=true;
   const show=GEN&&GEN.phase==='job'&&!GEN.seen&&$('#v-gen').hidden;p.hidden=!show;if(!show)return;
   p.innerHTML=genStage()==='pronto'?'✅ Seu corte ficou pronto · ver':`<i></i>Gerando ${GEN.ids.length>1?GEN.ids.length+' cortes':'seu corte'}… ver`}
 async function watchJobs(){clearTimeout(WT);const ids=PEND();if(!ids.length||!TOK())return;let left=0;
@@ -1025,6 +1122,7 @@ $('#gal').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const t=
   try{CAT=await api('/api/catalog')}catch{toast('Não deu pra carregar os visuais')}
   renderGal();applyPrefs();
   if(TOK())api('/api/me').then(u=>{ME=u;refreshAcct();
+    const vid=LS.get('cgta_vid',null);if(vid&&!VID){VID={id:vid,status:'carregando',moments:[]};watchVid()}
     const pend=PEND();if(pend.length){GEN={boot:true,ids:pend,file:false,link:false,up:100,phase:'job',tpl:(PREFS().tpl||'basico-legenda'),st:{}};watchJobs()}}).catch(e=>{if(e.status===401)logoutLocal()});
   const pg=new URLSearchParams(location.search).get('pagamento');if(pg){history.replaceState(null,'',location.pathname);view('planos');
     toast(pg==='success'?'Pagamento aprovado! Seu plano já está liberado.':pg==='pending'?'Pagamento em análise. Assim que aprovar, o plano libera sozinho.':'O pagamento não foi concluído.');setTimeout(()=>TOK()&&api('/api/me').then(u=>{ME=u;refreshAcct()}),2500)}

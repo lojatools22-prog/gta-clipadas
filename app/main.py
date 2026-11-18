@@ -469,7 +469,10 @@ def _segments(raw: dict, P: dict) -> list:
 
 
 def _start(request: Request, raw: dict, upload: Path | None = None, cam: Path | None = None):
-    u = current_user(request)
+    return _start_for(current_user(request), raw, upload, cam)
+
+
+def _start_for(u, raw: dict, upload: Path | None = None, cam: Path | None = None):
     P = accounts.plan_info(u)
     segs = _segments(raw, P)
     base = _opts(raw, P)
@@ -525,6 +528,113 @@ def _refund_failed(jid: str):
 
 
 video.ON_FAIL = _refund_failed
+
+AUTO_MAX = int(os.getenv("AUTO_CLIPS", "10"))  # quantos cortes a IA gera sozinha por vídeo
+
+
+def _auto_cut(aid: str):
+    """Fim da análise com "gerar sozinho": cria os melhores cortes direto, como no fluxo do Cut.Pro."""
+    st = moments.get(aid)
+    u = accounts._user(st["user_id"])
+    left = accounts.public(u)["left"]
+    ms = st.get("moments") or []
+    n = min(int(st["auto"].get("n") or AUTO_MAX), AUTO_MAX, len(ms), left)
+    if n <= 0:
+        raise HTTPException(402, "Seus cortes do plano acabaram. Renove pra gerar os cortes desse vídeo.")
+    raw = {k: v for k, v in st["auto"].items() if k != "n"}
+    raw.update(analysis=aid, segments=[[m["start"], m["end"], m.get("title") or ""] for m in ms[:n]])
+    res = _start_for(u, raw)
+    for m, jid in zip(ms, res["jobs"]):
+        m["job"] = jid
+    note = None if len(res["jobs"]) == n else f"Gerei {len(res['jobs'])} cortes: seus cortes do plano acabaram."
+    if n < min(len(ms), AUTO_MAX) and n == left:
+        note = f"Gerei {n} cortes: era o que restava no seu plano."
+    moments._set(aid, moments=ms, note=note)
+
+
+moments.ON_READY = _auto_cut
+
+
+def _my_video(aid: str, u) -> dict:
+    st = moments.get(aid)
+    if not st or st.get("user_id") != u["id"]:
+        raise HTTPException(404, "Vídeo não encontrado")
+    return st
+
+
+@app.get("/api/my/videos")
+def my_videos(request: Request):
+    return moments.list_for(current_user(request)["id"])
+
+
+@app.get("/api/videos/{aid}")
+def video_page(aid: str, request: Request):
+    """Página do vídeo: momentos achados pela IA e o estado de cada corte."""
+    st = _my_video(aid, current_user(request))
+    out = moments.public(st)
+    out["moments"] = [{**m, "clip": ({"id": m["job"], **_job_state(m["job"])} if m.get("job") else None)}
+                      for m in (st.get("moments") or []) if not m.get("hidden")]
+    return out
+
+
+class VidOpIn(BaseModel):
+    jobs: list[str]
+    action: str  # "visual" (troca o visual sem gastar corte), "apagar" ou "gerar" (momento ainda sem corte)
+    template: str = ""
+    caption: str = ""
+    caption_color: str = "auto"
+    starts: list[int] = []
+
+
+@app.post("/api/videos/{aid}/batch")
+def video_batch(aid: str, b: VidOpIn, request: Request):
+    u = current_user(request)
+    st = _my_video(aid, u)
+    ms = st.get("moments") or []
+    if b.action == "apagar":
+        for m in ms:
+            if m.get("job") in b.jobs:
+                m["hidden"] = True
+        moments._set(aid, moments=ms)
+        return {"ok": True}
+    P = accounts.plan_info(u)
+    if b.action == "gerar":  # momentos que ficaram sem corte (gasta 1 corte cada)
+        pick = [m for m in ms if not m.get("job") and m["start"] in b.starts][:12]
+        if not pick:
+            raise HTTPException(400, "Escolha os momentos")
+        raw = {**{k: v for k, v in (st.get("auto") or {}).items() if k != "n"}, "analysis": aid,
+               "segments": [[m["start"], m["end"], m.get("title") or ""] for m in pick]}
+        res = _start_for(u, raw)
+        for m, jid in zip(pick, res["jobs"]):
+            m["job"] = jid
+        moments._set(aid, moments=ms)
+        return {"ok": True, "user": res["user"]}
+    if b.action != "visual":
+        raise HTTPException(400, "Ação inválida")
+    # troca o visual dos cortes escolhidos: monta de novo sem descontar corte
+    raw = {**(st.get("auto") or {}), "template": b.template, "caption": b.caption, "caption_color": b.caption_color}
+    raw.pop("n", None)
+    base = _opts(raw, P)
+    lp = accounts.logo_path(u["id"])
+    if P.get("own_logo") and lp.exists():
+        base["_logo"] = str(lp)
+    src = moments.source_of(aid)
+    if not src and not st.get("url"):
+        raise HTTPException(410, "O vídeo original expirou. Gere os cortes de novo.")
+    if not src:
+        base["url"] = st["url"]
+    done = 0
+    for m in ms:
+        if m.get("job") not in b.jobs:
+            continue
+        o = {**base, "start": m["start"], "end": m["end"], "title": m.get("title") or ""}
+        job = video.create_job(o, upload=src, priority=P["priority"], keep_upload=True)
+        accounts.add_job(job["id"], u["id"], o["title"] or "Corte GTA", "")
+        m["job"] = job["id"]
+        done += 1
+    st["auto"] = {**(st.get("auto") or {}), "template": b.template, "caption": b.caption, "caption_color": b.caption_color}
+    moments._set(aid, moments=ms, auto=st["auto"])
+    return {"ok": True, "n": done}
 
 
 def _boot_asaas():
@@ -590,7 +700,8 @@ def upload_start(b: UpStartIn, request: Request):
         raise HTTPException(507, "Estamos com muitos vídeos sendo processados agora. Tente em alguns minutos ou cole o link.")
     uid = _s.token_hex(10)
     ext = (Path(b.name).suffix or ".mp4")[:6].lower()
-    (UPLOADS / f"{uid}.json").write_text(json.dumps({"user": u["id"], "size": b.size, "ext": ext, "created": time.time()}))
+    (UPLOADS / f"{uid}.json").write_text(json.dumps({"user": u["id"], "size": b.size, "ext": ext, "created": time.time(), "name": b.name[:120]}))
+    (UPLOADS / f"{uid}.name").write_text(b.name[:120])
     (UPLOADS / f"{uid}.part").touch()
     return {"id": uid, "received": 0}
 
@@ -631,6 +742,16 @@ async def upload_chunk(uid: str, request: Request, offset: int = 0):
                 raise HTTPException(400, "Pedaço inválido")
             f.write(chunk)
     return {"received": have + n, "size": m["size"]}
+
+
+def _up_name(uid: str) -> str:
+    f = UPLOADS / f"{uid}.name"
+    try:
+        n = f.read_text()
+        f.unlink(missing_ok=True)
+        return n
+    except Exception:
+        return ""
 
 
 def take_upload(uid: str, u) -> Path:
@@ -717,9 +838,18 @@ def get_job(jid: str):
 
 
 @app.post("/api/moments")
-async def new_moments(request: Request, file: UploadFile | None = File(None), url: str = Form(""), upload_id: str = Form("")):
+async def new_moments(request: Request, file: UploadFile | None = File(None), url: str = Form(""), upload_id: str = Form(""),
+                      auto: str = Form(""), template: str = Form("basico-legenda"), caption: str = Form("pesada-karaoke"),
+                      caption_color: str = Form("auto"), captions: str = Form("true"), cover: str = Form("true"), n: int = Form(10)):
     u = current_user(request)
     P = accounts.plan_info(u)
+    ao = None
+    if auto in ("1", "true"):  # gera os melhores cortes sozinho quando a análise terminar
+        if accounts.public(u)["left"] <= 0:
+            raise HTTPException(402, "Seus cortes do plano acabaram. Renove pra gerar mais.")
+        ao = _opts({"template": template, "caption": caption, "caption_color": caption_color,
+                    "captions": captions not in ("false", "0"), "cover": cover not in ("false", "0")}, P)
+        ao["n"] = max(1, min(int(n or 10), AUTO_MAX))
     if not P.get("auto_moments"):
         raise HTTPException(402, "O corte automático com IA é dos planos Clipador e Pro.")
     if not video.GROQ_KEY:
@@ -728,7 +858,7 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
     if busy:
         return moments.public(busy[0])
     if upload_id:
-        return moments.create(u["id"], upload=take_upload(upload_id, u))
+        return moments.create(u["id"], upload=take_upload(upload_id, u), auto=ao, name=_up_name(upload_id))
     if file is not None and file.filename:
         tmp = Path(tempfile.mkstemp(suffix=Path(file.filename).suffix or ".mp4", dir=video.SCRATCH)[1])
         size = 0
@@ -739,10 +869,10 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
                     f.close(); tmp.unlink(missing_ok=True)
                     raise HTTPException(413, f"Vídeo acima de {P['max_mb'] // 1024} GB no seu plano. Cole o link da live.")
                 f.write(chunk)
-        return moments.create(u["id"], upload=tmp)
+        return moments.create(u["id"], upload=tmp, auto=ao, name=file.filename or "")
     if not url.startswith(ALLOWED):
         raise HTTPException(400, "Envie um vídeo ou um link da Twitch, YouTube ou Kick")
-    return moments.create(u["id"], url=url)
+    return moments.create(u["id"], url=url, auto=ao)
 
 
 @app.get("/api/moments/{aid}")
