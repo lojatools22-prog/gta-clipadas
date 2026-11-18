@@ -513,7 +513,7 @@ def new_job(j: JobIn, request: Request):
 
 
 # ---------------- envio em partes (vídeos grandes, retoma se a conexão cair) ----------------
-UPLOADS = video.DATA / "envios"
+UPLOADS = video.SCRATCH / "envios"
 UPLOADS.mkdir(parents=True, exist_ok=True)
 
 
@@ -531,9 +531,10 @@ def upload_start(b: UpStartIn, request: Request):
         raise HTTPException(400, "Arquivo vazio")
     if b.size > lim * 1048576:
         raise HTTPException(413, f"Vídeo acima de {lim // 1024} GB no seu plano. Cole o link da live e marque o trecho.")
-    free = shutil.disk_usage(UPLOADS).free
-    if b.size * 1.15 + 150 * 1048576 > free:  # espaço pro arquivo + a margem do corte
-        log.error("Disco quase cheio: %s livres, envio de %s", free, b.size)
+    need = int(b.size * 1.15 + 150 * 1048576)  # espaço pro arquivo + a margem do corte
+    free = video.free_space(need)
+    if need > free:
+        log.error("Disco de trabalho cheio: %s MB livres, envio de %s MB", free // 1048576, b.size // 1048576)
         raise HTTPException(507, "Estamos com muitos vídeos sendo processados agora. Tente em alguns minutos ou cole o link.")
     uid = _s.token_hex(10)
     ext = (Path(b.name).suffix or ".mp4")[:6].lower()
@@ -620,7 +621,7 @@ async def new_upload(request: Request, file: UploadFile | None = File(None), url
             raise HTTPException(400, "Envie um vídeo ou um link da Twitch, YouTube ou Kick")
         if cam is None or not cam.filename:
             raise HTTPException(400, "Use este envio só com o vídeo do react")
-    tmp = take_upload(upload_id, u) if upload_id else None if file is None or not file.filename else Path(tempfile.mkstemp(suffix=Path(file.filename or "v.mp4").suffix or ".mp4", dir=video.DATA)[1])
+    tmp = take_upload(upload_id, u) if upload_id else None if file is None or not file.filename else Path(tempfile.mkstemp(suffix=Path(file.filename or "v.mp4").suffix or ".mp4", dir=video.SCRATCH)[1])
     size = 0
     with open(os.devnull if (tmp is None or upload_id) else tmp, "wb") as f:
         while tmp and not upload_id and (chunk := await file.read(1 << 20)):
@@ -631,7 +632,7 @@ async def new_upload(request: Request, file: UploadFile | None = File(None), url
             f.write(chunk)
     cam_tmp = None
     if cam is not None and cam.filename:
-        cam_tmp = Path(tempfile.mkstemp(suffix=Path(cam.filename).suffix or ".mp4", dir=video.DATA)[1])
+        cam_tmp = Path(tempfile.mkstemp(suffix=Path(cam.filename).suffix or ".mp4", dir=video.SCRATCH)[1])
         csize = 0
         with open(cam_tmp, "wb") as f:
             while chunk := await cam.read(1 << 20):
@@ -677,7 +678,7 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
     if upload_id:
         return moments.create(u["id"], upload=take_upload(upload_id, u))
     if file is not None and file.filename:
-        tmp = Path(tempfile.mkstemp(suffix=Path(file.filename).suffix or ".mp4", dir=video.DATA)[1])
+        tmp = Path(tempfile.mkstemp(suffix=Path(file.filename).suffix or ".mp4", dir=video.SCRATCH)[1])
         size = 0
         with open(tmp, "wb") as f:
             while chunk := await file.read(1 << 20):

@@ -54,7 +54,9 @@ def create(user_id: int, url: str | None = None, upload: Path | None = None) -> 
     d.mkdir(parents=True)
     st = {"id": aid, "user_id": user_id, "status": "na fila", "progress": 2, "url": url, "created": time.time(), "moments": []}
     if upload:
-        dst = d / ("fonte" + upload.suffix)
+        sd = video.SCRATCH / "analises" / aid
+        sd.mkdir(parents=True, exist_ok=True)
+        dst = sd / ("fonte" + upload.suffix)
         shutil.move(str(upload), dst)
         st["source"] = str(dst)
     STATE[aid] = st
@@ -267,6 +269,7 @@ def _cleanup():
             try:
                 if d.is_dir() and d.stat().st_mtime < lim:
                     shutil.rmtree(d, ignore_errors=True)
+                    shutil.rmtree(video.SCRATCH / "analises" / d.name, ignore_errors=True)
                     STATE.pop(d.name, None)
             except Exception:
                 pass

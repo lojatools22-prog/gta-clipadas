@@ -8,6 +8,33 @@ from . import assets, art, templates, captions
 DATA = Path(os.getenv("DATA_DIR", Path(__file__).parent.parent / "data"))
 JOBS_DIR = DATA / "jobs"
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _free(p: Path) -> int:
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+        return shutil.disk_usage(p).free
+    except Exception:
+        return 0
+
+
+def _pick_scratch() -> Path:
+    """Disco de trabalho para vídeos em processamento (grandes e temporários).
+    O volume fica só com os cortes prontos; o trabalho vai para onde houver mais espaço livre."""
+    if os.getenv("SCRATCH_DIR"):
+        return Path(os.environ["SCRATCH_DIR"])
+    opts = [DATA / "trabalho", Path("/tmp/clipadas")]
+    return max(opts, key=_free)
+
+
+SCRATCH = _pick_scratch()
+SCRATCH.mkdir(parents=True, exist_ok=True)
+
+
+def scratch(jid: str) -> Path:
+    p = SCRATCH / "cortes" / jid
+    p.mkdir(parents=True, exist_ok=True)
+    return p
 FONTS = Path(__file__).parent / "fonts"
 MAX_LEN = int(os.getenv("MAX_CLIP_SECONDS", "180"))
 GROQ_KEY = os.getenv("GROQ_API_KEY", "")
@@ -282,7 +309,7 @@ def _local_words(wav: Path) -> list[dict]:
     with _WM_LOCK:
         if _WM is None:
             _WM = WhisperModel(LOCAL_MODEL, device="cpu", compute_type="int8", cpu_threads=int(FF_THREADS),
-                               download_root=str(DATA / "modelos"))
+                               download_root=str(SCRATCH / "modelos"))
         audio = np.frombuffer(subprocess.run(["ffmpeg", "-v", "error", "-i", str(wav), "-f", "f32le", "-ac", "1", "-ar", "16000", "-"],
                                              capture_output=True, check=True).stdout, np.float32)
         segs, _ = _WM.transcribe(audio, language="pt", word_timestamps=True, vad_filter=True, beam_size=1,
@@ -400,6 +427,52 @@ def _set(jid, **kw):
         _save(jid)
 
 
+def _drop_sources(jid: str):
+    """Apaga o vídeo original e os arquivos de trabalho de um corte (fica só o corte pronto)."""
+    d = JOBS_DIR / jid
+    for f in list(d.glob("cam.*")) + list(d.glob("upload.*")) + list(d.glob("src.*")) + list(d.glob("audio.mp3")) + list(d.glob("cover_raw.png")):
+        f.unlink(missing_ok=True)
+    shutil.rmtree(SCRATCH / "cortes" / jid, ignore_errors=True)
+
+
+def free_space(need: int) -> int:
+    """Libera espaço no disco de trabalho quando falta: restos de cortes terminados,
+    envios abandonados e arquivos temporários antigos. Devolve o espaço livre."""
+    if _free(SCRATCH) >= need:
+        return _free(SCRATCH)
+    now = time.time()
+    for base in (SCRATCH / "cortes", JOBS_DIR):
+        for d in list(base.iterdir()) if base.exists() else []:
+            j = JOBS.get(d.name)
+            if j is None or j.get("status") in ("pronto", "erro"):
+                _drop_sources(d.name)
+    for f in list(SCRATCH.rglob("*.part")) + [x for x in DATA.glob("tmp*") if x.is_file()] + [x for x in SCRATCH.glob("tmp*") if x.is_file()]:
+        try:
+            if now - f.stat().st_mtime > 1800:
+                f.unlink(missing_ok=True)
+        except Exception:
+            pass
+    return _free(SCRATCH)
+
+
+def _boot_disk():
+    """Ao ligar: tira do volume o que não precisa estar lá e registra o espaço livre."""
+    try:
+        for j in JOBS.values():
+            if j.get("status") in ("pronto", "erro"):
+                _drop_sources(j["id"])
+        if SCRATCH != DATA / "trabalho":
+            shutil.rmtree(DATA / "modelos", ignore_errors=True)
+            shutil.rmtree(DATA / "trabalho", ignore_errors=True)
+        for x in DATA.glob("tmp*"):
+            if x.is_file():
+                x.unlink(missing_ok=True)
+        log.info("Disco: volume %s MB livres · trabalho (%s) %s MB livres",
+                 _free(DATA) // 1048576, SCRATCH, _free(SCRATCH) // 1048576)
+    except Exception as e:
+        log.error("Limpeza do disco ao ligar falhou: %s", e)
+
+
 def _work(jid: str):
     j = JOBS[jid]
     d = JOBS_DIR / jid
@@ -413,7 +486,7 @@ def _work(jid: str):
             src, trim = Path(j["src_path"]), None
         else:
             _set(jid, status="baixando", progress=15)
-            src = download(o["url"], start, end, d)
+            src = download(o["url"], start, end, scratch(jid))
             _set(jid, src_path=str(src))
             trim = None
         if trim is None and probe_duration(src) > MAX_LEN + 1:
@@ -433,12 +506,12 @@ def _work(jid: str):
                 return
         _set(jid, status="renderizando", progress=70)
         render(src, d, o, trim, words, Path(j["cam"]) if j.get("cam") else None)
-        for f in list(d.glob("cam.*")) + list(d.glob("upload.*")) + list(d.glob("src.*")) + list(d.glob("audio.mp3")) + list(d.glob("cover_raw.png")):
-            f.unlink(missing_ok=True)
+        _drop_sources(jid)
         cover = f"/files/{jid}/capa.jpg" if (d / "capa.jpg").exists() else None
         _set(jid, status="pronto", progress=100, video=f"/files/{jid}/corte.mp4", thumb=f"/files/{jid}/thumb.jpg", cover=cover,
              finished=time.time(), captions=len(words) > 0)
     except Exception as e:
+        _drop_sources(jid)
         _set(jid, status="erro", error=str(e)[-1500:])
         log.error("Corte %s falhou: %s\n%s", jid, str(e)[-1500:], traceback.format_exc()[-1500:])
         if ON_FAIL:
@@ -460,7 +533,7 @@ def create_job(opts: dict, upload: Path | None = None, priority: int = 0, keep_u
     d.mkdir(parents=True)
     job = {"id": jid, "status": "na fila", "progress": 5, "opts": opts, "created": time.time()}
     if upload:
-        dst = d / ("upload" + upload.suffix)
+        dst = scratch(jid) / ("upload" + upload.suffix)
         if keep_upload:  # corte em lote: vários cortes do mesmo arquivo
             try:
                 os.link(upload, dst)
@@ -470,7 +543,7 @@ def create_job(opts: dict, upload: Path | None = None, priority: int = 0, keep_u
             shutil.move(str(upload), dst)
         job["upload"] = str(dst)
     if cam:
-        cdst = d / ("cam" + cam.suffix)
+        cdst = scratch(jid) / ("cam" + cam.suffix)
         try:
             os.link(cam, cdst)
         except OSError:
@@ -536,6 +609,7 @@ try:
     _restore()
 except Exception as e:
     log.error("Falha ao retomar cortes: %s", e)
+threading.Thread(target=_boot_disk, daemon=True).start()
 threading.Thread(target=_selftest, daemon=True).start()
 
 
