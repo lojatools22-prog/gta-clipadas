@@ -272,7 +272,7 @@ input,select,textarea{font-size:16px!important}
 .set span small{display:block;color:var(--dim);font-size:12px}
 .set input[type=checkbox]{width:20px;height:20px;accent-color:var(--pink)}
 .set .sm{margin:0}
-#camSrc .tab{flex:1;white-space:normal;font-size:12.5px}
+#reactPos .tab{flex:1;white-space:normal;font-size:12.5px}
 @media(max-width:899px){#mineBtn{display:none!important}}
 @media(min-width:640px){.feats{grid-template-columns:1fr 1fr}.gal{grid-template-columns:repeat(6,1fr)}.steps3{grid-template-columns:repeat(3,1fr)}.plans{grid-template-columns:1fr 1fr}.vgrid{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:900px){
@@ -480,17 +480,18 @@ input,select,textarea{font-size:16px!important}
       <div class="wh"><button class="back" onclick="step(1)">←</button><h2 class="disp">Escolha o visual</h2></div>
       <div class="tabs" id="fams"></div>
       <div class="grid" id="tpls"></div>
-      <details id="camBox" open><summary>Facecam</summary>
-        <div class="tabs" id="camSrc" style="margin:12px 0 4px"><button type="button" class="tab on" data-c="live">Webcam na live</button><button type="button" class="tab" data-c="file">Webcam em vídeo separado</button></div>
-        <div id="camFileBox" hidden>
-          <p class="lead" style="font-size:13px;margin:8px 0 10px">Suba a gravação da sua webcam. Ela precisa ter começado junto com a gravação da gameplay, pra ficar sincronizada.</p>
-          <button type="button" class="go ghost" onclick="$('#camFile').click()" id="camBtn">📷 Escolher vídeo da webcam</button>
-          <input id="camFile" type="file" accept="video/*" hidden>
+      <div class="box react" id="reactBox" style="margin-top:16px">
+        <div class="pl-row" style="margin:0"><span><b style="font-size:15px">Seu react</b><br><small style="color:var(--mute);font-size:13px">Grave você reagindo ao corte e coloque por cima</small></span><span class="pill">opcional</span></div>
+        <button type="button" class="go ghost" style="margin-top:12px" onclick="$('#camFile').click()" id="camBtn">📷 Adicionar meu react</button>
+        <input id="camFile" type="file" accept="video/*" hidden>
+        <div id="reactOpts" hidden>
+          <div class="tabs" id="reactPos" style="margin:12px 0 6px"><button type="button" class="tab on" data-p="float">Janela no canto</button><button type="button" class="tab" data-p="slot" id="slotBtn">No lugar da facecam</button></div>
+          <p class="lead" style="font-size:12.5px;margin:4px 0 0">O react começa junto com o corte e a sua voz entra misturada com o áudio do clipe. <a href="#" onclick="clearReact();return false">Remover react</a></p>
         </div>
-        <div id="camLiveBox">
+      </div>
+      <details id="camBox"><summary>Ajustar a facecam do streamer</summary>
         <div class="tg">Onde ela fica na live<select id="corner"><option value="top-left">Em cima, à esquerda</option><option value="top-right">Em cima, à direita</option><option value="bottom-left">Embaixo, à esquerda</option><option value="bottom-right">Embaixo, à direita</option></select></div>
         <div class="tg">Tamanho<input id="cam_size" type="range" min="15" max="50" value="30" style="width:50%"></div>
-        </div>
       </details>
       <div class="bar"><button class="go" onclick="step(3)">Escolher a legenda →</button></div>
     </div>
@@ -612,7 +613,7 @@ const ytId=u=>{const m=String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(
 function loadYT(id,start){$('#ytBox').hidden=false;ytReady=false;
   const mk=()=>{try{ytp&&ytp.destroy()}catch{}$('#ytBox').innerHTML='<div id="yt"></div>';ytp=new YT.Player('yt',{videoId:id,playerVars:{playsinline:1,rel:0,modestbranding:1,start:Math.floor(start||0)},events:{onReady:()=>{ytReady=true;$('#markRow').hidden=false}}})};
   if(window.YT&&YT.Player)return mk();window.onYouTubeIframeAPIReady=mk;if(!document.getElementById('ytapi')){const s=document.createElement('script');s.id='ytapi';s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s)}}
-function resetMedia(){camMode='live';CAMF=null;document.querySelectorAll('#camSrc .tab').forEach((x,i)=>x.classList.toggle('on',i===0));$('#camFileBox').hidden=true;$('#camLiveBox').hidden=false;$('#camBtn').textContent='📷 Escolher vídeo da webcam';['#playerBox','#ytBox','#thumbBox','#probeLoad','#trim','#markRow'].forEach(s=>$(s).hidden=true);try{ytp&&ytp.destroy()}catch{}ytp=null;ytReady=false;DUR=0;$('#start').value='';$('#end').value='';$('#blankHint').hidden=true;SEGS=[];renderSegs()}
+function resetMedia(){clearReact();['#playerBox','#ytBox','#thumbBox','#probeLoad','#trim','#markRow'].forEach(s=>$(s).hidden=true);try{ytp&&ytp.destroy()}catch{}ytp=null;ytReady=false;DUR=0;$('#start').value='';$('#end').value='';$('#blankHint').hidden=true;SEGS=[];renderSegs()}
 async function probeLink(url,s,e){const seq=++probeSeq;$('#probeLoad').hidden=false;$('#typeBox').open=false;
   try{const d=await api('/api/probe?url='+encodeURIComponent(url));if(seq!==probeSeq)return;$('#probeLoad').hidden=true;
     if(d.title)$('#srcLabel').textContent=d.title;
@@ -633,7 +634,7 @@ function renderTpls(){if(!CAT)return;
   $('#fams').innerHTML=tabs.map(f=>`<button class="tab ${f.id===fam?'on':''}" data-f="${f.id}">${esc(f.name)}</button>`).join('');
   const list=fam==='destaques'?FEAT_T.map(id=>CAT.templates.find(t=>t.id===id)).filter(Boolean):CAT.templates.filter(t=>t.family===fam);
   $('#tpls').innerHTML=list.map(t=>`<button class="opt v ${t.id===sel.tpl?'on':''}" data-id="${t.id}"><img loading="lazy" src="/previews/tpl-${t.id}.jpg" alt="">${t.tier>myTier()?`<span class="p">${TIERN[t.tier]}</span>`:''}<span class="n">${esc(t.name)}</span></button>`).join('');
-  const cur=CAT.templates.find(t=>t.id===sel.tpl);$('#camBox').hidden=!(cur&&cur.cam)}
+  const cur=CAT.templates.find(t=>t.id===sel.tpl);$('#camBox').hidden=!(cur&&cur.cam);slotAvail()}
 function renderCaps(){if(!CAT)return;
   const tabs=[{id:'destaques',name:'Destaques'},...CAT.caption_fonts];
   $('#fonts').innerHTML=tabs.map(f=>`<button class="tab ${f.id===font?'on':''}" data-f="${f.id}">${esc(f.name)}</button>`).join('');
@@ -652,7 +653,8 @@ $('#go').onclick=()=>{if(!ME)return openAuth('signup','Crie sua conta grátis pr
 async function generate(){const go=$('#go');go.disabled=true;go.textContent='Enviando…';
   const segs=[...SEGS];if($('#start').value.trim()&&$('#end').value.trim()&&segs.length)segs.push([$('#start').value.trim(),$('#end').value.trim()]);
   const o={start:$('#start').value.trim(),end:$('#end').value.trim(),segments:segs.length>1?JSON.stringify(segs):'',template:sel.tpl,caption:sel.cap,caption_color:sel.color,corner:$('#corner').value,cam_size:$('#cam_size').value/100,title:$('#title').value,captions:$('#captions').checked,cover:$('#cover').checked,watermark:$('#watermark').checked};
-  try{let j;if(src.kind==='file'){const fd=new FormData();fd.append('file',src.file);if(camMode==='file'&&CAMF)fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
+  if(CAMF)o.react_pos=reactPos;
+  try{let j;if(src.kind==='file'||CAMF){const fd=new FormData();if(src.kind==='file')fd.append('file',src.file);else fd.append('url',src.url);if(CAMF)fd.append('cam',CAMF);for(const k in o)fd.append(k,o[k]);j=await api('/api/jobs/upload',{method:'POST',body:fd})}
   else{j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,url:src.url,start:o.start||null,end:o.end||null,segments:segs.length>1?segs:[]})})}
   if(j.user){ME=j.user;refreshAcct()}{const p=PREFS();p.tpl=sel.tpl;p.cap=sel.cap;LS.set('cgta_prefs',p)}SEGS=[];CAMF=null;renderSegs();view('mine');toast((j.jobs&&j.jobs.length>1)?j.jobs.length+' cortes sendo montados':'Seu corte está sendo montado')}
   catch(err){toast(err.message);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='✂️ Gerar meu corte'}}
@@ -672,7 +674,7 @@ async function openStreamer(login,name){if(needAcc(()=>openStreamer(login,name))
 async function joinWait(e){e.preventDefault();try{await api('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('#wlName').value,handle:$('#wlAt').value,whatsapp:$('#wlZap').value})});$('#wl').hidden=true;$('#wlOk').hidden=false}catch(err){toast(err.message)}return false}
 
 /* meus cortes */
-const LBL={'na fila':'Na fila…','baixando':'Pegando o trecho…','legendando':'Escrevendo a legenda…','renderizando':'Montando o vídeo…','pronto':'Pronto pra postar','erro':'Não deu certo'};
+const LBL={'na fila':'Preparando seu corte…','baixando':'Pegando o trecho…','legendando':'Escrevendo a legenda…','renderizando':'Montando o vídeo…','pronto':'Pronto pra postar','erro':'Não deu certo'};
 let poll;async function renderJobs(){clearTimeout(poll);const el=$('#jobs');
   if(!ME){el.innerHTML='<div class="empty">Entre na sua conta pra ver seus cortes.<br><br><button class="go" onclick="openAuth(\'login\')">Entrar</button></div>';return}
   let rs=[];try{rs=await api('/api/my/jobs')}catch(e){el.innerHTML=`<div class="empty">${esc(e.message)}</div>`;return}
@@ -751,12 +753,12 @@ function openAccount(){const paid=ME.plan!=='gratis';
   ${ME.admin?'<a class="go ghost" style="margin-top:10px;text-decoration:none" href="/admin">Painel de admin</a>':''}
   <button class="alt" onclick="api('/api/auth/logout',{method:'POST'}).catch(()=>{});logoutLocal();closeSheet();toast('Você saiu')">Sair da conta</button>`)}
 
-/* webcam separada */
-let camMode='live',CAMF=null;
-$('#camSrc').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;if(b.dataset.c==='file'&&src.kind!=='file'){toast('A webcam separada funciona quando você sobe o vídeo da gameplay pelo botão Subir vídeo.');return}
-  camMode=b.dataset.c;document.querySelectorAll('#camSrc .tab').forEach(x=>x.classList.toggle('on',x===b));$('#camFileBox').hidden=camMode!=='file';$('#camLiveBox').hidden=camMode==='file';if(camMode==='file'&&!CAMF)$('#camFile').click()};
-$('#camFile').onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>1073741824){e.target.value='';return toast('O vídeo da webcam pode ter até 1 GB')}CAMF=f;$('#camBtn').textContent='✓ '+f.name.slice(0,34)+' · trocar'};
-
+/* react */
+let CAMF=null,reactPos='float';
+$('#camFile').onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>1073741824){e.target.value='';return toast('O vídeo do react pode ter até 1 GB')}CAMF=f;$('#camBtn').textContent='✓ '+f.name.slice(0,30)+' · trocar';$('#reactOpts').hidden=false;slotAvail()};
+$('#reactPos').onclick=e=>{const b=e.target.closest('[data-p]');if(!b||b.disabled)return;reactPos=b.dataset.p;document.querySelectorAll('#reactPos .tab').forEach(x=>x.classList.toggle('on',x===b))};
+function slotAvail(){const t=CAT&&CAT.templates.find(x=>x.id===sel.tpl),ok=!!(t&&t.cam);$('#slotBtn').disabled=!ok;$('#slotBtn').style.opacity=ok?1:.4;if(!ok&&reactPos==='slot'){reactPos='float';document.querySelectorAll('#reactPos .tab').forEach((x,i)=>x.classList.toggle('on',i===0))}}
+function clearReact(){CAMF=null;$('#camFile').value='';$('#camBtn').textContent='📷 Adicionar meu react';$('#reactOpts').hidden=true}
 /* conta */
 const PREFS=()=>LS.get('cgta_prefs',{captions:true,cover:true});
 function applyPrefs(){const p=PREFS();$('#captions').checked=p.captions!==false;$('#cover').checked=p.cover!==false;if(p.tpl)sel.tpl=p.tpl;if(p.cap)sel.cap=p.cap}

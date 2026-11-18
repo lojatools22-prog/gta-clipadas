@@ -358,6 +358,7 @@ def _opts(d: dict, P: dict) -> dict:
         raise HTTPException(402, "Esse visual ou legenda não está no seu plano. Suba de plano pra usar.")
     if not P["watermark_off"]:
         d["watermark"] = True
+    d["react_pos"] = "slot" if d.get("react_pos") == "slot" else "float"
     d.pop("segments", None)
     return d
 
@@ -444,16 +445,21 @@ def new_job(j: JobIn, request: Request):
 
 
 @app.post("/api/jobs/upload")
-async def new_upload(request: Request, file: UploadFile = File(...), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
+async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
                      template: str = Form("vice-cam-cima"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
                      corner: str = Form("top-left"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
                      watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None)):
     u = current_user(request)
     max_mb = accounts.plan_info(u)["max_mb"]
-    tmp = Path(tempfile.mkstemp(suffix=Path(file.filename or "v.mp4").suffix or ".mp4", dir=video.DATA)[1])
+    if file is None or not file.filename:
+        if not url.startswith(ALLOWED):
+            raise HTTPException(400, "Envie um vídeo ou um link da Twitch, YouTube ou Kick")
+        if cam is None or not cam.filename:
+            raise HTTPException(400, "Use este envio só com o vídeo do react")
+    tmp = None if file is None or not file.filename else Path(tempfile.mkstemp(suffix=Path(file.filename or "v.mp4").suffix or ".mp4", dir=video.DATA)[1])
     size = 0
-    with open(tmp, "wb") as f:
-        while chunk := await file.read(1 << 20):
+    with open(tmp or os.devnull, "wb") as f:
+        while tmp and (chunk := await file.read(1 << 20)):
             size += len(chunk)
             if size > max_mb * 1048576:
                 f.close(); tmp.unlink(missing_ok=True)
@@ -467,15 +473,18 @@ async def new_upload(request: Request, file: UploadFile = File(...), start: str 
             while chunk := await cam.read(1 << 20):
                 csize += len(chunk)
                 if csize > 1024 * 1048576:
-                    f.close(); cam_tmp.unlink(missing_ok=True); tmp.unlink(missing_ok=True)
-                    raise HTTPException(413, "O vídeo da webcam pode ter até 1 GB.")
+                    f.close(); cam_tmp.unlink(missing_ok=True)
+                    if tmp:
+                        tmp.unlink(missing_ok=True)
+                    raise HTTPException(413, "O vídeo do react pode ter até 1 GB.")
                 f.write(chunk)
     try:
-        return _start(request, {"url": "upload", "start": start, "end": end, "segments": segments, "template": template, "caption": caption,
+        return _start(request, {"url": url if tmp is None else "upload", "react_pos": react_pos, "start": start, "end": end, "segments": segments, "template": template, "caption": caption,
                                 "caption_color": caption_color, "corner": corner, "cam_size": cam_size, "title": title,
                                 "captions": captions, "watermark": watermark, "cover": cover}, upload=tmp, cam=cam_tmp)
     except HTTPException:
-        tmp.unlink(missing_ok=True)
+        if tmp:
+            tmp.unlink(missing_ok=True)
         raise
     finally:
         if cam_tmp:

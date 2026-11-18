@@ -115,8 +115,10 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
         inputs.append(p)
         return f"[{len(inputs)}:v]"
 
+    # react: webcam de quem está cortando. 'slot' ocupa o lugar da facecam do template; 'float' fica numa janela por cima
     cam_ref = inp(cam) if cam else None
-    vf = layout_filter(tpl["layout"], opts.get("corner", "top-left"), float(opts.get("cam_size", 0.30)), cam_ref)
+    slot = cam_ref and opts.get("react_pos") == "slot" and tpl["layout"]["kind"] in ("cam_top", "cam_bottom", "split", "float")
+    vf = layout_filter(tpl["layout"], opts.get("corner", "top-left"), float(opts.get("cam_size", 0.30)), cam_ref if slot else None)
     cur, n = "[base]", 0
 
     def nxt():
@@ -137,6 +139,10 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
         o = nxt(); vf += f";{inp(assets.OUT / 'logo_round.png')}scale=150:150[lg];{cur}[lg]overlay={W - 180}:{H - 230}{o}"; cur = o
     if "gray_end" in tpl["fx"]:
         o = nxt(); vf += f";{cur}hue=s=0:enable='gte(t,{max(0, dur - 1.8):.2f})'{o}"; cur = o
+    if cam_ref and not slot:
+        o = nxt()
+        vf += (f";{cam_ref}{_cover(380, 380)},pad=392:392:6:6:color=0xff1fa8[rc];"
+               f"{cur}[rc]overlay={W - 392 - 36}:{150}:eof_action=repeat{o}"); cur = o
     if with_text:
         vf += f";{cur}ass=subs.ass:fontsdir={FONTS}[v]"
     else:
@@ -162,6 +168,13 @@ def _run(cmd, cwd=None, timeout=1800):
         key = [l for l in err.splitlines() if any(w in l.lower() for w in ("error", "invalid", "no such", "killed", "cannot", "failed"))]
         raise RuntimeError(f"código {p.returncode}: " + (" | ".join(key[-6:]) or err[-600:])[-1500:])
     return p.stdout
+
+
+def has_audio(path: Path) -> bool:
+    try:
+        return bool(_run(["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", str(path)]).strip())
+    except Exception:
+        return False
 
 
 def probe_duration(path: Path) -> float:
@@ -226,11 +239,20 @@ def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list
     pre = ["-ss", f"{trim[0]:.2f}", "-t", f"{dur:.2f}"] if trim else []
     ins = pre + ["-i", str(src)]
     for p in extra:
-        ins += (pre + ["-i", str(p)]) if (cam and p == cam) else ["-i", str(p)]
+        ins += ["-i", str(p)]  # o react começa junto com o corte, sem deslocamento
+    amap = ["-map", "0:a?"]
+    if cam:
+        ci = extra.index(cam) + 1
+        ga, ra = has_audio(src), has_audio(cam)
+        if ga and ra:  # mistura a voz do react com o áudio do clipe
+            vf += f";[0:a]volume=0.75[ga];[{ci}:a]volume=1.4[ra];[ga][ra]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[a]"
+            amap = ["-map", "[a]"]
+        elif ra:
+            amap = ["-map", f"{ci}:a"]
     out = job_dir / "corte.mp4"
-    _run(["ffmpeg", "-y", *ins, "-filter_complex", vf, "-map", "[v]", "-map", "0:a?", "-r", "30",
+    _run(["ffmpeg", "-y", *ins, "-filter_complex", vf, "-map", "[v]", *amap, "-r", "30",
           "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p",
-          "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", "-shortest", out.name], cwd=job_dir)
+          "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", "-t", f"{dur:.2f}", out.name], cwd=job_dir)
     _run(["ffmpeg", "-y", "-ss", f"{min(1.0, dur / 2):.2f}", "-i", out.name, "-frames:v", "1", "-vf", "scale=360:-2", "thumb.jpg"], cwd=job_dir)
     if opts.get("cover", True):
         try:
@@ -247,7 +269,7 @@ def make_cover(src: Path, job_dir: Path, tpl: dict, opts: dict, trim, dur, cam: 
     vf, extra = build_filter(tpl, {**opts, "watermark": False}, dur, with_text=False, cam=cam)
     ins = ["-ss", f"{t:.2f}", "-i", str(src)]
     for p in extra:
-        ins += ["-ss", f"{t:.2f}", "-i", str(p)] if (cam and p == cam) else ["-i", str(p)]
+        ins += ["-ss", f"{max(0.0, dur * 0.45):.2f}", "-i", str(p)] if (cam and p == cam) else ["-i", str(p)]
     _run(["ffmpeg", "-y", *ins, "-filter_complex", vf, "-map", "[v]", "-frames:v", "1", "cover_raw.png"], cwd=job_dir)
     im = Image.open(job_dir / "cover_raw.png").convert("RGBA")
     shade = Image.new("RGBA", im.size, (0, 0, 0, 0)); sd = ImageDraw.Draw(shade)
