@@ -81,6 +81,7 @@ def _record(url: str, secs: int, dest: Path) -> Path:
         if not f or f.stat().st_size < 20_000:
             break
         d = video.probe_duration(f)
+        log.info("Ao vivo: pedaço %s com %.0fs e %.1f MB", k, d, f.stat().st_size / 1e6)
         parts.append(f); got += d
         if d < 5:
             time.sleep(5)

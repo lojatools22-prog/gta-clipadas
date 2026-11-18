@@ -381,6 +381,11 @@ def _geo_proxy(px):
     if not u.username:
         return px
     net = u.netloc.replace(u.username + ":", f"{u.username}__cr.{cc}:", 1) if u.password else u.netloc.replace(u.username + "@", f"{u.username}__cr.{cc}@", 1)
+    # IP fixo durante toda a chamada (porta "sticky" 10000-20000): o YouTube amarra os links de vídeo/live ao IP que
+    # pediu; com IP girando a cada pedido, a live gravava só uns segundos.
+    if os.getenv("YTDLP_PROXY_STICKY", "1") == "1" and u.port in (823, None):
+        import random
+        net = net.rsplit(":", 1)[0] + f":{random.randint(10000, 20000)}" if u.port else net + f":{random.randint(10000, 20000)}"
     return urlunsplit(u._replace(netloc=net))
 
 
