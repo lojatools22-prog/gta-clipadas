@@ -150,6 +150,9 @@ def _disk_guard(min_free=int(float(os.getenv("MIN_FREE_GB", "3")) * 1e9), report
     log.warning("Disco quase cheio: apaguei %.2f GB de temporários; livre agora %.1f GB", freed / 1e9, _free(SCRATCH) / 1e9)
 
 
+TEST_JOB = None  # main.py liga: diz se um corte é de conta de teste (admin/tester)
+
+
 def _data_guard(min_free=int(float(os.getenv("MIN_DATA_FREE_MB", "120")) * 1e6)):
     """O volume (/data) guarda os cortes prontos. Cheio, nada mais funciona (nem salvar estado). Se faltar espaço, apaga
     primeiro os vídeos-fonte de análises antigas e depois os cortes mais velhos (mais de 1 dia), até liberar."""
@@ -163,6 +166,10 @@ def _data_guard(min_free=int(float(os.getenv("MIN_DATA_FREE_MB", "120")) * 1e6))
     old = time.time() - 86400
     cands = sorted(cands, key=lambda f: f.stat().st_mtime)
     cands += sorted([d for d in JOBS_DIR.iterdir() if d.is_dir() and d.stat().st_mtime < old], key=lambda d: d.stat().st_mtime)
+    if TEST_JOB:  # depois: cortes de teste da equipe (admins/testers) com mais de 2 h
+        lim2 = time.time() - 7200
+        cands += sorted([d for d in JOBS_DIR.iterdir() if d.is_dir() and old <= d.stat().st_mtime < lim2 and TEST_JOB(d.name)],
+                        key=lambda d: d.stat().st_mtime)
     freed = 0
     for x in cands:
         if _free(DATA) >= min_free * 2:
@@ -175,6 +182,7 @@ def _data_guard(min_free=int(float(os.getenv("MIN_DATA_FREE_MB", "120")) * 1e6))
 
 
 def _guard_loop():
+    time.sleep(20)  # espera o main.py ligar o TEST_JOB
     try:
         out = subprocess.run("df -h /tmp /data 2>&1; du -sh /tmp/* /data/* 2>/dev/null | sort -h | tail -12", shell=True, capture_output=True, text=True, timeout=60).stdout
         log.info("Disco (df/du): %s", out.replace("\n", " | "))

@@ -217,14 +217,14 @@ def demo():
         if not ms:
             raise RuntimeError("a IA não achou momento")
         m = ms[0]
-        out = video.JOBS_DIR / "demo-aovivo"
+        out = video.SCRATCH / "demo-aovivo-saida"  # fora do volume (só conferência)
         shutil.rmtree(out, ignore_errors=True)
         out.mkdir(parents=True)
         trim = (float(m["start"]), float(m["end"]))
         words = video.transcribe(blk, out, trim)
         video.render(blk, out, {"template": "capa-praia", "caption": "pesada-karaoke", "title": m["title"], "wm_text": "@gta6clips",
                                 "corner": "auto", "cover": False}, trim, words)
-        log.info("Demo ao vivo OK em %.0fs: '%s' (%s-%ss, nota %s) -> /files/demo-aovivo/corte.mp4 | live: %s",
+        log.info("Demo ao vivo OK em %.0fs: '%s' (%s-%ss, nota %s) -> /api/demo-aovivo.mp4 | live: %s",
                  time.time() - t0, m["title"], m["start"], m["end"], m.get("score"), url)
     except Exception as e:
         log.error("Demo ao vivo FALHOU: %s", str(e)[-800:])

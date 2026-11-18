@@ -588,6 +588,26 @@ def my_videos(request: Request):
     return moments.list_for(current_user(request)["id"])
 
 
+def _test_job(jid):
+    try:
+        r = accounts.job_owner(jid)
+        u = r and accounts._user(r["user_id"])
+        return bool(u) and accounts.is_admin(u)
+    except Exception:
+        return False
+
+
+video.TEST_JOB = _test_job
+
+
+@app.get("/api/demo-aovivo.mp4")
+def demo_aovivo():
+    f = video.SCRATCH / "demo-aovivo-saida" / "corte.mp4"
+    if not f.exists():
+        raise HTTPException(404, "Ainda não ficou pronto")
+    return FileResponse(f, media_type="video/mp4")
+
+
 @app.get("/api/my/lives")
 def my_lives(request: Request):
     return livefollow.list_for(current_user(request)["id"])
