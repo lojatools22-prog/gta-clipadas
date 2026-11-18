@@ -1,5 +1,5 @@
 """Pipeline de corte: baixa o trecho, transcreve, monta 9:16 com template GTA e legenda."""
-import os, json, uuid, time, shutil, subprocess, threading
+import os, json, uuid, time, shutil, subprocess, threading, logging, traceback
 from pathlib import Path
 import httpx
 
@@ -14,6 +14,7 @@ GROQ_KEY = os.getenv("GROQ_API_KEY", "")
 OPENAI_KEY = os.getenv("OPENAI_API_KEY", "")
 
 W, H = 1080, 1920
+log = logging.getLogger("uvicorn.error")
 JOBS: dict[str, dict] = {}
 ON_FAIL = None  # chamado com o id do corte quando ele falha (devolve o crédito)
 RETENTION_DAYS = int(os.getenv("RETENTION_DAYS", "30"))
@@ -257,9 +258,20 @@ def make_cover(src: Path, job_dir: Path, tpl: dict, opts: dict, trim, dur):
     im.convert("RGB").save(job_dir / "capa.jpg", quality=90)
 
 
+def _save(jid):
+    j = JOBS.get(jid)
+    if not j:
+        return
+    try:
+        (JOBS_DIR / jid / "job.json").write_text(json.dumps(j))
+    except Exception:
+        pass
+
+
 def _set(jid, **kw):
     with _lock:
         JOBS[jid].update(kw)
+        _save(jid)
 
 
 def _work(jid: str):
@@ -295,7 +307,8 @@ def _work(jid: str):
         _set(jid, status="pronto", progress=100, video=f"/files/{jid}/corte.mp4", thumb=f"/files/{jid}/thumb.jpg", cover=cover,
              finished=time.time(), captions=len(words) > 0)
     except Exception as e:
-        _set(jid, status="erro", error=str(e)[-800:])
+        _set(jid, status="erro", error=str(e)[-1500:])
+        log.error("Corte %s falhou: %s\n%s", jid, str(e)[-1500:], traceback.format_exc()[-1500:])
         if ON_FAIL:
             try:
                 ON_FAIL(jid)
@@ -324,10 +337,61 @@ def create_job(opts: dict, upload: Path | None = None, priority: int = 0, keep_u
         else:
             shutil.move(str(upload), dst)
         job["upload"] = str(dst)
+    job["priority"] = priority
     JOBS[jid] = job
+    _save(jid)
     _q.put((-priority, next(_seq), jid))
+    log.info("Corte %s na fila (%s)", jid, "upload" if upload else opts.get("url"))
     return public(job)
 
 
 def public(j: dict) -> dict:
     return {k: v for k, v in j.items() if k not in ("upload",)}
+
+
+def _restore():
+    """Depois de um reinício do servidor, retoma os cortes que estavam na fila ou em andamento."""
+    n = 0
+    for d in JOBS_DIR.iterdir():
+        f = d / "job.json"
+        if not f.exists():
+            continue
+        try:
+            j = json.loads(f.read_text())
+        except Exception:
+            continue
+        if j.get("status") in ("pronto", "erro"):
+            JOBS[j["id"]] = j
+            continue
+        if j.get("upload") and not Path(j["upload"]).exists():
+            j.update(status="erro", error="Arquivo enviado não encontrado após reinício")
+            JOBS[j["id"]] = j
+            continue
+        j.update(status="na fila", progress=5)
+        JOBS[j["id"]] = j
+        _q.put((-int(j.get("priority", 0)), next(_seq), j["id"]))
+        n += 1
+    if n:
+        log.info("Retomando %s corte(s) depois do reinício", n)
+
+
+def _selftest():
+    """Faz um corte de 3s com o vídeo de exemplo ao ligar e registra o resultado no log."""
+    time.sleep(3)
+    d = Path("/tmp/autoteste")
+    shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True)
+    try:
+        v = _run(["ffmpeg", "-version"]).splitlines()[0]
+        render(assets.OUT / "sample.mp4", d, {"template": "vice-cam-cima", "caption": "pesada-karaoke", "title": "AUTOTESTE"}, (0.0, 3.0),
+               [{"word": "teste", "start": 0.2, "end": 0.8}])
+        log.info("Autoteste de corte OK (%s, %s bytes)", v, (d / "corte.mp4").stat().st_size)
+    except Exception as e:
+        log.error("Autoteste de corte FALHOU: %s", str(e)[-1500:])
+
+
+try:
+    _restore()
+except Exception as e:
+    log.error("Falha ao retomar cortes: %s", e)
+threading.Thread(target=_selftest, daemon=True).start()
