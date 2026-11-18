@@ -754,6 +754,10 @@ def _yt_selftest():
         render(src, d, {"template": "fundo-skyline", "caption": "pesada-karaoke", "title": "AUTOTESTE YOUTUBE"}, None, words)
         log.info("Autoteste do YouTube OK: '%s' baixado, legendado (%d palavras) e cortado em %.0fs (%s bytes)",
                  info["title"][:60], len(words), time.time() - t0, (d / "corte.mp4").stat().st_size)
+        from . import moments  # importa aqui pra evitar import circular
+        txt = " ".join(w["word"] for w in words)[:600] or "teste"
+        j = moments._chat([{"role": "user", "content": 'Responda só JSON {"ok": true, "resumo": "..."} resumindo em 5 palavras: ' + txt}])
+        log.info("Autoteste da IA de momentos OK (modelo %s): %s", moments._MODEL_OK["m"], j["choices"][0]["message"]["content"][:120])
     except Exception as e:
         log.error("Autoteste do YouTube FALHOU: %s", friendly_error(str(e)) + " | " + str(e)[-400:])
 
