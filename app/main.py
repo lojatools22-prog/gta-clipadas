@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import httpx
 
-from . import twitch, video, templates, accounts, plans, payments, notify, moments, livefollow, destaques
+from . import twitch, video, templates, accounts, plans, payments, notify, moments, livefollow, destaques, trending
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("app")
@@ -406,6 +406,25 @@ async def schedule(login: str):
     return await safe(twitch.schedule(login))
 
 
+@app.get("/api/virais")
+def get_virais():
+    return trending.items()
+
+
+@app.post("/api/admin/virais/atualizar")
+def virais_atualizar(request: Request):
+    admin_user(request)
+    import threading
+    threading.Thread(target=trending.refresh, daemon=True).start()
+    return {"ok": True}
+
+
+@app.get("/api/admin/virais/status")
+def virais_status(request: Request):
+    admin_user(request)
+    return trending.status()
+
+
 @app.get("/api/destaques")
 async def get_destaques():
     return await destaques.items()
@@ -632,6 +651,7 @@ def _test_job(jid):
 
 
 video.TEST_JOB = _test_job
+trending.start()
 try:
     _n = accounts.fix_free_credits()
     if _n:
