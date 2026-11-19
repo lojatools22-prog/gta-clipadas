@@ -462,7 +462,7 @@ details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--d
     <div class="sect">
       <p class="kick">Visuais</p>
       <h2 class="t">Cara de GTA em todo corte</h2>
-      <p class="st">Facecam em cima, tela de celular, nível de procurado, missão cumprida, VHS dos anos 80. Toque em um pra começar.</p>
+      <p class="st">O formato dos cortes que viralizam: facecam grande em cima, jogo embaixo e título em faixa vermelha. Toque em um pra começar.</p>
       <div class="gal" id="gal"></div>
     </div>
 
@@ -1239,9 +1239,12 @@ async function renderConta(){const el=$('#conta');
 $('#logoFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const fd=new FormData();fd.append('file',f);try{const r=await api('/api/my/logo',{method:'POST',body:fd});if(ME){ME.has_logo=true;ME.logo_url=r.logo}const p=PREFS();p.logo=true;LS.set('cgta_prefs',p);wmRender();toast('Logo salva. Ela entra nos próximos cortes.');if(!$('#v-conta').hidden)renderConta()}catch(err){toast(err.message)}};
 async function delLogo(){try{await api('/api/my/logo',{method:'DELETE'});if(ME){ME.has_logo=false;ME.logo_url=null}wmRender();toast('Logo removida');renderConta()}catch(err){toast(err.message)}}
 
-const GAL=['viral','viral-legenda','capa-praia','capa-cidade','capa-estrada','capa-cam-praia','vice-cam-cima','neon-rosa','procurado-3','celular-chat'];
-function renderGal(){const el=$('#gal');if(!el)return;el.innerHTML=GAL.map(id=>{const t=CAT&&CAT.templates.find(x=>x.id===id);return `<button data-t="${id}"><img loading="lazy" src="/previews/tpl-${id}.jpg" alt=""><span>${esc(t?t.name:'')}</span></button>`}).join('')}
-$('#gal').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;const t=CAT&&CAT.templates.find(x=>x.id===b.dataset.t);if(t&&t.tier<=myTier())sel.tpl=t.id;pickFile()};
+const GAL=[{img:'tpl-viral',t:'viral',c:'',n:'Viral: facecam + jogo'},{img:'tpl-viral-legenda',t:'viral-legenda',c:'pesada-karaoke',n:'Viral + legenda'},
+  {img:'gal-viral-4',t:'viral-legenda',c:'pesada-quique',n:'Viral + legenda pulando'},{img:'gal-viral-7',t:'viral-legenda',c:'grafite-tremida',n:'Viral + legenda grafite'},
+  {img:'gal-viral-6',t:'viral-legenda',c:'condensada-pop',n:'Viral + legenda condensada'},{img:'gal-viral-9',t:'viral',c:'',n:'Viral: título em faixa'},
+  {img:'gal-viral-3',t:'viral-legenda',c:'neon-pop',n:'Viral + legenda neon'},{img:'gal-viral-5',t:'viral-legenda',c:'redonda-karaoke',n:'Viral + legenda redonda'}];
+function renderGal(){const el=$('#gal');if(!el)return;el.innerHTML=GAL.map((g,i)=>`<button data-g="${i}"><img loading="lazy" src="/previews/${g.img}.jpg" alt=""><span>${esc(g.n)}</span></button>`).join('')}
+$('#gal').onclick=e=>{const b=e.target.closest('[data-g]');if(!b)return;const g=GAL[+b.dataset.g];const t=CAT&&CAT.templates.find(x=>x.id===g.t);if(t&&t.tier<=myTier())sel.tpl=t.id;const c=g.c&&CAT&&CAT.captions.find(x=>x.id===g.c);if(c&&c.tier<=myTier())sel.cap=c.id;pickFile()};
 (()=>{const d=$('#drop');['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('over')}));['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('over')}));
   d.addEventListener('drop',e=>{const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;if(!f.type.startsWith('video/'))return toast('Envie um arquivo de vídeo (MP4 ou MOV)');
     const go=()=>{const dt=new DataTransfer();dt.items.add(f);$('#file').files=dt.files;$('#file').onchange({target:$('#file')})};if(needAcc(go))return;go()})})();
