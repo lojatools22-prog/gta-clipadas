@@ -10,7 +10,7 @@ from . import twitch, video, templates, accounts, plans, payments, notify, momen
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("app")
-app = FastAPI(title="GTA6 Clips")
+app = FastAPI(title="GTA Clipadas")
 STATIC = Path(__file__).parent / "static"
 
 
@@ -1174,12 +1174,12 @@ async def not_found(request: Request, exc: StarletteHTTPException):
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=getattr(exc, "headers", None))
 
 
-NOT_FOUND = """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Página não encontrada — GTA6 Clips</title><link rel="icon" href="/static/icon-64.png">
+NOT_FOUND = """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Página não encontrada — GTA Clipadas</title><link rel="icon" href="/static/icon-64.png">
 <style>@font-face{font-family:Inter;src:url(/static/inter-800.woff2) format("woff2");font-weight:800}@font-face{font-family:Inter;src:url(/static/inter-400.woff2) format("woff2");font-weight:400}
 body{margin:0;min-height:100vh;display:grid;place-items:center;background:#09090b;color:#fafafa;font:16px/1.6 Inter,system-ui,sans-serif;text-align:center;padding:20px}
 img{width:72px;height:72px;border-radius:50%}h1{font-size:30px;letter-spacing:-.03em;margin:18px 0 6px}p{color:#a1a1aa;margin:0 0 24px}
 a{display:inline-block;background:#ff1fa8;color:#fff;text-decoration:none;font-weight:800;padding:14px 24px;border-radius:12px}</style></head>
-<body><div><img src="/static/icon-192.png" alt=""><h1>Essa página não existe</h1><p>O link pode estar errado ou o conteúdo saiu do ar.</p><a href="/">Voltar pro GTA6 Clips</a></div></body></html>"""
+<body><div><img src="/static/icon-192.png" alt=""><h1>Essa página não existe</h1><p>O link pode estar errado ou o conteúdo saiu do ar.</p><a href="/">Voltar pro GTA Clipadas</a></div></body></html>"""
 
 
 @app.get("/")
@@ -1196,7 +1196,7 @@ def _legal(name: str):
     from fastapi.responses import HTMLResponse
     emp = os.getenv("EMPRESA_NOME", "").strip()
     cnpj = os.getenv("EMPRESA_CNPJ", "").strip()
-    full = f"{emp}, CNPJ {cnpj}" if emp and cnpj else (emp or "os responsáveis pelo GTA6 Clips")
+    full = f"{emp}, CNPJ {cnpj}" if emp and cnpj else (emp or "os responsáveis pelo GTA Clipadas")
     contato = os.getenv("CONTATO_EMAIL", "").strip()
     contato = f'<a href="mailto:{contato}">{contato}</a>' if contato else "pelos canais de suporte do site"
     h = (STATIC / name).read_text(encoding="utf-8").replace("{{EMPRESA}}", full).replace("{{EMPRESA_CAP}}", full[:1].upper() + full[1:]).replace("{{CONTATO}}", contato)

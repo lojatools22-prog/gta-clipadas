@@ -229,7 +229,7 @@ def demo():
         out.mkdir(parents=True)
         trim = (float(m["start"]), float(m["end"]))
         words = video.transcribe(blk, out, trim)
-        video.render(blk, out, {"template": "viral", "caption": "pesada-karaoke", "title": m["title"], "wm_text": "@gta6clips",
+        video.render(blk, out, {"template": "viral", "caption": "pesada-karaoke", "title": m["title"], "wm_text": "@gtaclipadas",
                                 "corner": "auto", "cover": False}, trim, words)
         log.info("Demo ao vivo OK em %.0fs: '%s' (%s-%ss, nota %s) -> /api/demo-aovivo.mp4 | live: %s",
                  time.time() - t0, m["title"], m["start"], m["end"], m.get("score"), url)

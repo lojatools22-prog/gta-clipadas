@@ -1,6 +1,6 @@
 """Catálogo dos 36 templates (6 famílias x 6 variações) e 36 estilos de legenda (6 fontes x 6 animações)."""
 
-# Cores no formato ASS (&HAABBGGRR) — paleta GTA6 Clips
+# Cores no formato ASS (&HAABBGGRR) — paleta GTA Clipadas
 C = {
     "rosa": "&H00A81FFF", "ciano": "&H00FFE13C", "amarelo": "&H0028C4FF", "laranja": "&H003278FF",
     "roxo": "&H00FF46BE", "verde": "&H0078E63C", "vermelho": "&H003C32FF", "branco": "&H00FFFFFF",

@@ -1,4 +1,4 @@
-"""Artes procedurais dos templates GTA6 Clips (desenho próprio, sem material da Rockstar).
+"""Artes procedurais dos templates GTA Clipadas (desenho próprio, sem material da Rockstar).
 Cada função devolve uma imagem RGBA 1080x1920 que é sobreposta ao vídeo."""
 import math, random
 from pathlib import Path
@@ -228,7 +228,7 @@ def phone_ui(kind):
     if kind == "chat":
         u.rectangle((x0, y0 + 60, x1, y0 + 170), fill=(20, 12, 36, 235))
         u.ellipse((x0 + 30, y0 + 80, x0 + 100, y0 + 150), fill=(*PINK, 255))
-        u.text((x0 + 120, y0 + 115), "GTA6 Clips", font=font(ANTON, 40), fill=WHITE, anchor="lm")
+        u.text((x0 + 120, y0 + 115), "GTA Clipadas", font=font(ANTON, 40), fill=WHITE, anchor="lm")
         u.rounded_rectangle((x0 + 30, y1 - 330, x1 - 30, y1 - 120), radius=36, fill=(255, 255, 255, 240))
         u.rounded_rectangle((x0 + 20, y1 - 100, x1 - 20, y1 - 30), radius=35, fill=(20, 12, 36, 230))
         u.text((x0 + 60, y1 - 65), "Mensagem...", font=font(ANTON, 30), fill=(180, 170, 200), anchor="lm")
@@ -360,7 +360,7 @@ def revista():
     g = Image.new("RGBA", (W, H), (0, 0, 0, 0)); gp = ImageDraw.Draw(g)
     gp.rectangle((0, 0, W, 420), fill=(0, 0, 0, 90))
     img.alpha_composite(g.filter(ImageFilter.GaussianBlur(30)))
-    d.text((W // 2, 190), "GTA6 CLIPS", font=font(BOWLBY, 135), fill=(*PINK, 255), stroke_width=8, stroke_fill=(0, 0, 0), anchor="mm")
+    d.text((W // 2, 190), "GTA CLIPADAS", font=font(BOWLBY, 135), fill=(*PINK, 255), stroke_width=8, stroke_fill=(0, 0, 0), anchor="mm")
     d.text((W // 2, 320), "EDIÇÃO ESPECIAL  •  GTA 6  •  Nº 1", font=font(ANTON, 40), fill=WHITE, stroke_width=3, stroke_fill=(0, 0, 0), anchor="mm")
     d.rectangle((60, 1650, 330, 1720), fill=(*YELLOW, 255))
     d.text((195, 1685), "EXCLUSIVO", font=font(ANTON, 44), fill=(0, 0, 0), anchor="mm")

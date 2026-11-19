@@ -4,7 +4,7 @@ import httpx
 
 log = logging.getLogger("notify")
 TW_SID, TW_TOKEN, TW_FROM = os.getenv("TWILIO_ACCOUNT_SID", ""), os.getenv("TWILIO_AUTH_TOKEN", ""), os.getenv("TWILIO_FROM", "")
-RESEND_KEY, MAIL_FROM = os.getenv("RESEND_API_KEY", ""), os.getenv("MAIL_FROM", "GTA6 Clips <nao-responda@gta6clips.com.br>")
+RESEND_KEY, MAIL_FROM = os.getenv("RESEND_API_KEY", ""), os.getenv("MAIL_FROM", "GTA Clipadas <nao-responda@gta6clipadas.com>")
 
 
 def sms_ready() -> bool:

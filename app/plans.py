@@ -1,4 +1,4 @@
-"""Planos do GTA6 Clips. Preço em reais, cota de cortes por período e o que cada um libera."""
+"""Planos do GTA Clipadas. Preço em reais, cota de cortes por período e o que cada um libera."""
 import os
 
 MB_BASE = int(os.getenv("MAX_UPLOAD_MB", "1024"))      # limite de vídeo enviado nos planos comuns

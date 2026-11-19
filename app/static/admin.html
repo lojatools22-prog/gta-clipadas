@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Painel — GTA6 Clips</title><link rel="icon" href="/static/icon-64.png"><meta name="robots" content="noindex">
+<title>Painel — GTA Clipadas</title><link rel="icon" href="/static/icon-64.png"><meta name="robots" content="noindex">
 <style>
 @font-face{font-family:Inter;src:url(/static/inter-400.woff2) format("woff2");font-weight:400}@font-face{font-family:Inter;src:url(/static/inter-600.woff2) format("woff2");font-weight:600}@font-face{font-family:Inter;src:url(/static/inter-800.woff2) format("woff2");font-weight:800}
 :root{--bg:#09090b;--s1:#111114;--s2:#17171b;--s3:#1f1f25;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--pink:#ff1fa8;--mute:#a1a1aa;--dim:#71717a}
@@ -43,7 +43,7 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 <body>
 <div class="login" id="login" hidden>
   <img src="/static/icon-192.png" alt="" style="width:46px;height:46px;border-radius:50%">
-  <h2>Painel GTA6 Clips</h2><p class="m" style="margin:0">Acesso restrito à equipe.</p>
+  <h2>Painel GTA Clipadas</h2><p class="m" style="margin:0">Acesso restrito à equipe.</p>
   <form id="lf"><label>Usuário</label><input id="lu" autocomplete="username" required><label>Senha</label><input id="lp" type="password" autocomplete="current-password" required>
   <button class="btn" type="submit">Entrar</button></form>
   <p class="d" id="lerr" style="margin:12px 0 0"></p>
@@ -87,7 +87,7 @@ function drawCrm(){const cnt=s=>LEADS.filter(l=>l.stage===s).length;
       <span class="d">Cortes</span><div>${l.cortes||0}${l.ultimo_corte?'<span class="d"> · último há '+ago(l.ultimo_corte)+'</span>':''}${l.left!=null&&l.tipo==='cadastro'?'<span class="d"> · restam '+l.left+'</span>':''}</div></div>
     <div><textarea data-n="${esc(l.key)}" placeholder="Anotações">${esc(l.notes)}</textarea></div>
     <div style="display:grid;gap:6px"><select data-s="${esc(l.key)}">${Object.keys(ST).map(s=>`<option value="${s}" ${l.stage===s?'selected':''}>${ST[s]}</option>`).join('')}</select>
-      ${wa(l.phone)?`<a class="btn wa sm" target="_blank" rel="noopener" href="${wa(l.phone)}?text=${encodeURIComponent('Fala '+(l.name||'').split(' ')[0]+'! Aqui é do GTA6 Clips 👋')}">WhatsApp</a>`:''}
+      ${wa(l.phone)?`<a class="btn wa sm" target="_blank" rel="noopener" href="${wa(l.phone)}?text=${encodeURIComponent('Fala '+(l.name||'').split(' ')[0]+'! Aqui é do GTA Clipadas 👋')}">WhatsApp</a>`:''}
       ${l.email?`<a class="btn g sm" href="mailto:${esc(l.email)}">E-mail</a>`:''}</div></div>`).join('')||'<p class="m">Nenhum lead com esse filtro.</p>'}`;
   $('#q').oninput=e=>{F.q=e.target.value;clearTimeout(window._qt);window._qt=setTimeout(()=>{drawCrm();const i=$('#q');i.focus();i.setSelectionRange(i.value.length,i.value.length)},300)};
   document.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{F.stage=b.dataset.st;drawCrm()});
@@ -96,7 +96,7 @@ function drawCrm(){const cnt=s=>LEADS.filter(l=>l.stage===s).length;
   document.querySelectorAll('[data-n]').forEach(t=>t.onchange=async()=>{await api('/api/admin/crm',{method:'POST',body:JSON.stringify({key:t.dataset.n,notes:t.value})});LEADS.find(l=>l.key===t.dataset.n).notes=t.value;toast('Anotação salva')})}
 function csv(){const H=['nome','email','celular','instagram','tipo','plano','cortes','pago','etapa','anotacoes','cadastro'];
   const rows=LEADS.map(l=>[l.name,l.email,l.phone,l.handle,l.tipo,l.plan_name,l.cortes,l.pago,ST[l.stage],l.notes,dt(l.created)].map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';'));
-  const b=new Blob(['﻿'+H.join(';')+'\n'+rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='leads-gta6clips.csv';a.click()}
+  const b=new Blob(['﻿'+H.join(';')+'\n'+rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='leads-gtaclipadas.csv';a.click()}
 
 const PL=['iniciante','clipador','pro','passe'];
 async function users(q=''){const d=await api('/api/admin/users?q='+encodeURIComponent(q));
