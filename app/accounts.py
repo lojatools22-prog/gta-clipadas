@@ -147,7 +147,7 @@ def sms_on() -> bool:
 def _finish_phone(uid: int, device: str) -> dict:
     u = _user(uid)
     with _lock, _conn() as c:
-        dup = c.execute("SELECT 1 FROM users WHERE phone=? AND phone_verified=1 AND id<>?", (u["phone"], u["id"])).fetchone()
+        dup = _dup_phone(c, u)
         c.execute("UPDATE users SET phone_verified=1, credits=? WHERE id=?", (0 if dup else PLANS["gratis"]["quota"], u["id"]))
     _trust(uid, device)
     return {"step": "done", "token": _session(uid)}
@@ -188,7 +188,7 @@ def verify_phone(challenge: str, code: str) -> str:
     u = _user(o["user_id"])
     with _lock, _conn() as c:
         # cortes grátis só uma vez por número de celular
-        dup = c.execute("SELECT 1 FROM users WHERE phone=? AND phone_verified=1 AND id<>?", (u["phone"], u["id"])).fetchone()
+        dup = _dup_phone(c, u)
         c.execute("UPDATE users SET phone_verified=1, credits=? WHERE id=?", (0 if dup else PLANS["gratis"]["quota"], u["id"]))
     _trust(u["id"], o["extra"])
     return _session(u["id"])
@@ -282,6 +282,35 @@ def plan_info(u) -> dict:
 ADMIN_IDS = {int(x) for x in os.getenv("ADMIN_IDS", "").replace(" ", "").split(",") if x.isdigit()}
 
 
+def _dup_phone(c, u) -> bool:
+    """Os 3 cortes grátis valem 1 vez por celular. Contas da equipe (admin/tester) não contam: assim dá pra testar o
+    cadastro de cliente novo com o mesmo número."""
+    rows = c.execute("SELECT * FROM users WHERE phone=? AND phone_verified=1 AND id<>?", (u["phone"], u["id"])).fetchall()
+    return any(not is_admin(r) for r in rows)
+
+
+def free_used_elsewhere(u) -> bool:
+    if not u or active_plan(u) != "gratis" or (u["credits"] or 0) > 0 or is_admin(u):
+        return False
+    with _conn() as c:
+        if c.execute("SELECT 1 FROM jobs WHERE user_id=? LIMIT 1", (u["id"],)).fetchone():
+            return False
+        return _dup_phone(c, u)
+
+
+def fix_free_credits():
+    """Conserta quem ficou sem os cortes grátis só porque o número era o mesmo de uma conta da equipe."""
+    fixed = 0
+    with _lock, _conn() as c:
+        for u in c.execute("SELECT * FROM users WHERE plan='gratis' AND credits=0 AND phone_verified=1").fetchall():
+            if is_admin(u) or c.execute("SELECT 1 FROM jobs WHERE user_id=? LIMIT 1", (u["id"],)).fetchone():
+                continue
+            if not _dup_phone(c, u):
+                c.execute("UPDATE users SET credits=? WHERE id=?", (PLANS["gratis"]["quota"], u["id"]))
+                fixed += 1
+    return fixed
+
+
 def is_admin(u) -> bool:
     return bool(u) and ((u["email"] or "").lower() in ADMIN_EMAILS or int(u["id"]) in ADMIN_IDS)
 
@@ -297,7 +326,7 @@ def public(u) -> dict:
             "plan": p, "plan_name": PLANS[p]["name"], "plan_until": u["plan_until"] if p != "gratis" else None,
             "left": left, "tier": PLANS[p]["tier"], "max_mb": PLANS[p]["max_mb"], "batch": PLANS[p]["batch"],
             "watermark_off": PLANS[p]["watermark_off"], "own_logo": PLANS[p].get("own_logo", False), "auto_moments": PLANS[p].get("auto_moments", False), "has_logo": logo_path(u["id"]).exists(),
-            "admin": is_admin(u), "has_billing": bool(u["asaas_customer"]),
+            "admin": is_admin(u), "has_billing": bool(u["asaas_customer"]), "free_used_elsewhere": free_used_elsewhere(u),
             # compatibilidade com a interface
             "credits": left, "pro": p != "gratis"}
 
@@ -339,6 +368,8 @@ def charge(u, n: int = 1) -> str:
         if c.execute(f"UPDATE users SET {col}={col}-? WHERE id=? AND {col}>=?", (n, u["id"], n)).rowcount == 0:
             if n > 1 and c.execute(f"SELECT {col} FROM users WHERE id=?", (u["id"],)).fetchone()[0] > 0:
                 raise AuthError(f"Corte com mais de 1 minuto usa {n} cortes e você só tem 1. Escolha um trecho de até 1 minuto.")
+            if p == "gratis" and free_used_elsewhere(u):
+                raise AuthError("Esse celular já ganhou os 3 cortes grátis em outra conta. Escolha um plano pra continuar.")
             raise AuthError("Seus cortes grátis acabaram. Escolha um plano pra continuar." if p == "gratis"
                             else f"Você usou todos os cortes do plano {PLANS[p]['name']}. Renove ou suba de plano.")
     return col if n == 1 else f"{col}:{n}"

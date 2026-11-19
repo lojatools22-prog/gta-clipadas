@@ -598,6 +598,12 @@ def _test_job(jid):
 
 
 video.TEST_JOB = _test_job
+try:
+    _n = accounts.fix_free_credits()
+    if _n:
+        log.info("Cortes grátis devolvidos para %d conta(s) que ficaram sem por usar o número de uma conta da equipe", _n)
+except Exception as _e:
+    log.warning("fix_free_credits falhou: %s", _e)
 livefollow.LEFT_FN = lambda uid: accounts.public(accounts._user(uid))["left"]
 
 
