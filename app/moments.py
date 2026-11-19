@@ -50,11 +50,11 @@ def source_of(aid: str) -> Path | None:
     return None
 
 
-def create(user_id: int, url: str | None = None, upload: Path | None = None, auto: dict | None = None, name: str = "") -> dict:
+def create(user_id: int, url: str | None = None, upload: Path | None = None, auto: dict | None = None, name: str = "", channel: str = "") -> dict:
     aid = uuid.uuid4().hex[:12]
     d = DIR / aid
     d.mkdir(parents=True)
-    st = {"id": aid, "user_id": user_id, "status": "na fila", "progress": 2, "url": url, "created": time.time(), "moments": [], "auto": auto, "name": name[:120]}
+    st = {"id": aid, "user_id": user_id, "status": "na fila", "progress": 2, "url": url, "created": time.time(), "moments": [], "auto": auto, "name": name[:120], "channel": channel}
     if upload:
         sd = video.SCRATCH / "analises" / aid
         sd.mkdir(parents=True, exist_ok=True)
@@ -119,6 +119,7 @@ def _audio(st: dict, d: Path) -> Path:
         st["live"] = live
         st["title"] = info.get("title")
         st["heatmap"] = info.get("heatmap") or []
+        st["channel"] = info.get("channel") or ""
         if not live and info.get("duration", 0) > MAX_SECONDS:
             raise RuntimeError(f"O vídeo tem mais de {MAX_SECONDS // 3600} horas. Corte em partes ou use um trecho menor.")
         args = ["--no-playlist", "-f", "worstaudio[abr>=32]/worstaudio/bestaudio/worst", "-o", str(d / "baixado.%(ext)s")]
@@ -275,14 +276,16 @@ RANK = """Você é o editor-chefe de um canal de cortes de GTA que viraliza no T
 Abaixo estão momentos candidatos de uma live, com o que foi falado em cada um e os sinais (chat explodiu, mais repetido, pico de áudio).
 Ordene do MAIS para o MENOS viralizável. Seja exigente: os primeiros têm que prender nos 2 primeiros segundos
 (reação forte, risada, susto, briga, fala absurda, plot twist, perseguição, morte engraçada). Corte sem graça vai pro fim ou sai.
-Para cada um, escreva um título curto, específico e chamativo em caixa alta (até 7 palavras, sem ser genérico) e uma nota de 0 a 100.
+Para cada um, escreva um título em caixa alta no estilo dos clipadores que viralizam: quem + o que aconteceu, específico e engraçado,
+de 5 a 9 palavras, pode terminar com KKK quando for engraçado. Ex.: "BISTECONE TA ROUBANDO ATE MENDIGO NO GTA 6 KKK".{canal}
+Nunca genérico ("MOMENTO ÉPICO", "OLHA ISSO"). Dê também uma nota de 0 a 100.
 Responda só JSON: {{"ordem":[{{"id":0,"titulo":"...","nota":0-100,"motivo":"uma frase"}}]}}
 
 CANDIDATOS:
 {lista}"""
 
 
-def _rank(cands: list[dict], segs: list[dict]) -> list[dict]:
+def _rank(cands: list[dict], segs: list[dict], canal: str = "") -> list[dict]:
     """Segunda passada: a IA compara os candidatos entre si e escolhe os melhores (é o que vai para o teste grátis)."""
     if len(cands) < 2:
         return cands
@@ -292,7 +295,7 @@ def _rank(cands: list[dict], segs: list[dict]) -> list[dict]:
         sig = ", ".join(k for k, v in (("chat explodiu", m.get("chat")), ("mais repetido", m.get("replay"))) if v)
         lst.append(f'[{i}] {_fmt(m["start"])}-{_fmt(m["end"])} | título atual: {m["title"]} | sinais: {sig or "-"}\nfala: {fala}')
     try:
-        j = _chat([{"role": "user", "content": RANK.format(lista="\n\n".join(lst))}])
+        j = _chat([{"role": "user", "content": RANK.format(lista="\n\n".join(lst), canal=f' O streamer é "{canal}": use o nome dele (como o público conhece) no título.' if canal else "")}])
         data = json.loads(j["choices"][0]["message"]["content"])
         out, seen = [], set()
         for r in data.get("ordem", []):
@@ -414,7 +417,7 @@ def _work(aid: str):
         chat = [] if st.get("live") else _chat_peaks(st, d, dur)  # chat de live no ar não termina de baixar
         heat = _heat_peaks(st)
         moments = _pick(segs, peaks, dur, aid, chat, heat) or _fallback(segs, peaks, dur, chat, heat)
-        moments = _rank(moments, segs)
+        moments = _rank(moments, segs, st.get("channel") or "")
         off = st.get("offset") or 0
         for m in moments:  # live no ar: os tempos da análise contam do começo do trecho baixado
             m["start"] += round(off); m["end"] += round(off)

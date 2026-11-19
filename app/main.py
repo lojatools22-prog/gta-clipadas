@@ -536,7 +536,7 @@ AUTO_MAX = int(os.getenv("AUTO_CLIPS", "10"))
 LONG_CLIP = 60  # acima disso o corte manual custa 2
 
 
-FREE_SHOWCASE = [("capa-praia", "pesada-karaoke"), ("capa-cidade", "condensada-pop"), ("capa-estrada", "neon-quique")]  # o principal: jogo + arte, sem facecam
+FREE_SHOWCASE = [("viral", "pesada-karaoke"), ("viral-legenda", "condensada-pop"), ("capa-praia", "neon-quique")]  # o principal: jogo + arte, sem facecam
 
 
 def _auto_cut(aid: str):
@@ -831,7 +831,7 @@ _th.Thread(target=_upload_cleanup, daemon=True).start()
 
 @app.post("/api/jobs/upload")
 async def new_upload(request: Request, file: UploadFile | None = File(None), url: str = Form(""), react_pos: str = Form("float"), analysis: str = Form(""), upload_id: str = Form(""), start: str = Form(""), end: str = Form(""), segments: str = Form(""),
-                     template: str = Form("capa-praia"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
+                     template: str = Form("viral"), caption: str = Form("pesada-karaoke"), caption_color: str = Form("auto"),
                      corner: str = Form("auto"), cam_size: float = Form(0.30), title: str = Form(""), captions: bool = Form(True),
                      watermark: bool = Form(True), cover: bool = Form(True), cam: UploadFile | None = File(None), logo: bool = Form(True), review: bool = Form(False)):
     u = current_user(request)
@@ -886,7 +886,7 @@ def get_job(jid: str):
 
 @app.post("/api/moments")
 async def new_moments(request: Request, file: UploadFile | None = File(None), url: str = Form(""), upload_id: str = Form(""),
-                      auto: str = Form(""), template: str = Form("capa-praia"), caption: str = Form("pesada-karaoke"),
+                      auto: str = Form(""), template: str = Form("viral"), caption: str = Form("pesada-karaoke"),
                       caption_color: str = Form("auto"), captions: str = Form("true"), cover: str = Form("true"), n: int = Form(10),
                       logo: str = Form("true")):
     u = current_user(request)
@@ -929,7 +929,7 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
 class FollowIn(BaseModel):
     url: str
     minutes: int = 60
-    template: str = "capa-praia"
+    template: str = "viral"
     caption: str = "pesada-karaoke"
     wm_text: str = ""
     por_bloco: int = 2

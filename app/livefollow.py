@@ -87,7 +87,7 @@ def _record(url: str, secs: int, dest: Path) -> Path:
         k = len(parts)
         need = int(secs - got)
         try:
-            video.ytdlp(["--no-playlist", "--no-live-from-start", "-f", "best[height<=720]/best", "--hls-use-mpegts",
+            video.ytdlp(["--no-playlist", "--no-live-from-start", "-f", "best[height<=1080]/best", "--hls-use-mpegts",
                          "--downloader", "ffmpeg", "--downloader-args", f"ffmpeg:-t {need}",
                          "--no-part", "-o", str(dest / f"p{k}.%(ext)s")], url, timeout=need + 180)
         except Exception as e:
@@ -126,7 +126,7 @@ def _run(fid, left_fn):
         info = video.probe_url(st["url"])
         if not info.get("live"):
             raise RuntimeError("Esse link não está ao vivo agora. Pra vídeo que já acabou, use o corte normal.")
-        _set(fid, title=info.get("title") or "Live", status="gravando")
+        _set(fid, title=info.get("title") or "Live", status="gravando", channel=info.get("channel") or "")
         n = len(get(fid).get("videos") or [])
         while time.time() < get(fid)["until"]:
             if left_fn(st["user_id"]) <= 0:
@@ -156,7 +156,7 @@ def _run(fid, left_fn):
             _set(fid, fails=0, note=None)
             n += 1
             auto = {**st["auto"], "n": int(st["auto"].get("n_bloco", 2))}
-            m = moments.create(st["user_id"], upload=blk, auto=auto, name=f"{get(fid)['title'][:80]} · ao vivo {t0}")
+            m = moments.create(st["user_id"], upload=blk, auto=auto, name=f"{get(fid)['title'][:80]} · ao vivo {t0}", channel=get(fid).get("channel") or "")
             with _lock:
                 STATE[fid]["videos"].append(m["id"])
                 STATE[fid]["blocks"] = n
@@ -220,7 +220,7 @@ def demo():
         ms = moments._pick(segs, peaks, dur, aid) or moments._fallback(segs, peaks, dur)
         if not ms and dur > 40:  # sem fala nem pico: pega o trecho do meio, só pra entregar o teste
             ms = [{"start": round(dur / 2 - 20), "end": round(dur / 2 + 20), "title": "MOMENTO DA LIVE AO VIVO", "score": 50}]
-        ms = moments._rank(ms, segs)
+        ms = moments._rank(ms, segs, info.get("channel") or "")
         if not ms:
             raise RuntimeError("a IA não achou momento")
         m = ms[0]
@@ -229,7 +229,7 @@ def demo():
         out.mkdir(parents=True)
         trim = (float(m["start"]), float(m["end"]))
         words = video.transcribe(blk, out, trim)
-        video.render(blk, out, {"template": "capa-praia", "caption": "pesada-karaoke", "title": m["title"], "wm_text": "@gta6clips",
+        video.render(blk, out, {"template": "viral", "caption": "pesada-karaoke", "title": m["title"], "wm_text": "@gta6clips",
                                 "corner": "auto", "cover": False}, trim, words)
         log.info("Demo ao vivo OK em %.0fs: '%s' (%s-%ss, nota %s) -> /api/demo-aovivo.mp4 | live: %s",
                  time.time() - t0, m["title"], m["start"], m["end"], m.get("score"), url)

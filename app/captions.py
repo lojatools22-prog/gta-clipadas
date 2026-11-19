@@ -53,6 +53,8 @@ Style: Cap,{cap['font']},{cap['size']},&H00FFFFFF,&H000000FF,&H00000000,{shadow}
 Style: Title,Bowlby One,{int(tpl['title_size'] * 1.12)},&H00FFFFFF,&H000000FF,{tbox},&H00000000,0,0,0,0,100,100,0,0,3,16,0,5,70,70,0,1
 Style: Card,Bowlby One,110,&H00FFFFFF,&H000000FF,&H00000000,&H00A81FFF,0,0,0,0,100,100,1,0,1,9,8,5,40,40,0,1
 Style: Wm,Anton,58,&H22FFFFFF,&H000000FF,&H00000000,&H66000000,1,0,0,0,100,100,1,0,1,3,2,9,40,40,48,1
+Style: VBox,Anton,{tpl['title_size']},&H000B00E3,&H000000FF,&H000B00E3,&H00000000,1,0,0,0,104,100,1,0,3,20,0,5,40,40,0,1
+Style: VTxt,Anton,{tpl['title_size']},&H00FFFFFF,&H000000FF,&H00000000,&H00000000,1,0,0,0,104,100,1,0,1,7,0,5,40,40,0,1
 Style: Sub,Bowlby One,56,&H00FFFFFF,&H000000FF,&H00000000,&H00A81FFF,0,0,0,0,100,100,0,0,1,6,5,5,40,40,0,1
 
 [Events]
@@ -61,13 +63,24 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     ev = []
     if wm.strip():  # marca d'água em texto (@ do clipador), em cima à direita o vídeo todo
         ev.append(f"Dialogue: 3,{ts(0)},{ts(duration)},Wm,,0,0,0,,{esc(wm.strip()[:30])}")
-    if title.strip():
+    if title.strip() and tpl.get("title_style") == "viral":
+        # manchete de clipador: faixa vermelha, letra branca grossa com contorno preto, em 2 linhas na emenda cam/jogo
+        t = (tpl.get("title_prefix", "") + title).upper().split()
+        if len(" ".join(t)) > 16 and len(t) > 1:
+            best = min(range(1, len(t)), key=lambda k: abs(len(" ".join(t[:k])) - len(" ".join(t[k:]))))
+            txt = esc(" ".join(t[:best])) + "\\N" + esc(" ".join(t[best:]))
+        else:
+            txt = esc(" ".join(t))
+        tag = f"{{\\pos({tx},{ty})\\fax-0.08}}"
+        ev.append(f"Dialogue: 2,{ts(0)},{ts(duration)},VBox,,0,0,0,,{tag}{txt}")
+        ev.append(f"Dialogue: 3,{ts(0)},{ts(duration)},VTxt,,0,0,0,,{tag}{txt}")
+    elif title.strip():
         txt = esc((tpl.get("title_prefix", "") + title).upper())
         ev.append(f"Dialogue: 2,{ts(0)},{ts(duration)},Title,,0,0,0,,{{\\pos({tx},{ty})\\fad(200,0)\\fax-0.10}}{txt}")
 
     up = (lambda s: s.upper()) if cap["upper"] else (lambda s: s)
     anim = cap["anim"]
-    groups = _groups(words, 1 if anim == "quique" else 3)
+    groups = [] if tpl.get("no_caps") else _groups(words, 1 if anim == "quique" else 3)
     for gi, g in enumerate(groups):
         for i, w in enumerate(g):
             st, en = w["start"], _end_of(groups, gi, i)

@@ -301,6 +301,19 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
             vf += "[c0]nullsink;[b1]null[b2];"
         vf += (f"[b2]drawbox=x=0:y={gy - 14}:w={W}:h=14:color=0xff1fa8@0.35:t=fill,drawbox=x=0:y={gy + gh}:w={W}:h=14:color=0xff1fa8@0.35:t=fill,"
                f"drawbox=x=0:y={gy - 6}:w={W}:h=6:color=0xff4fc0:t=fill,drawbox=x=0:y={gy + gh}:w={W}:h=6:color=0xff4fc0:t=fill[base]")
+    elif tpl["layout"]["kind"] == "viral" and not opts.get("_portrait"):
+        # formato dos cortes que mais viralizam: facecam grande em cima, jogo cortado ocupando o resto, sem moldura
+        face = (opts.get("_frame") or {}).get("cam")
+        ch = int(tpl["layout"].get("cam_h", 740))
+        gh = H - ch
+        if face:
+            vf = (f"[0:v]split=2[g0][c0];[c0]{framing.cam_crop(face, W, ch, (opts.get('_frame') or {}).get('aspect', 16 / 9), 4.6)}:flags=lanczos,setsar=1[cam];"
+                  f"[g0]scale={W}:{gh}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{gh},setsar=1[game];"
+                  f"[cam][game]vstack=inputs=2[base]")
+        else:  # sem facecam: o próprio jogo, ampliado e desfocado, ocupa a parte de cima
+            vf = (f"[0:v]split=2[g0][c0];[c0]scale={W}:{ch}:force_original_aspect_ratio=increase,crop={W}:{ch},boxblur=24:3,eq=brightness=-0.10,setsar=1[cam];"
+                  f"[g0]scale={W}:{gh}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{gh},setsar=1[game];"
+                  f"[cam][game]vstack=inputs=2[base]")
     elif opts.get("_portrait") and not slot:  # vídeo gravado em pé: ocupa a tela toda, sem recortar facecam
         vf = f"[0:v]{_cover(W, H)}[base]"
     else:
@@ -558,6 +571,7 @@ def probe_url(url: str) -> dict:
             "thumb": j.get("thumbnail") or "", "live": bool(j.get("is_live")),
             "live_start": float(j.get("release_timestamp") or j.get("timestamp") or 0),
             "extractor": (j.get("extractor_key") or "").lower(), "id": j.get("id") or "",
+            "channel": (j.get("channel") or j.get("uploader") or "")[:60],
             # gráfico "mais repetidos" do YouTube: onde o público voltou pra rever
             "heatmap": [(float(h.get("start_time", 0)), float(h.get("end_time", 0)), float(h.get("value", 0))) for h in (j.get("heatmap") or [])]}
     if info["live"] and info["live_start"]:
@@ -716,7 +730,7 @@ def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list
             amap = ["-map", f"{ci}:a"]
     out = job_dir / "corte.mp4"
     _run(["ffmpeg", "-y", *ins, "-filter_complex", vf, "-map", "[v]", *amap, "-r", "30",
-          "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p",
+          "-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-pix_fmt", "yuv420p",
           "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", "-t", f"{dur:.2f}", out.name], cwd=job_dir)
     _run(["ffmpeg", "-y", "-ss", f"{min(1.0, dur / 2):.2f}", "-i", out.name, "-frames:v", "1", "-vf", "scale=360:-2", "thumb.jpg"], cwd=job_dir)
     if opts.get("cover", True):

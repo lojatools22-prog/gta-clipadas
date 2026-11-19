@@ -94,12 +94,12 @@ def analyze(src: Path, start: float, end: float) -> dict:
     return out
 
 
-def cam_crop(face: tuple, slot_w: int, slot_h: int, src_aspect: float = 16 / 9) -> str:
+def cam_crop(face: tuple, slot_w: int, slot_h: int, src_aspect: float = 16 / 9, faces: float = 3.2) -> str:
     """Filtro ffmpeg de corte em volta do rosto da facecam, no formato exato do espaço do template."""
     fx, fy, fw, fh = face
     target = slot_w / slot_h  # formato do espaço (ex.: 1080x608)
     # largura do corte = ~3,2 rostos; altura sai do formato do espaço (em proporção do quadro)
-    cw = min(1.0, fw * 3.2)
+    cw = min(1.0, fw * faces)
     ch = cw * src_aspect / target
     if ch > 1.0:
         ch = 1.0
