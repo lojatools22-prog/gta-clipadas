@@ -380,7 +380,7 @@ def _run(cmd, cwd=None, timeout=1800):
     except subprocess.TimeoutExpired:
         raise RuntimeError(f"{cmd[0]} demorou mais de {timeout}s e foi interrompido") from None
     if p.returncode != 0:
-        err = _redact(p.stderr or p.stdout or "")
+        err = re.sub(r"(https?://[^\s/]+)/\S{40,}", r"\1/…", _redact(p.stderr or p.stdout or ""))  # links enormes escondiam o erro de verdade
         key = [l for l in err.splitlines() if any(w in l.lower() for w in ("error", "invalid", "no such", "killed", "cannot", "failed", "warning"))]
         raise RuntimeError(f"código {p.returncode}: " + (" | ".join(key[-6:]) or err[-600:])[-1500:])
     return p.stdout
