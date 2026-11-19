@@ -410,6 +410,17 @@ async def get_destaques():
     return await destaques.items()
 
 
+@app.get("/api/destaques/capa/{name}")
+def destaque_capa(name: str):
+    import re as _re
+    if not _re.fullmatch(r"[A-Za-z0-9]{1,40}\.jpg", name):
+        raise HTTPException(404, "Não achei")
+    f = destaques.THUMBS / name
+    if not f.exists():
+        raise HTTPException(404, "Não achei")
+    return FileResponse(f, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+
+
 class DestaquesIn(BaseModel):
     urls: list[str]
 

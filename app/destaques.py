@@ -24,19 +24,65 @@ def save(lst: list[str]):
     _cache["at"] = 0
 
 
+THUMBS = DATA / "destaques"
+
+
+def _px():
+    import os
+    from . import video
+    px = os.getenv("YTDLP_PROXY", "")
+    return video._geo_proxy(px) if px else None
+
+
 async def _one(c: httpx.AsyncClient, u: str) -> dict | None:
+    import re, asyncio
+    from . import video
     full = u
+    out = {"url": u, "short": u, "title": "", "author": "", "handle": "", "thumb": ""}
     try:
         if "vt.tiktok.com" in u or "vm.tiktok.com" in u:
             r = await c.get(u, headers=UA, follow_redirects=True)
             full = str(r.url).split("?")[0]
-        r = await c.get("https://www.tiktok.com/oembed", params={"url": full}, headers=UA)
-        j = r.json()
-        return {"url": full, "short": u, "title": (j.get("title") or "")[:140], "author": j.get("author_name") or "",
-                "handle": (j.get("author_unique_id") or "").lstrip("@"), "thumb": j.get("thumbnail_url") or ""}
+        out["url"] = full
+        m = re.search(r"tiktok\.com/@([^/]+)/video/(\d+)", full)
+        if m:
+            out["handle"] = m.group(1)
+        vid = m.group(2) if m else re.sub(r"\W", "", u)[-16:]
+        THUMBS.mkdir(parents=True, exist_ok=True)
+        jpg = THUMBS / f"{vid}.jpg"
+        meta = THUMBS / f"{vid}.json"
+        if meta.exists():
+            out.update(json.loads(meta.read_text()))
+        else:
+            j = {}
+            for px in (None, _px()):  # direto; se o TikTok recusar, pelo proxy
+                try:
+                    async with httpx.AsyncClient(timeout=15, proxy=px) as c2:
+                        r = await c2.get("https://www.tiktok.com/oembed", params={"url": full}, headers=UA)
+                        j = r.json()
+                    if j.get("thumbnail_url"):
+                        async with httpx.AsyncClient(timeout=20, proxy=px) as c2:
+                            img = await c2.get(j["thumbnail_url"], headers=UA)
+                        if img.status_code == 200 and len(img.content) > 2000:
+                            jpg.write_bytes(img.content)
+                        break
+                except Exception as e:
+                    log.warning("Destaque %s (proxy=%s): %s", u, bool(px), e)
+            if not jpg.exists():  # último recurso: o yt-dlp pega a capa
+                try:
+                    await asyncio.to_thread(video.ytdlp, ["--skip-download", "--write-thumbnail", "--convert-thumbnails", "jpg",
+                                                          "-o", str(THUMBS / vid)], full, 90)
+                except Exception as e:
+                    log.warning("Destaque %s (yt-dlp): %s", u, e)
+            info = {"title": (j.get("title") or "")[:140], "author": j.get("author_name") or ""}
+            if jpg.exists():
+                meta.write_text(json.dumps(info, ensure_ascii=False))
+            out.update(info)
+        if jpg.exists():
+            out["thumb"] = f"/api/destaques/capa/{vid}.jpg"
     except Exception as e:
         log.warning("Destaque %s: %s", u, e)
-        return {"url": full, "short": u, "title": "", "author": "", "handle": "", "thumb": ""}
+    return out
 
 
 async def items() -> list[dict]:
