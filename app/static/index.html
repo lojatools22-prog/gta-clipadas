@@ -1145,8 +1145,8 @@ function openAuth(mode='signup',msg='',then){if(then!==undefined)afterAuth=then;
   ${su?'':'<button class="alt" onclick="openForgot()">Esqueci minha senha</button>'}
   <button class="alt" onclick="openAuth('${su?'login':'signup'}')">${su?'Já tem conta? <u>Entrar</u>':'Ainda não tem conta? <u>Criar grátis</u>'}</button>`);
   $('#authF').onsubmit=async e=>{e.preventDefault();const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
-    try{const r=su?await post('/api/auth/signup',{name:$('#aName').value,email:$('#aEmail').value,phone:$('#aPhone').value,password:$('#aPw').value,device:DEV})
-                  :await post('/api/auth/login',{email:$('#aEmail').value,password:$('#aPw').value,device:DEV});
+    try{const r=su?await post('/api/auth/signup',{name:$('#aName').value,email:$('#aEmail').value,phone:$('#aPhone').value,password:$('#aPw').value,device:DEV,origem:ORIGEM})
+                  :await post('/api/auth/login',{email:$('#aEmail').value,password:$('#aPw').value,device:DEV,origem:ORIGEM});
       if(r.step==='done')return done(r,su?(r.user.left>0?`Conta criada! Você tem ${r.user.left} cortes grátis.`:'Conta criada!'):'Você entrou!');
       openCode(r, r.step==='phone'?'/api/auth/verify-phone':'/api/auth/verify-login', r.step==='phone'?'Confirme seu celular':'Confirme que é você')}
     catch(err){toast(err.message);btn.disabled=false}}}
@@ -1187,6 +1187,17 @@ function slotAvail(){const t=CAT&&CAT.templates.find(x=>x.id===sel.tpl),ok=!!(t&
 function clearReact(){CAMF=null;$('#camFile').value='';$('#camBtn').textContent='Adicionar meu react';$('#reactOpts').hidden=true}
 /* conta */
 const PREFS=()=>LS.get('cgta_prefs',{captions:true,cover:true});
+/* de onde a pessoa veio (anúncio, Instagram, TikTok…): guardado no 1º acesso e enviado no cadastro */
+const ORIGEM=(()=>{try{const q=new URLSearchParams(location.search);let s=q.get('utm_source')?(q.get('utm_source')+(q.get('utm_campaign')?'/'+q.get('utm_campaign'):'')):'';
+  const r=document.referrer||'';
+  if(!s&&q.get('fbclid'))s=/instagram/i.test(r)||/Instagram/.test(navigator.userAgent)?'instagram anuncio':'facebook anuncio';
+  if(!s&&/Instagram/.test(navigator.userAgent))s='instagram';
+  if(!s&&/instagram\.com/i.test(r))s='instagram';if(!s&&/tiktok/i.test(r)||(!s&&/musical_ly|TikTok|BytedanceWebview/i.test(navigator.userAgent)))s='tiktok';
+  if(!s&&/facebook\.com|fb\.com/i.test(r))s='facebook';if(!s&&/google\./i.test(r))s='google';if(!s&&/youtube/i.test(r))s='youtube';
+  if(!s&&/wa\.me|whatsapp/i.test(r))s='whatsapp';
+  const old=LS.get('cgta_src');if(old&&old.at>Date.now()-30*864e5&&(!s||s===old.s))return old.s;
+  if(s){LS.set('cgta_src',{s,at:Date.now()});return s}return old?old.s:'direto'}catch(e){return 'direto'}})();
+try{if(!sessionStorage.getItem('cgta_hit')){sessionStorage.setItem('cgta_hit','1');fetch('/api/hit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({src:ORIGEM})})}}catch(e){}
 (()=>{const p=LS.get('cgta_prefs',null);if(p&&!p.v2){if(!p.tpl||/^capa-/.test(p.tpl))p.tpl='viral';p.v2=1;LS.set('cgta_prefs',p)}})();
 function wmRender(){const el=$('#wmBox');if(!el)return;const has=!!(ME&&ME.has_logo),on=PREFS().logo!==false,wm=PREFS().wm||'';
   if(has&&!ME.logo_url&&!wmRender.busy){wmRender.busy=1;api('/api/my/stats').then(d=>{ME.logo_url=d.logo;wmRender.busy=0;wmRender()}).catch(()=>{})}

@@ -122,6 +122,7 @@ class SignupIn(BaseModel):
     phone: str
     password: str
     device: str = ""
+    origem: str = ""
 
 
 class LoginIn(BaseModel):
@@ -161,7 +162,7 @@ def _wrap(fn, *a):
 
 @app.post("/api/auth/signup")
 def signup(b: SignupIn):
-    r = _wrap(accounts.signup, b.name, b.email, b.phone, b.password, b.device)
+    r = _wrap(accounts.signup, b.name, b.email, b.phone, b.password, b.device, b.origem)
     return _logged(r["token"]) if r["step"] == "done" else r
 
 
@@ -1113,6 +1114,25 @@ def waitlist(w: WaitIn):
 
 
 # ---------------- admin ----------------
+class HitIn(BaseModel):
+    src: str = ""
+
+
+@app.post("/api/hit")
+def api_hit(b: HitIn):
+    try:
+        accounts.hit(b.src)
+    except Exception:
+        pass
+    return {"ok": True}
+
+
+@app.get("/api/admin/origens")
+def admin_origens(request: Request, days: int = 7):
+    admin_user(request)
+    return accounts.origins(min(max(days, 1), 90))
+
+
 @app.get("/api/admin/overview")
 def admin_overview(request: Request):
     admin_user(request)

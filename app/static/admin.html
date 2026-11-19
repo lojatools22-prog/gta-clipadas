@@ -52,6 +52,7 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 <header><img src="/static/icon-192.png" alt=""><h1>Painel</h1><span class="sp"></span><span class="d" id="who"></span><a class="btn g sm" href="/">Ver site</a><button class="btn g sm" onclick="sair()">Sair</button></header>
 <div class="kpis" id="kpis"></div>
 <div class="funnel" id="funnel"></div>
+<div class="wrap" id="orig" style="margin:0 0 18px"></div>
 <div class="tabs"><button data-t="crm" class="on">CRM de leads</button><button data-t="users">Usuários e planos</button><button data-t="pay">Pagamentos</button><button data-t="dest">Virais (TikTok)</button></div>
 <div id="tab"></div>
 </main><div class="toast" id="toast"></div>
@@ -67,21 +68,22 @@ const wa=p=>{let d=String(p||'').replace(/\D/g,'');if(d.length===11)d='55'+d;ret
 const ST={novo:'Novo',contatado:'Contatado',negociando:'Negociando',cliente:'Cliente',perdido:'Perdido'};
 let LEADS=[],F={stage:'',q:'',tipo:''};
 
-async function kpis(){const d=await api('/api/admin/overview');const L=[['usuarios','Cadastros'],['novos_24h','Novos (24h)'],['assinantes_ativos','Assinantes ativos'],['cortes_24h','Cortes (24h)'],['cortes_total','Cortes no total'],['receita_30d','Receita (30 dias)'],['receita_total','Receita total'],['fila_agora','Na fila agora']];
+async function kpis(){const d=await api('/api/admin/overview');const L=[['usuarios','Cadastros'],['novos_24h','Novos (24h)'],['assinantes_ativos','Assinantes ativos'],['cortes_24h','Cortes (24h)'],['cortes_total','Cortes no total'],['receita_30d','Receita (30 dias)'],['receita_total','Receita total'],['fila_agora','Na fila agora'],['visitas_hoje','Visitas hoje']];
   $('#kpis').innerHTML=L.map(([k,n])=>`<div class="k"><b>${k.startsWith('receita')?brl(d[k]):d[k]}</b><span>${n}</span></div>`).join('')}
 function funnel(){const u=LEADS.filter(l=>l.tipo==='cadastro'),a=u.length,b=u.filter(l=>l.cortes>0).length,c=u.filter(l=>l.cortes>=3).length,p=u.filter(l=>l.pago>0).length;
   const F2=[['Cadastraram',a],['Fizeram 1 corte',b],['Usaram os grátis',c],['Pagaram',p]];
   $('#funnel').innerHTML=F2.map(([n,v])=>`<div class="fu"><span class="m" style="font-size:12px">${n}</span><br><b>${v}</b> <span class="d">${a?Math.round(v/a*100):0}%</span><div class="bar"><i style="width:${a?v/a*100:0}%"></i></div></div>`).join('')}
 
-async function crm(){const d=await api('/api/admin/crm');LEADS=d.leads;funnel();drawCrm()}
+async function origens(){try{const d=await api('/api/admin/origens?days=7');$('#orig').innerHTML=`<table><tr><th>De onde vieram (7 dias)</th><th>Visitas</th><th>Cadastros</th><th>Conversão</th><th>Pagaram</th></tr>${d.map(o=>`<tr><td>${esc(o.origem)}</td><td>${o.visitas}</td><td>${o.cadastros}</td><td>${o.visitas?Math.round(o.cadastros/o.visitas*100)+'%':'—'}</td><td>${o.pagaram}</td></tr>`).join('')||'<tr><td colspan=5 class="m">Ainda sem visitas registradas.</td></tr>'}</table>`}catch(e){}}
+async function crm(){origens();const d=await api('/api/admin/crm');LEADS=d.leads;funnel();drawCrm()}
 function drawCrm(){const cnt=s=>LEADS.filter(l=>l.stage===s).length;
-  let L=LEADS.filter(l=>(!F.stage||l.stage===F.stage)&&(!F.tipo||(F.tipo==='quente'?l.quente:F.tipo==='auto'?l.tipo==='automatico':F.tipo==='pagou'?l.pago>0:true))&&(!F.q||[l.name,l.email,l.phone,l.handle].join(' ').toLowerCase().includes(F.q.toLowerCase())));
+  let L=LEADS.filter(l=>(!F.stage||l.stage===F.stage)&&(!F.tipo||(F.tipo==='quente'?l.quente:F.tipo==='auto'?l.tipo==='automatico':F.tipo==='pagou'?l.pago>0:true))&&(!F.q||[l.name,l.email,l.phone,l.handle,l.origem].join(' ').toLowerCase().includes(F.q.toLowerCase())));
   $('#tab').innerHTML=`<div class="bar2"><input id="q" placeholder="Buscar nome, e-mail, celular ou @" value="${esc(F.q)}" style="flex:1;min-width:220px">
     <button class="btn g sm" onclick="csv()">⬇ Exportar planilha</button></div>
   <div class="bar2"><div class="chips">${[['','Todas',LEADS.length],...Object.keys(ST).map(s=>[s,ST[s],cnt(s)])].map(([k,n,c])=>`<button class="chip ${F.stage===k?'on':''}" data-st="${k}">${n} · ${c}</button>`).join('')}</div>
   <div class="chips">${[['','Todos'],['quente','🔥 Quentes'],['auto','Interessados no Automático'],['pagou','Pagaram']].map(([k,n])=>`<button class="chip ${F.tipo===k?'on':''}" data-tp="${k}">${n}</button>`).join('')}</div></div>
   <p class="d" style="margin:0 0 10px">${L.length} leads · 🔥 quente = plano grátis, já fez 2+ cortes nos últimos 14 dias (bom pra oferecer plano)</p>
-  ${L.map(l=>`<div class="lead st-${l.stage}"><div><b>${esc(l.name||'—')}</b>${l.quente?'<span class="tag hot">🔥 quente</span>':''}${l.tipo==='automatico'?'<span class="tag auto">Automático</span>':''}${l.pago>0?'<span class="tag pay">'+brl(l.pago)+'</span>':''}
+  ${L.map(l=>`<div class="lead st-${l.stage}"><div><b>${esc(l.name||'—')}</b>${l.quente?'<span class="tag hot">🔥 quente</span>':''}${l.tipo==='automatico'?'<span class="tag auto">Automático</span>':''}${l.pago>0?'<span class="tag pay">'+brl(l.pago)+'</span>':''}${l.origem&&l.origem!=='direto'?'<span class="tag">via '+esc(l.origem)+'</span>':''}
       <div class="m" style="margin-top:4px">${esc(l.email||l.handle||'')}</div><div class="m">${esc(l.phone||'')}</div><div class="d">Cadastro há ${ago(l.created)}</div></div>
     <div><span class="d">Plano</span><div>${esc(l.plan_name||'—')}${l.plan_until?'<span class="d"> até '+dt(l.plan_until).slice(0,8)+'</span>':''}</div>
       <span class="d">Cortes</span><div>${l.cortes||0}${l.ultimo_corte?'<span class="d"> · último há '+ago(l.ultimo_corte)+'</span>':''}${l.left!=null&&l.tipo==='cadastro'?'<span class="d"> · restam '+l.left+'</span>':''}</div></div>

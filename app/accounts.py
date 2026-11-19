@@ -40,10 +40,39 @@ with _conn() as c:
 
 
 with _conn() as c:
-    try:
-        c.execute("ALTER TABLE users ADD COLUMN asaas_customer TEXT")
-    except sqlite3.OperationalError:
-        pass
+    for _sql in ("ALTER TABLE users ADD COLUMN asaas_customer TEXT", "ALTER TABLE users ADD COLUMN origem TEXT"):
+        try:
+            c.execute(_sql)
+        except sqlite3.OperationalError:
+            pass
+    c.execute("CREATE TABLE IF NOT EXISTS visits(day TEXT, src TEXT, n INTEGER DEFAULT 0, PRIMARY KEY(day, src))")
+
+
+def _src(s: str) -> str:
+    import re as _re
+    return (_re.sub(r"[^a-z0-9_./ -]", "", (s or "").lower())[:40]).strip() or "direto"
+
+
+def hit(src: str):
+    day = time.strftime("%Y-%m-%d", time.localtime(time.time() - 3 * 3600))
+    with _lock, _conn() as c:
+        c.execute("INSERT INTO visits(day,src,n) VALUES(?,?,1) ON CONFLICT(day,src) DO UPDATE SET n=n+1", (day, _src(src)))
+
+
+def origins(days: int = 7):
+    """Por origem (instagram, tiktok, anúncio…): visitas, cadastros e quem pagou nos últimos dias."""
+    since_day = time.strftime("%Y-%m-%d", time.localtime(time.time() - 3 * 3600 - (days - 1) * 86400))
+    since = time.time() - days * 86400
+    out = {}
+    with _conn() as c:
+        for r in c.execute("SELECT src, SUM(n) AS n FROM visits WHERE day>=? GROUP BY src", (since_day,)):
+            out.setdefault(r["src"], {"origem": r["src"], "visitas": 0, "cadastros": 0, "pagaram": 0})["visitas"] = r["n"]
+        for r in c.execute("""SELECT COALESCE(origem,'direto') AS src, COUNT(*) AS n,
+                              SUM(CASE WHEN EXISTS(SELECT 1 FROM payments p WHERE p.user_id=u.id AND p.status='approved') THEN 1 ELSE 0 END) AS pg
+                              FROM users u WHERE created>? GROUP BY src""", (since,)):
+            o = out.setdefault(r["src"], {"origem": r["src"], "visitas": 0, "cadastros": 0, "pagaram": 0})
+            o["cadastros"], o["pagaram"] = r["n"], r["pg"] or 0
+    return sorted(out.values(), key=lambda o: -(o["visitas"] + o["cadastros"] * 10))
 
 
 def set_asaas_customer(user_id: int, cid: str):
@@ -164,7 +193,7 @@ def _send_sms_code(user_id: int, phone: str, purpose: str, extra: str = "") -> d
 
 
 # ---------------- cadastro e login ----------------
-def signup(name, email, phone, password, device="") -> dict:
+def signup(name, email, phone, password, device="", origem="") -> dict:
     email, phone = norm_email(email), norm_phone(phone)
     name = (name or "").strip()[:60]
     if len(name) < 2:
@@ -174,8 +203,8 @@ def signup(name, email, phone, password, device="") -> dict:
     salt = secrets.token_hex(16)
     try:
         with _lock, _conn() as c:
-            uid = c.execute("INSERT INTO users(name,email,phone,pw,salt,created) VALUES(?,?,?,?,?,?)",
-                            (name, email, phone, _hash(password, salt), salt, time.time())).lastrowid
+            uid = c.execute("INSERT INTO users(name,email,phone,pw,salt,created,origem) VALUES(?,?,?,?,?,?,?)",
+                            (name, email, phone, _hash(password, salt), salt, time.time(), _src(origem))).lastrowid
     except sqlite3.IntegrityError:
         raise AuthError("Esse e-mail já tem conta. Entre com sua senha.")
     if not sms_on():
@@ -447,7 +476,8 @@ def admin_stats():
                 "assinantes_ativos": q("SELECT COUNT(*) FROM users WHERE plan<>'gratis' AND plan_until>?", now),
                 "cortes_total": q("SELECT COUNT(*) FROM jobs"), "cortes_24h": q("SELECT COUNT(*) FROM jobs WHERE created>?", now - 86400),
                 "receita_total": round(q("SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='approved'"), 2),
-                "receita_30d": round(q("SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='approved' AND created>?", now - 30 * 86400), 2)}
+                "receita_30d": round(q("SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='approved' AND created>?", now - 30 * 86400), 2),
+                "visitas_hoje": q("SELECT COALESCE(SUM(n),0) FROM visits WHERE day=?", time.strftime("%Y-%m-%d", time.localtime(now - 3 * 3600)))}
 
 
 def admin_users(search="", limit=100):
@@ -494,7 +524,7 @@ def crm_rows():
         out.append({"key": f"u:{r['id']}", "tipo": "cadastro", "user_id": r["id"], "name": r["name"], "email": r["email"], "phone": r["phone"],
                     "plan": p, "plan_name": PLANS[p]["name"], "plan_until": r["plan_until"] if p != "gratis" else None,
                     "left": r["credits"] if p == "gratis" else r["quota_left"], "cortes": r["cortes"], "ultimo_corte": r["ultimo_corte"],
-                    "pago": round(r["pago"] or 0, 2), "ultimo_pagamento": r["ultimo_pagamento"], "created": r["created"],
+                    "pago": round(r["pago"] or 0, 2), "ultimo_pagamento": r["ultimo_pagamento"], "created": r["created"], "origem": r["origem"] or "direto",
                     "last_login": r["last_login"], "stage": r["stage"] or auto, "notes": r["notes"] or "",
                     "quente": p == "gratis" and (r["cortes"] or 0) >= 2 and (r["created"] or 0) > now - 14 * 86400})
     return out, extra
