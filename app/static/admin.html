@@ -52,7 +52,7 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 <header><img src="/static/icon-192.png" alt=""><h1>Painel</h1><span class="sp"></span><span class="d" id="who"></span><a class="btn g sm" href="/">Ver site</a><button class="btn g sm" onclick="sair()">Sair</button></header>
 <div class="kpis" id="kpis"></div>
 <div class="funnel" id="funnel"></div>
-<div class="tabs"><button data-t="crm" class="on">CRM de leads</button><button data-t="users">Usuários e planos</button><button data-t="pay">Pagamentos</button></div>
+<div class="tabs"><button data-t="crm" class="on">CRM de leads</button><button data-t="users">Usuários e planos</button><button data-t="pay">Pagamentos</button><button data-t="dest">Virais (TikTok)</button></div>
 <div id="tab"></div>
 </main><div class="toast" id="toast"></div>
 <script>
@@ -106,8 +106,10 @@ async function users(q=''){const d=await api('/api/admin/users?q='+encodeURIComp
   $('#q').onchange=e=>users(e.target.value);
   document.querySelectorAll('.pl').forEach(s=>s.onchange=async()=>{if(!s.value)return;if(!confirm(`Liberar o plano ${s.value} pra este usuário?`))return(s.value='');await api('/api/admin/plan',{method:'POST',body:JSON.stringify({user_id:+s.dataset.u,plan:s.value})});toast('Plano liberado');users(q);kpis()});
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=async()=>{await api('/api/admin/credits',{method:'POST',body:JSON.stringify({user_id:+b.dataset.c,amount:5})});toast('+5 cortes');users(q)})}
+async function dest(){const d=await api('/api/admin/destaques');$('#tab').innerHTML=`<div class="wrap" style="padding:16px"><p class="m">Links do TikTok que aparecem no topo da aba Virais, um por linha, na ordem.</p><textarea id="dl" style="width:100%;min-height:220px;background:#0f0a16;color:#fff;border:1px solid #333;border-radius:10px;padding:10px;font:14px monospace">${esc(d.urls.join('\n'))}</textarea><button class="btn" style="margin-top:10px" onclick="saveDest()">Salvar</button></div>`}
+async function saveDest(){try{await api('/api/admin/destaques',{method:'POST',body:JSON.stringify({urls:$('#dl').value.split('\n')})});toast('Salvo! Já aparece na aba Virais.')}catch(e){toast(e.message)}}
 async function pays(){const d=await api('/api/admin/payments');$('#tab').innerHTML=`<div class="wrap"><table><tr><th>Data</th><th>Usuário</th><th>Plano</th><th>Valor</th><th>Situação</th></tr>${d.map(p=>`<tr><td>${dt(p.created)}</td><td>${esc(p.email)}</td><td>${esc(p.plan)}</td><td>${brl(p.amount)}</td><td>${esc(p.status)}</td></tr>`).join('')||'<tr><td colspan=5 class="m">Nenhum pagamento ainda.</td></tr>'}</table></div>`}
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));({crm,users,pay:pays})[b.dataset.t]()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));({crm,users,pay:pays,dest})[b.dataset.t]()});
 function sair(){LS.set('cgta_admin',null);location.reload()}
 $('#lf').onsubmit=async e=>{e.preventDefault();$('#lerr').textContent='';try{const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:$('#lu').value,password:$('#lp').value})});const j=await r.json();if(!r.ok)throw new Error(j.detail||'Erro');LS.set('cgta_admin',j.token);TOK=j.token;start(j.user)}catch(err){$('#lerr').textContent=err.message}};
 async function start(who){try{await kpis();$('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=who?'Entrou como '+who:'';await crm();setInterval(kpis,30000)}catch(e){$('#app').hidden=true;$('#login').hidden=false}}

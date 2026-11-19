@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import httpx
 
-from . import twitch, video, templates, accounts, plans, payments, notify, moments, livefollow
+from . import twitch, video, templates, accounts, plans, payments, notify, moments, livefollow, destaques
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("app")
@@ -403,6 +403,28 @@ async def vods(login: str):
 @app.get("/api/schedule/{login}")
 async def schedule(login: str):
     return await safe(twitch.schedule(login))
+
+
+@app.get("/api/destaques")
+async def get_destaques():
+    return await destaques.items()
+
+
+class DestaquesIn(BaseModel):
+    urls: list[str]
+
+
+@app.post("/api/admin/destaques")
+def set_destaques(body: DestaquesIn, request: Request):
+    admin_user(request)
+    destaques.save(body.urls)
+    return {"ok": True, "urls": destaques.urls()}
+
+
+@app.get("/api/admin/destaques")
+def list_destaques(request: Request):
+    admin_user(request)
+    return {"urls": destaques.urls()}
 
 
 @app.get("/api/clips")
