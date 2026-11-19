@@ -536,7 +536,7 @@ AUTO_MAX = int(os.getenv("AUTO_CLIPS", "10"))
 LONG_CLIP = 60  # acima disso o corte manual custa 2
 
 
-FREE_SHOWCASE = [("viral", "pesada-karaoke"), ("viral-legenda", "condensada-pop"), ("capa-praia", "neon-quique")]  # o principal: jogo + arte, sem facecam
+FREE_SHOWCASE = [("viral", "pesada-karaoke"), ("viral", "pesada-karaoke"), ("viral", "pesada-karaoke")]  # demo grátis: tudo no formato Viral (o que mais viraliza)
 
 
 def _auto_cut(aid: str):

@@ -307,7 +307,7 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
         ch = int(tpl["layout"].get("cam_h", 740))
         gh = H - ch
         if face:
-            vf = (f"[0:v]split=2[g0][c0];[c0]{framing.cam_crop(face, W, ch, (opts.get('_frame') or {}).get('aspect', 16 / 9), 4.6)}:flags=lanczos,setsar=1[cam];"
+            vf = (f"[0:v]split=2[g0][c0];[c0]hqdn3d=2:1.5:4:3,{framing.cam_crop(face, W, ch, (opts.get('_frame') or {}).get('aspect', 16 / 9), 4.6)}:flags=lanczos,unsharp=5:5:0.9:5:5:0,setsar=1[cam];"
                   f"[g0]scale={W}:{gh}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{gh},setsar=1[game];"
                   f"[cam][game]vstack=inputs=2[base]")
         else:  # sem facecam: o próprio jogo, ampliado e desfocado, ocupa a parte de cima
@@ -583,7 +583,8 @@ def probe_url(url: str) -> dict:
 
 
 def download(url: str, start: float | None, end: float | None, dest: Path) -> Path:
-    cmd = ["--no-playlist", "-f", "best[height<=1080]/bestvideo[height<=1080]+bestaudio/best",
+    # vídeo e áudio separados primeiro: no YouTube o "best" (já juntado) costuma ser só 360p e deixava a webcam borrada
+    cmd = ["--no-playlist", "-f", "bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
            "--merge-output-format", "mp4", "-o", str(dest / "src.%(ext)s")]
     if start is not None and end is not None:
         cmd += ["--download-sections", f"*{start:.2f}-{end:.2f}"]
@@ -597,6 +598,11 @@ def download(url: str, start: float | None, end: float | None, dest: Path) -> Pa
     files = sorted(dest.glob("src.*"))
     if not files:
         raise RuntimeError("Download não gerou arquivo")
+    try:
+        wh = _run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", str(files[0])]).strip()
+        log.info("Download: %s em %s", url[:60], wh)
+    except Exception:
+        pass
     return files[0]
 
 
