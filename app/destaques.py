@@ -51,8 +51,9 @@ async def _one(c: httpx.AsyncClient, u: str) -> dict | None:
         THUMBS.mkdir(parents=True, exist_ok=True)
         jpg = THUMBS / f"{vid}.jpg"
         meta = THUMBS / f"{vid}.json"
-        if meta.exists():
-            out.update(json.loads(meta.read_text()))
+        old = json.loads(meta.read_text()) if meta.exists() else None
+        if old and (old.get("title") or old.get("tried")):
+            out.update(old)
         else:
             j = {}
             for px in (None, _px()):  # direto; se o TikTok recusar, pelo proxy
@@ -68,13 +69,19 @@ async def _one(c: httpx.AsyncClient, u: str) -> dict | None:
                         break
                 except Exception as e:
                     log.warning("Destaque %s (proxy=%s): %s", u, bool(px), e)
-            if not jpg.exists():  # último recurso: o yt-dlp pega a capa
-                try:
-                    await asyncio.to_thread(video.ytdlp, ["--skip-download", "--write-thumbnail", "--convert-thumbnails", "jpg",
-                                                          "-o", str(THUMBS / vid)], full, 90)
-                except Exception as e:
-                    log.warning("Destaque %s (yt-dlp): %s", u, e)
-            info = {"title": (j.get("title") or "")[:140], "author": j.get("author_name") or ""}
+            yt = ""
+            if not jpg.exists() or not j.get("title"):  # o yt-dlp pega a capa e a legenda do vídeo
+                for _ in range(2):
+                    try:
+                        yt = await asyncio.to_thread(video.ytdlp, ["--skip-download", "--write-thumbnail", "--convert-thumbnails", "jpg",
+                                                                   "--print", "%(title)s|||%(uploader)s", "--no-simulate",
+                                                                   "-o", str(THUMBS / vid)], full, 90)
+                        if jpg.exists():
+                            break
+                    except Exception as e:
+                        log.warning("Destaque %s (yt-dlp): %s", u, e)
+            t2, _, a2 = (yt or "").strip().splitlines()[-1].partition("|||") if (yt or "").strip() else ("", "", "")
+            info = {"title": (j.get("title") or t2 or "")[:140], "author": j.get("author_name") or a2 or "", "tried": True}
             if jpg.exists():
                 meta.write_text(json.dumps(info, ensure_ascii=False))
             out.update(info)
@@ -90,6 +97,8 @@ async def items() -> list[dict]:
         return _cache["items"]
     async with httpx.AsyncClient(timeout=12) as c:
         out = [x for x in [await _one(c, u) for u in urls()] if x]
-    if any(x["thumb"] for x in out):
+    if all(x["thumb"] for x in out):
         _cache.update(at=time.time(), items=out)
+    elif any(x["thumb"] for x in out):
+        _cache.update(at=time.time() - 3 * 3600 + 600, items=out)  # tenta de novo as que faltaram em 10 min
     return out
