@@ -395,6 +395,9 @@ details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--d
  .vgrid{grid-template-columns:repeat(4,1fr)}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.ups{margin:22px auto 0;max-width:420px;text-align:center;padding:18px;border:1px solid var(--line2,#333);border-radius:18px;background:rgba(255,31,168,.07)}
+.ups b{display:block;font-size:17px;margin-bottom:6px}.ups p{color:var(--mute,#aaa);font-size:14px;margin:0 0 14px}
+.ups .go{width:100%;justify-content:center}.ups small{display:block;color:var(--mute,#aaa);font-size:12px;margin:8px 0 6px}.ups .alt{margin-top:4px}
 </style>
 </head>
 <body>
@@ -886,7 +889,7 @@ async function generate(){const go=$('#go');go.disabled=true;go.textContent='Env
   else{j=await api('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...o,url:src.url,start:o.start||null,end:o.end||null,segments:segs.length>1?segs:[]})})}
   if(j.user){ME=j.user;refreshAcct()}{const p=PREFS();p.tpl=sel.tpl;p.cap=sel.cap;LS.set('cgta_prefs',p)}SEGS=[];CAMF=null;renderSegs();
   GEN.ids=j.jobs||[j.id];GEN.phase='job';addPending(GEN.ids);renderGen();watchJobs()}
-  catch(err){toast(err.message);if(!$('#v-gen').hidden)step(3);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402)WIZ=true,setTimeout(()=>view('planos'),1400)}finally{go.disabled=false;go.textContent='Gerar meu corte'}}
+  catch(err){toast(err.message);if(!$('#v-gen').hidden)step(3);if(err.status===401){logoutLocal();openAuth('signup','Crie sua conta grátis pra gerar o corte.',generate)}else if(err.status===402){WIZ=true;semCreditos(err.message)}}finally{go.disabled=false;go.textContent='Gerar meu corte'}}
 
 
 /* ===== fluxo principal (igual Cut.Pro): cola o link → a IA gera os cortes sozinha → página do vídeo ===== */
@@ -921,7 +924,7 @@ async function startAuto({url,file}){VID={id:null,status:'enviando',up:0,name:ur
   try{const fd=new FormData();const o=autoOpts();for(const k in o)fd.append(k,o[k]);fd.append('auto','1');fd.append('n','10');
     if(file){const id=await upFile(file,p=>{VID.up=p;renderVid()});fd.append('upload_id',id)}else fd.append('url',url);
     const r=await api('/api/moments',{method:'POST',body:fd});VID={...r,moments:[]};LS.set('cgta_vid',r.id);$('#url').value='';watchVid()}
-  catch(e){toast(e.message);VID=null;if(e.status===402){WIZ=false;view('planos')}else home()}}
+  catch(e){if(e.status===402){VID=null;WIZ=false;semCreditos(e.message)}else{toast(e.message);VID=null;home()}}}
 function openVideo(id){VID={id,status:'carregando',moments:[]};VSEL.clear();view('video');renderVid();watchVid()}
 async function watchVid(){clearTimeout(VT);if(!VID||!VID.id)return;
   try{VID=await api('/api/videos/'+VID.id)}catch(e){if(e.status===404){VID=null;LS.set('cgta_vid',null);return renderVid()}VT=setTimeout(watchVid,5000);return}
@@ -965,7 +968,7 @@ async function vDownload(){const cs=VID.moments.filter(m=>m.clip&&VSEL.has(m.cli
   for(const m of cs){const a=document.createElement('a');a.href=m.clip.video;a.download=`gtaclipadas-${m.clip.id}.mp4`;document.body.appendChild(a);a.click();a.remove();await new Promise(r=>setTimeout(r,700))}}
 async function vDelete(){const ids=[...VSEL];if(!confirm(`Apagar ${ids.length} corte${ids.length>1?'s':''} desse vídeo?`))return;
   try{await post(`/api/videos/${VID.id}/batch`,{jobs:ids,action:'apagar'});VSEL.clear();toast('Cortes apagados');watchVid()}catch(e){toast(e.message)}}
-async function vGen(start){try{const r=await post(`/api/videos/${VID.id}/batch`,{jobs:[],action:'gerar',starts:[start]});if(r.user){ME=r.user;refreshAcct()}toast('Gerando o corte…');watchVid()}catch(e){toast(e.message);if(e.status===402)view('planos')}}
+async function vGen(start){try{const r=await post(`/api/videos/${VID.id}/batch`,{jobs:[],action:'gerar',starts:[start]});if(r.user){ME=r.user;refreshAcct()}toast('Gerando o corte…');watchVid()}catch(e){if(e.status===402)semCreditos(e.message);else toast(e.message)}}
 function vVisual(){if(!CAT)return;let t=autoOpts().template,c=autoOpts().caption;
   const tg=CAT.templates.filter(x=>x.tier<=myTier());
   sheet(`<h2 class="disp" style="margin:0 0 4px">Trocar o visual</h2><p class="lead" style="font-size:14px;margin:0 0 12px">Aplica em ${VSEL.size} corte${VSEL.size>1?'s':''}. Não gasta cortes do plano.</p>
@@ -1011,8 +1014,20 @@ function renderGen(){const el=$('#gen');if(!GEN){el.innerHTML='<div class="empty
     :rev?`<button class="go" onclick="openReview('${rev}')">${I('pen')} Revisar legenda</button>`:`${bell}<button class="go ghost" onclick="home()">Fazer outro corte enquanto isso</button><button class="alt" onclick="view('mine')">Ver meus cortes</button>`;
   el.innerHTML=`<div class="gen">${vis}<h2 class="disp">${title}</h2><p class="lead">${sub}</p>
    ${note}${done?'':`<div class="gen-bar"><i style="width:${pct}%"></i></div><ul class="gen-steps">${steps.map(([k,l],i)=>`<li class="${i<idx?'ok':i===idx?'now':''}"><i>${i<idx?'✓':''}</i>${l}${i===idx&&k==='up'?`<small>${GEN.up}%</small>`:i===idx&&k==='fila'&&pos>1?`<small>${pos}º da fila</small>`:''}</li>`).join('')}</ul>`}
-   <div class="gen-btns">${btns}</div></div>`;
+   <div class="gen-btns">${btns}</div>${done&&ready.length?upsell():''}</div>`;
   updPill()}
+function upsell(){if(!ME||ME.plan!=='gratis'||!(STATUS.plans||{}).passe)return '';const l=ME.left|0,P=STATUS.plans.passe;
+  return `<div class="ups"><b>${l>0?`Você ainda tem ${l} corte${l>1?'s':''} grátis`:'Seus cortes grátis acabaram'}</b>
+   <p>${l>0?'Gostou do resultado? Pra postar todo dia, libere mais cortes:':'Continue postando cortes virais do GTA 6:'}</p>
+   <button class="go" onclick="buy('passe')">${P.quota} cortes por ${brl(P.price)}</button>
+   <small>Passe GTA 6 · pagamento único no Pix · 7 dias · sem assinatura</small>
+   <button class="alt" onclick="view('planos')">Ver todos os planos</button></div>`}
+function semCreditos(msg){if(!ME||ME.plan!=='gratis'||!(STATUS.plans||{}).passe){toast(msg);return view('planos')}const P=STATUS.plans.passe;
+  sheet(`<div class="ups" style="margin:0;border:0"><b style="font-size:20px">Seus 3 cortes grátis acabaram</b>
+   <p>Você já viu como fica. Continue postando cortes virais do GTA 6 sem editar nada.</p>
+   <button class="go" onclick="buy('passe')">Liberar ${P.quota} cortes por ${brl(P.price)}</button>
+   <small>Pagamento único no Pix · vale 7 dias · sem assinatura</small>
+   <button class="alt" onclick="closeSheet();view('planos')">Ver planos com mais cortes</button></div>`)}
 function updPill(){const p=$('#genPill');if(!GEN||GEN.phase!=='job'){p.hidden=true;return updVidPill()}if(GEN&&!$('#v-gen').hidden&&genStage()==='pronto')GEN.seen=true;
   const show=GEN&&GEN.phase==='job'&&!GEN.seen&&$('#v-gen').hidden;p.hidden=!show;if(!show)return;
   p.innerHTML=genStage()==='pronto'?I('check')+' Seu corte ficou pronto · ver':`<i></i>Gerando ${GEN.ids.length>1?GEN.ids.length+' cortes':'seu corte'}… ver`}
