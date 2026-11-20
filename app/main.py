@@ -86,7 +86,7 @@ def admin_login(b: AdminLoginIn, request: Request):
         raise HTTPException(429, "Muitas tentativas. Espere 15 minutos.")
     au, ap = os.getenv("ADMIN_USER", ""), os.getenv("ADMIN_PASSWORD", "")
     if not au or not ap:
-        raise HTTPException(503, "O acesso do painel ainda não foi configurado no servidor.")
+        raise HTTPException(503, "Esse login do painel não está ativo. Entre no site com a sua conta (botão Entrar na página inicial) e volte pra /admin.")
     if not (_h.compare_digest(b.user.strip().lower(), au.lower()) and _h.compare_digest(b.password, ap)):
         _ADMIN_FAILS[ip] = fails + [now]
         time.sleep(1)
