@@ -304,15 +304,17 @@ def build_filter(tpl: dict, opts: dict, dur: float, with_text: bool = True, cam:
     elif tpl["layout"]["kind"] == "viral" and not opts.get("_portrait"):
         # formato dos cortes que mais viralizam: facecam grande em cima, jogo cortado ocupando o resto, sem moldura
         face = (opts.get("_frame") or {}).get("cam")
+        gbox = (opts.get("_frame") or {}).get("game")
+        gpre = f"{framing.game_crop(gbox)}," if gbox else ""  # só a área do jogo, sem a moldura/overlay da live
         ch = int(tpl["layout"].get("cam_h", 740))
         gh = H - ch
         if face:
             vf = (f"[0:v]split=2[g0][c0];[c0]hqdn3d=2:1.5:4:3,{framing.cam_crop(face, W, ch, (opts.get('_frame') or {}).get('aspect', 16 / 9), 4.6)}:flags=lanczos,unsharp=5:5:0.9:5:5:0,setsar=1[cam];"
-                  f"[g0]scale={W}:{gh}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{gh},setsar=1[game];"
+                  f"[g0]{gpre}scale={W}:{gh}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{gh},setsar=1[game];"
                   f"[cam][game]vstack=inputs=2[base]")
         else:  # sem facecam: o próprio jogo, ampliado e desfocado, ocupa a parte de cima
-            vf = (f"[0:v]split=2[g0][c0];[c0]scale={W}:{ch}:force_original_aspect_ratio=increase,crop={W}:{ch},boxblur=24:3,eq=brightness=-0.10,setsar=1[cam];"
-                  f"[g0]scale={W}:{gh}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{gh},setsar=1[game];"
+            vf = (f"[0:v]split=2[g0][c0];[c0]{gpre}scale={W}:{ch}:force_original_aspect_ratio=increase,crop={W}:{ch},boxblur=24:3,eq=brightness=-0.10,setsar=1[cam];"
+                  f"[g0]{gpre}scale={W}:{gh}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{gh},setsar=1[game];"
                   f"[cam][game]vstack=inputs=2[base]")
     elif opts.get("_portrait") and not slot:  # vídeo gravado em pé: ocupa a tela toda, sem recortar facecam
         vf = f"[0:v]{_cover(W, H)}[base]"

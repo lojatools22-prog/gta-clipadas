@@ -57,13 +57,21 @@ def analyze(src: Path, start: float, end: float) -> dict:
         files = _frames(src, start or 0.0, dur, Path(td))
         if not files:
             return out
-        dets = []
+        dets, grays = [], []
         for i, f in enumerate(files):
             img = cv2.imread(str(f))
             if img is None:
                 continue
             out["aspect"] = img.shape[1] / img.shape[0]
+            grays.append(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype("float32"))
             dets += [(i, *d) for d in _faces(img)]
+    motion = _motion_map(grays)
+    if motion is not None:
+        box = _active_box(motion)
+        if box:
+            out["game"] = box
+            log.info("Enquadramento: área do jogo detectada em %s (resto da tela é moldura/overlay parado)",
+                     tuple(round(v, 3) for v in box))
     if not dets:
         return out
     n = len(files)
@@ -84,7 +92,10 @@ def analyze(src: Path, start: float, end: float) -> dict:
     ws = [x[3] for x in best["items"]]; hs = [x[4] for x in best["items"]]
     face = (float(np.median(xs)), float(np.median(ys)), float(np.median(ws)), float(np.median(hs)))
     big = face[2] > 0.16  # rosto grande: é uma live de câmera (IRL), não facecam no canto
-    if hits >= max(3, int(n * 0.5)) and not big:
+    still = motion is not None and _region_motion(motion, face) < 2.0  # "rosto" parado = foto/ícone do overlay, não webcam
+    if still:
+        log.info("Enquadramento: rosto achado não se mexe (imagem do overlay), ignorando como facecam")
+    if hits >= max(3, int(n * 0.5)) and not big and not still:
         out["cam"] = face
     if big and hits >= max(2, int(n * 0.4)):  # live de câmera: o corte vertical segue o rosto
         out["focus"] = min(max(face[0] + face[2] / 2, 0.0), 1.0)
@@ -92,6 +103,51 @@ def analyze(src: Path, start: float, end: float) -> dict:
     log.info("Enquadramento: %s rosto(s), facecam=%s (em %s de %s quadros)", len(dets),
              "sim" if out["cam"] else "não", hits, n)
     return out
+
+
+def _motion_map(grays):
+    """Desvio padrão de cada pixel ao longo dos quadros: onde tem jogo/câmera mexe, moldura e overlay ficam parados."""
+    if len(grays) < 4:
+        return None
+    h, w = grays[0].shape
+    st = np.stack([cv2.resize(g, (w // 4, h // 4)) for g in grays if g.shape == (h, w)])
+    if len(st) < 4:
+        return None
+    return st.std(axis=0)
+
+
+def _region_motion(motion, box) -> float:
+    h, w = motion.shape
+    x, y, bw, bh = box
+    x0, y0 = int(max(x, 0) * w), int(max(y, 0) * h)
+    x1, y1 = int(min(x + bw, 1) * w) + 1, int(min(y + bh, 1) * h) + 1
+    reg = motion[y0:y1, x0:x1]
+    return float(reg.mean()) if reg.size else 99.0
+
+
+def _active_box(motion):
+    """Retângulo (x, y, w, h normalizados) onde está o jogo, quando a live tem moldura parada em volta.
+    Só devolve algo se a moldura for grande o bastante pra valer a pena recortar."""
+    h, w = motion.shape
+    mask = (motion > 6.0).astype("uint8")
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), "uint8"))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), "uint8"))
+    n, _, stats, _ = cv2.connectedComponentsWithStats(mask)
+    if n <= 1:
+        return None
+    i = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+    x, y, bw, bh, area = stats[i]
+    if area < 0.12 * w * h or bw < 0.3 * w or bh < 0.3 * h:
+        return None
+    box = (float(x / w), float(y / h), float(bw / w), float(bh / h))
+    if box[2] * box[3] > 0.82:  # quase a tela toda: não tem moldura
+        return None
+    return box
+
+
+def game_crop(box: tuple) -> str:
+    x, y, bw, bh = box
+    return f"crop=iw*{bw:.4f}:ih*{bh:.4f}:iw*{x:.4f}:ih*{y:.4f}"
 
 
 def cam_crop(face: tuple, slot_w: int, slot_h: int, src_aspect: float = 16 / 9, faces: float = 3.2) -> str:
