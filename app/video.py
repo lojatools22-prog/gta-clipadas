@@ -458,6 +458,8 @@ def _fix_cookies(txt: str) -> str:
 
 def friendly_error(msg: str) -> str:
     m = msg or ""
+    if "TRAFFIC_EXH" in m or "Unable to connect to proxy" in m:
+        return "O download do YouTube está instável agora. Tente de novo em alguns minutos, use um link da Twitch ou Kick, ou envie o arquivo do vídeo (esses funcionam normal)."
     if "not a bot" in m or "429" in m or "Sign in" in m:
         return "O YouTube bloqueou o download desse vídeo agora. Tente de novo em alguns minutos, use um link da Twitch ou Kick, ou envie o arquivo do vídeo."
     if "Private video" in m or "private" in m.lower():
@@ -500,6 +502,7 @@ def _geo_proxy(px):
     return urlunsplit(u._replace(netloc=net))
 
 
+_PROXY_DEAD = ("TRAFFIC_EXH", "407", "Unable to connect to proxy", "Tunnel connection failed", "ProxyError")
 _BLOCK = ("not a bot", "Sign in", "403", "429", "Requested format is not available", "player response", "claimed content", "not available in your country", "blocked it in your country",
           "recording is not available", "live stream", "No video formats found")
 
@@ -525,6 +528,8 @@ def ytdlp(args: list, url: str, timeout: int):
     if not _is_yt(url):
         return _run(base + args + [url], timeout=timeout)
     proxy = _geo_proxy(os.getenv("YTDLP_PROXY"))
+    if _YT_OK.get("proxy_dead_until", 0) > time.time():
+        proxy = None  # proxy sem saldo/fora do ar: vai direto, testando todos os clientes
     plan = []
     if not proxy or _YT_OK.get("blocked_until", 0) < time.time():
         plan.append((None, _YT_OK["client"]))
@@ -533,7 +538,10 @@ def ytdlp(args: list, url: str, timeout: int):
     else:
         plan += [(None, c) for c in YT_CLIENTS if c != _YT_OK["client"]]
     last = None
-    for px, c in plan:
+    i = 0
+    while i < len(plan):
+        px, c = plan[i]
+        i += 1
         extra = _px(px, args) + (["--extractor-args", f"youtube:player_client={c}"] if c else [])
         try:
             out = _run(base + extra + args + [url], timeout=timeout)
@@ -543,6 +551,12 @@ def ytdlp(args: list, url: str, timeout: int):
             return out
         except Exception as e:
             last = e
+            if px and any(k in str(e) for k in _PROXY_DEAD):
+                _YT_OK["proxy_dead_until"] = time.time() + 1200
+                log.error("PROXY SEM SALDO OU FORA DO AR (DataImpulse): indo direto pro YouTube por 20 min")
+                tried = set(plan[:i])
+                plan = plan[:i] + [(None, cc) for cc in YT_CLIENTS if (None, cc) not in tried]
+                continue
             if not any(k in str(e) for k in _BLOCK):
                 raise
             if not px:
