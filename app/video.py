@@ -984,6 +984,15 @@ def _restore():
 
 
 def _selftest():
+    try:  # diagnóstico do proxy sem mostrar a senha
+        from urllib.parse import urlsplit
+        _raw = os.getenv("YTDLP_PROXY") or ""
+        _u = urlsplit(_raw.strip())
+        log.info("Proxy do YouTube: %s", "NÃO CONFIGURADO (variável vazia)" if not _raw.strip() else
+                 f"esquema={_u.scheme or '?'} host={_u.hostname or '?'} porta={_u.port or '?'} usuário={len(_u.username or '')} caracteres "
+                 f"senha={'sim' if _u.password else 'NÃO'} espaços_extras={'SIM' if _raw != _raw.strip() else 'não'}")
+    except Exception as _e:
+        log.warning("Proxy do YouTube: valor inválido (%s)", type(_e).__name__)
     """Faz um corte de 3s com o vídeo de exemplo ao ligar e registra o resultado no log."""
     time.sleep(3)
     d = Path("/tmp/autoteste")
