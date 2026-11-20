@@ -1134,6 +1134,49 @@ def waitlist(w: WaitIn):
 
 
 # ---------------- admin ----------------
+class SupportIn(BaseModel):
+    msg: str
+    email: str = ""
+    ctx: str = ""
+
+
+class ReplyIn(BaseModel):
+    reply: str
+
+
+@app.post("/api/suporte")
+def suporte_novo(b: SupportIn, request: Request):
+    u = current_user(request, required=False)
+    return _wrap(accounts.support_new, u, b.email, b.msg, b.ctx)
+
+
+@app.get("/api/suporte")
+def suporte_meus(request: Request):
+    u = current_user(request)
+    return accounts.support_mine(u["id"])
+
+
+@app.get("/api/admin/suporte")
+def admin_suporte(request: Request):
+    admin_user(request)
+    return accounts.support_all()
+
+
+@app.post("/api/admin/suporte/{sid}/responder")
+def admin_suporte_responder(sid: int, b: ReplyIn, request: Request):
+    admin_user(request)
+    email = _wrap(accounts.support_reply, sid, b.reply)
+    try:  # avisa por e-mail (sai do nao-responda do site), se o envio de e-mail estiver configurado
+        from . import notify
+        if email and notify.email_ready():
+            notify.send_email(email, "Responderam sua mensagem · GTA Clipadas",
+                              "<p>A equipe do GTA Clipadas respondeu sua mensagem. Entre no site e toque em <b>Conta → Suporte</b> pra ver a resposta.</p>"
+                              "<p><a href=\"https://gta6clipadas.com\">gta6clipadas.com</a></p>")
+    except Exception as e:
+        log.warning("Suporte: aviso por e-mail falhou: %s", e)
+    return {"ok": True}
+
+
 class HitIn(BaseModel):
     src: str = ""
 

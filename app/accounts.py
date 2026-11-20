@@ -45,6 +45,7 @@ with _conn() as c:
             c.execute(_sql)
         except sqlite3.OperationalError:
             pass
+    c.execute("CREATE TABLE IF NOT EXISTS support(id INTEGER PRIMARY KEY, user_id INTEGER, email TEXT, msg TEXT, reply TEXT, created REAL, replied REAL, seen INTEGER DEFAULT 0)")
     c.execute("CREATE TABLE IF NOT EXISTS visits(day TEXT, src TEXT, n INTEGER DEFAULT 0, PRIMARY KEY(day, src))")
 
 
@@ -540,3 +541,50 @@ def crm_set(key: str, stage: str | None, notes: str | None):
         c.execute("INSERT INTO crm(key,stage,notes,updated) VALUES(?,?,?,?) ON CONFLICT(key) DO UPDATE SET stage=excluded.stage, notes=excluded.notes, updated=excluded.updated",
                   (key, st, nt, time.time()))
     return {"ok": True}
+
+
+# ---------------- suporte pelo próprio site ----------------
+def support_new(user, email: str, msg: str, ctx: str = "") -> dict:
+    msg = (msg or "").strip()[:2000]
+    if len(msg) < 5:
+        raise AuthError("Escreva um pouco mais sobre o problema")
+    if ctx:
+        msg = f"{msg}\n\n[{ctx[:200]}]"
+    em = (user["email"] if user else (email or "")).strip().lower()[:120]
+    if not user and "@" not in em:
+        raise AuthError("Informe seu e-mail pra gente responder")
+    with _lock, _conn() as c:
+        recent = c.execute("SELECT COUNT(*) FROM support WHERE email=? AND created>?", (em, time.time() - 3600)).fetchone()[0]
+        if recent >= 5:
+            raise AuthError("Você já mandou várias mensagens. Aguarde a resposta.")
+        i = c.execute("INSERT INTO support(user_id,email,msg,created) VALUES(?,?,?,?)",
+                      (user["id"] if user else None, em, msg, time.time())).lastrowid
+    return {"id": i}
+
+
+def support_mine(uid: int) -> list:
+    with _lock, _conn() as c:
+        rows = [dict(r) for r in c.execute("SELECT id,msg,reply,created,replied FROM support WHERE user_id=? ORDER BY created DESC LIMIT 30", (uid,))]
+        c.execute("UPDATE support SET seen=1 WHERE user_id=? AND reply IS NOT NULL", (uid,))
+    return rows
+
+
+def support_unread(uid: int) -> int:
+    with _conn() as c:
+        return c.execute("SELECT COUNT(*) FROM support WHERE user_id=? AND reply IS NOT NULL AND seen=0", (uid,)).fetchone()[0]
+
+
+def support_all(limit=200) -> list:
+    with _conn() as c:
+        return [dict(r) for r in c.execute("""SELECT s.*, u.name, u.plan FROM support s LEFT JOIN users u ON u.id=s.user_id
+                                              ORDER BY (s.reply IS NOT NULL), s.created DESC LIMIT ?""", (limit,))]
+
+
+def support_reply(sid: int, reply: str):
+    reply = (reply or "").strip()[:3000]
+    if not reply:
+        raise AuthError("Escreva a resposta")
+    with _lock, _conn() as c:
+        c.execute("UPDATE support SET reply=?, replied=?, seen=0 WHERE id=?", (reply, time.time(), sid))
+        r = c.execute("SELECT email FROM support WHERE id=?", (sid,)).fetchone()
+    return r["email"] if r else ""

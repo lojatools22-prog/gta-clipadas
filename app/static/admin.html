@@ -53,7 +53,7 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 <div class="kpis" id="kpis"></div>
 <div class="funnel" id="funnel"></div>
 <div class="wrap" id="orig" style="margin:0 0 18px"></div>
-<div class="tabs"><button data-t="crm" class="on">CRM de leads</button><button data-t="users">Usuários e planos</button><button data-t="pay">Pagamentos</button><button data-t="dest">Virais (TikTok)</button></div>
+<div class="tabs"><button data-t="crm" class="on">CRM de leads</button><button data-t="users">Usuários e planos</button><button data-t="pay">Pagamentos</button><button data-t="dest">Virais (TikTok)</button><button data-t="sup">Suporte</button></div>
 <div id="tab"></div>
 </main><div class="toast" id="toast"></div>
 <script>
@@ -75,6 +75,14 @@ function funnel(){const u=LEADS.filter(l=>l.tipo==='cadastro'),a=u.length,b=u.fi
   $('#funnel').innerHTML=F2.map(([n,v])=>`<div class="fu"><span class="m" style="font-size:12px">${n}</span><br><b>${v}</b> <span class="d">${a?Math.round(v/a*100):0}%</span><div class="bar"><i style="width:${a?v/a*100:0}%"></i></div></div>`).join('')}
 
 async function origens(){try{const d=await api('/api/admin/origens?days=7');$('#orig').innerHTML=`<table><tr><th>De onde vieram (7 dias)</th><th>Visitas</th><th>Cadastros</th><th>Conversão</th><th>Pagaram</th></tr>${d.map(o=>`<tr><td>${esc(o.origem)}</td><td>${o.visitas}</td><td>${o.cadastros}</td><td>${o.visitas?Math.round(o.cadastros/o.visitas*100)+'%':'—'}</td><td>${o.pagaram}</td></tr>`).join('')||'<tr><td colspan=5 class="m">Ainda sem visitas registradas.</td></tr>'}</table>`}catch(e){}}
+async function sup(){const d=await api('/api/admin/suporte');const pend=d.filter(t=>!t.reply).length;
+  $('#tab').innerHTML=`<p class="m" style="margin:0 0 12px">${pend} sem resposta · ${d.length} no total. A resposta aparece pro cliente em Conta → Suporte no site.</p>`+(d.map(t=>`<div class="lead" style="border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px">
+   <b>${esc(t.name||t.email||'Visitante')}</b> <span class="m">${esc(t.email||'')} · ${new Date(t.created*1000).toLocaleString('pt-BR')}${t.plan?' · '+esc(t.plan):''}</span>
+   <p style="white-space:pre-wrap;margin:8px 0">${esc(t.msg)}</p>
+   ${t.reply?`<div style="background:var(--s2);border-radius:10px;padding:10px"><span class="m">Sua resposta:</span><p style="white-space:pre-wrap;margin:4px 0 0">${esc(t.reply)}</p></div>`:''}
+   <textarea id="r${t.id}" rows="3" style="width:100%;margin-top:8px" placeholder="${t.reply?'Responder de novo':'Escreva a resposta'}"></textarea>
+   <button class="btn sm" style="margin-top:6px" onclick="responder(${t.id})">Enviar resposta</button></div>`).join('')||'<p class="m">Nenhuma mensagem ainda.</p>')}
+async function responder(id){const v=$('#r'+id).value.trim();if(!v)return;try{await api('/api/admin/suporte/'+id+'/responder',{method:'POST',body:JSON.stringify({reply:v})});sup()}catch(e){alert(e.message)}}
 async function crm(){origens();const d=await api('/api/admin/crm');LEADS=d.leads;funnel();drawCrm()}
 function drawCrm(){const cnt=s=>LEADS.filter(l=>l.stage===s).length;
   let L=LEADS.filter(l=>(!F.stage||l.stage===F.stage)&&(!F.tipo||(F.tipo==='quente'?l.quente:F.tipo==='auto'?l.tipo==='automatico':F.tipo==='pagou'?l.pago>0:true))&&(!F.q||[l.name,l.email,l.phone,l.handle,l.origem].join(' ').toLowerCase().includes(F.q.toLowerCase())));
@@ -111,7 +119,7 @@ async function users(q=''){const d=await api('/api/admin/users?q='+encodeURIComp
 async function dest(){const d=await api('/api/admin/destaques');$('#tab').innerHTML=`<div class="wrap" style="padding:16px"><p class="m">Links do TikTok que aparecem no topo da aba Virais, um por linha, na ordem.</p><textarea id="dl" style="width:100%;min-height:220px;background:#0f0a16;color:#fff;border:1px solid #333;border-radius:10px;padding:10px;font:14px monospace">${esc(d.urls.join('\n'))}</textarea><button class="btn" style="margin-top:10px" onclick="saveDest()">Salvar</button></div>`}
 async function saveDest(){try{await api('/api/admin/destaques',{method:'POST',body:JSON.stringify({urls:$('#dl').value.split('\n')})});toast('Salvo! Já aparece na aba Virais.')}catch(e){toast(e.message)}}
 async function pays(){const d=await api('/api/admin/payments');$('#tab').innerHTML=`<div class="wrap"><table><tr><th>Data</th><th>Usuário</th><th>Plano</th><th>Valor</th><th>Situação</th></tr>${d.map(p=>`<tr><td>${dt(p.created)}</td><td>${esc(p.email)}</td><td>${esc(p.plan)}</td><td>${brl(p.amount)}</td><td>${esc(p.status)}</td></tr>`).join('')||'<tr><td colspan=5 class="m">Nenhum pagamento ainda.</td></tr>'}</table></div>`}
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));({crm,users,pay:pays,dest})[b.dataset.t]()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));({crm,users,pay:pays,dest,sup})[b.dataset.t]()});
 function sair(){LS.set('cgta_admin',null);location.reload()}
 $('#lf').onsubmit=async e=>{e.preventDefault();$('#lerr').textContent='';try{const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:$('#lu').value,password:$('#lp').value})});const j=await r.json();if(!r.ok)throw new Error(j.detail||'Erro');LS.set('cgta_admin',j.token);TOK=j.token;start(j.user)}catch(err){$('#lerr').textContent=err.message}};
 async function start(who){try{await kpis();$('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=who?'Entrou como '+who:'';await crm();setInterval(kpis,30000)}catch(e){$('#app').hidden=true;$('#login').hidden=false}}

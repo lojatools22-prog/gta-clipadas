@@ -398,6 +398,8 @@ details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--d
 .ups{margin:22px auto 0;max-width:420px;text-align:center;padding:18px;border:1px solid var(--line2,#333);border-radius:18px;background:rgba(255,31,168,.07)}
 .ups b{display:block;font-size:17px;margin-bottom:6px}.ups p{color:var(--mute,#aaa);font-size:14px;margin:0 0 14px}
 .ups .go{width:100%;justify-content:center}.ups small{display:block;color:var(--mute,#aaa);font-size:12px;margin:8px 0 6px}.ups .alt{margin-top:4px}
+.sup-t{border:1px solid var(--line2,#333);border-radius:14px;padding:12px;margin-bottom:10px;text-align:left}.sup-t p{margin:0 0 4px;white-space:pre-wrap}
+.sup-t small{color:var(--mute,#aaa);font-size:12px}.sup-r{margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,31,168,.08)}.sup-r b{font-size:12px;color:#ff4fc0}.sup-w{display:block;margin-top:6px}
 </style>
 </head>
 <body>
@@ -678,7 +680,7 @@ details.more{margin-bottom:6px}details.more summary{cursor:pointer;color:var(--d
 
 <div class="sheet" id="sheet" onclick="if(event.target.id==='sheet')this.classList.remove('on')"><div id="sheetIn"></div></div>
 <div class="toast" id="toast"></div>
-<footer><div class="wrap"><span>© GTA Clipadas · Projeto de fãs, sem afiliação com a Rockstar Games ou a Twitch. Corte só quem libera cortes e dê os créditos.</span><span><a href="/termos" target="_blank">Termos de uso</a> &nbsp;·&nbsp; <a href="/privacidade" target="_blank">Privacidade</a></span></div></footer>
+<footer><div class="wrap"><span>© GTA Clipadas · Projeto de fãs, sem afiliação com a Rockstar Games ou a Twitch. Corte só quem libera cortes e dê os créditos.</span><span><a href="/termos" target="_blank">Termos de uso</a> · <a href="#" onclick="openSupport();return false">Suporte</a> &nbsp;·&nbsp; <a href="/privacidade" target="_blank">Privacidade</a></span></div></footer>
 
 <script>
 const ICO={check:'<path d="M20 6 9 17l-5-5"/>',sparkles:'<path d="M12 3l1.9 5.8L20 10.5l-6.1 1.7L12 18l-1.9-5.8L4 10.5l6.1-1.7z"/><path d="M19 3v4M21 5h-4"/>',
@@ -1014,7 +1016,7 @@ function renderGen(){const el=$('#gen');if(!GEN){el.innerHTML='<div class="empty
     :rev?`<button class="go" onclick="openReview('${rev}')">${I('pen')} Revisar legenda</button>`:`${bell}<button class="go ghost" onclick="home()">Fazer outro corte enquanto isso</button><button class="alt" onclick="view('mine')">Ver meus cortes</button>`;
   el.innerHTML=`<div class="gen">${vis}<h2 class="disp">${title}</h2><p class="lead">${sub}</p>
    ${note}${done?'':`<div class="gen-bar"><i style="width:${pct}%"></i></div><ul class="gen-steps">${steps.map(([k,l],i)=>`<li class="${i<idx?'ok':i===idx?'now':''}"><i>${i<idx?'✓':''}</i>${l}${i===idx&&k==='up'?`<small>${GEN.up}%</small>`:i===idx&&k==='fila'&&pos>1?`<small>${pos}º da fila</small>`:''}</li>`).join('')}</ul>`}
-   <div class="gen-btns">${btns}</div>${done&&ready.length?upsell():''}</div>`;
+   <div class="gen-btns">${btns}</div>${done&&ready.length?upsell():''}${done?`<button class="alt" style="margin-top:12px" onclick="openSupport('corte ${GEN.ids.join(',')}')">${allErr?'Precisa de ajuda? Fale com o suporte':'Algo saiu errado no corte? Fale com o suporte'}</button>`:''}</div>`;
   updPill()}
 function upsell(){if(!ME||ME.plan!=='gratis'||!(STATUS.plans||{}).passe)return '';const l=ME.left|0,P=STATUS.plans.passe;
   return `<div class="ups"><b>${l>0?`Você ainda tem ${l} corte${l>1?'s':''} grátis`:'Seus cortes grátis acabaram'}</b>
@@ -1189,11 +1191,19 @@ function openForgot(){
       sheet(`<h2 class="disp" style="margin:0 0 6px">Nova senha</h2><form id="npF"><label class="field"><span>Nova senha</span><input id="nPw" type="password" minlength="6" required autocomplete="new-password"></label><button class="go" type="submit">Salvar e entrar</button></form>`);
       $('#npF').onsubmit=async ev=>{ev.preventDefault();try{done(await post('/api/auth/reset',{challenge,code,password:$('#nPw').value,device:DEV}),'Senha nova salva!')}catch(err){toast(err.message);if(/código|Código/.test(err.message))openForgot()}}})}
     catch(err){toast(err.message)}}}
+async function openSupport(ctx=''){let mine=[];if(ME){try{mine=await api('/api/suporte')}catch(e){}}
+  const hist=mine.map(t=>`<div class="sup-t"><p>${esc(t.msg.replace(/\n\n\[[^\]]*\]$/,''))}</p><small>${new Date(t.created*1000).toLocaleString('pt-BR')}</small>${t.reply?`<div class="sup-r"><b>Equipe GTA Clipadas</b><p>${esc(t.reply)}</p></div>`:'<small class="sup-w">Aguardando resposta da equipe</small>'}</div>`).join('');
+  sheet(`<h2 class="disp" style="margin:0 0 6px">Suporte</h2><p class="lead" style="font-size:14px">Conte o que aconteceu. A equipe responde por aqui, normalmente no mesmo dia.</p>
+  <form id="supF">${ME?'':'<label class="field"><span>Seu e-mail</span><input id="supE" type="email" required placeholder="voce@email.com"></label>'}
+  <label class="field"><span>Mensagem</span><textarea id="supM" required minlength="5" maxlength="2000" rows="4" style="width:100%;resize:vertical" placeholder="Ex.: meu corte saiu com a tela cortada errado"></textarea></label>
+  <button class="go" type="submit">Enviar mensagem</button></form>${hist?`<h3 style="margin:22px 0 8px;font-size:15px">Suas mensagens</h3>${hist}`:''}`);
+  $('#supF').onsubmit=async e=>{e.preventDefault();try{await post('/api/suporte',{msg:$('#supM').value,email:ME?'':$('#supE').value,ctx});toast('Mensagem enviada! A resposta aparece aqui em Conta → Suporte.');closeSheet()}catch(err){toast(err.message)}}}
 function openAccount(){const paid=ME.plan!=='gratis';
   sheet(`<h2 class="disp" style="margin:0 0 6px">Minha conta</h2><p class="lead">${esc(ME.name)} · ${esc(ME.email)}</p>
   <div class="plan" style="margin-bottom:12px">${paid?`Plano <b>${esc(ME.plan_name)}</b> até ${new Date(ME.plan_until*1000).toLocaleDateString('pt-BR')}<br>Restam <b>${ME.left} cortes</b>.`:`Você tem <b>${ME.left} cortes grátis</b>.`}</div>
   <button class="go" onclick="closeSheet();view('mine')">Meus cortes</button>
   <button class="go ghost" style="margin-top:10px" onclick="closeSheet();view('planos')">${paid?'Renovar ou mudar de plano':'Ver planos'}</button>
+  <button class="go ghost" style="margin-top:10px" onclick="openSupport()">Suporte · falar com a equipe</button>
   ${ME.admin?'<a class="go ghost" style="margin-top:10px;text-decoration:none" href="/admin">Painel de admin</a>':''}
   <button class="alt" onclick="api('/api/auth/logout',{method:'POST'}).catch(()=>{});logoutLocal();closeSheet();toast('Você saiu')">Sair da conta</button>`)}
 
