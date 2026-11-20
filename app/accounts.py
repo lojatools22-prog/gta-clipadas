@@ -45,6 +45,7 @@ with _conn() as c:
             c.execute(_sql)
         except sqlite3.OperationalError:
             pass
+    c.execute("CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY, user_id INTEGER, kind TEXT, msg TEXT, src TEXT, at REAL)")
     c.execute("CREATE TABLE IF NOT EXISTS support(id INTEGER PRIMARY KEY, user_id INTEGER, email TEXT, msg TEXT, reply TEXT, created REAL, replied REAL, seen INTEGER DEFAULT 0)")
     c.execute("CREATE TABLE IF NOT EXISTS visits(day TEXT, src TEXT, n INTEGER DEFAULT 0, PRIMARY KEY(day, src))")
 
@@ -588,3 +589,15 @@ def support_reply(sid: int, reply: str):
         c.execute("UPDATE support SET reply=?, replied=?, seen=0 WHERE id=?", (reply, time.time(), sid))
         r = c.execute("SELECT email FROM support WHERE id=?", (sid,)).fetchone()
     return r["email"] if r else ""
+
+
+def event(uid, kind: str, msg: str, src: str = ""):
+    with _lock, _conn() as c:
+        c.execute("INSERT INTO events(user_id,kind,msg,src,at) VALUES(?,?,?,?,?)", (uid, (kind or "")[:20], (msg or "")[:300], _src(src), time.time()))
+        c.execute("DELETE FROM events WHERE at<?", (time.time() - 30 * 86400,))
+
+
+def events(hours: int = 48) -> list:
+    with _conn() as c:
+        return [dict(r) for r in c.execute("""SELECT e.*, u.name, u.email FROM events e LEFT JOIN users u ON u.id=e.user_id
+                                              WHERE e.at>? ORDER BY e.at DESC LIMIT 300""", (time.time() - hours * 3600,))]

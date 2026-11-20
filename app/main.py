@@ -1177,6 +1177,28 @@ def admin_suporte_responder(sid: int, b: ReplyIn, request: Request):
     return {"ok": True}
 
 
+class EventIn(BaseModel):
+    kind: str = ""
+    msg: str = ""
+    src: str = ""
+
+
+@app.post("/api/evento")
+def api_evento(b: EventIn, request: Request):
+    try:
+        u = current_user(request, required=False)
+        accounts.event(u["id"] if u else None, b.kind, b.msg, b.src)
+    except Exception:
+        pass
+    return {"ok": True}
+
+
+@app.get("/api/admin/erros")
+def admin_erros(request: Request, horas: int = 48):
+    admin_user(request)
+    return accounts.events(min(max(horas, 1), 720))
+
+
 class HitIn(BaseModel):
     src: str = ""
 
