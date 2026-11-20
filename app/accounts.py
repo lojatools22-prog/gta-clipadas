@@ -262,7 +262,7 @@ def forgot(email: str) -> dict:
     if u["phone_verified"] and sms_on():
         return {"via": "sms", **_send_sms_code(u["id"], u["phone"], "reset")}
     if not notify.email_ready() and not DEV_SHOW_CODES:
-        raise AuthError("Recuperação de senha indisponível agora. Fale com a gente no WhatsApp.")
+        raise AuthError("Recuperação de senha indisponível agora. Tente de novo mais tarde.")
     _rate(email)
     oid, code = _new_otp(u["id"], "reset")
     notify.send_email(email, "Seu código do GTA Clipadas", f"<p>Seu código para criar uma nova senha é <b>{code}</b>. Vale por 10 minutos.</p>")

@@ -234,7 +234,7 @@ def checkout(b: CheckoutIn, request: Request):
     if b.plan not in plans.PAID:
         raise HTTPException(400, "Plano inválido")
     if not payments.ready():
-        raise HTTPException(503, "O pagamento online abre em breve. Fale com a gente no WhatsApp pra assinar.")
+        raise HTTPException(503, "O pagamento online abre em breve. Tente de novo em alguns minutos.")
     try:
         if payments.PROVIDER == "asaas":
             cid = u["asaas_customer"]
@@ -307,7 +307,7 @@ def pay_start(b: PayIn, request: Request):
     if b.plan not in plans.PAID:
         raise HTTPException(400, "Plano inválido")
     if not payments.ready() or payments.PROVIDER != "asaas":
-        raise HTTPException(503, "O pagamento online abre em breve. Fale com a gente no WhatsApp pra assinar.")
+        raise HTTPException(503, "O pagamento online abre em breve. Tente de novo em alguns minutos.")
     cid = u["asaas_customer"]
     try:
         if not cid:
