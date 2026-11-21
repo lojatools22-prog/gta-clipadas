@@ -87,7 +87,7 @@ def _record(url: str, secs: int, dest: Path) -> Path:
         k = len(parts)
         need = int(secs - got)
         try:
-            video.ytdlp(["--no-playlist", "--no-live-from-start", "-f", "best[height<=1080]/best", "--hls-use-mpegts",
+            video.ytdlp(["--no-playlist", "--no-live-from-start", "-f", "best[height<=720]/best", "--hls-use-mpegts",  # 720p: metade do tráfego do proxy
                          "--downloader", "ffmpeg", "--downloader-args", f"ffmpeg:-t {need}",
                          "--no-part", "-o", str(dest / f"p{k}.%(ext)s")], url, timeout=need + 180)
         except Exception as e:
