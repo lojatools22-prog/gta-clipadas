@@ -1012,6 +1012,8 @@ def live_follow(b: FollowIn, request: Request):
                 "logo": True, "wm_text": b.wm_text}, P)
     ao["n_bloco"] = max(1, min(int(b.por_bloco or 2), 4))
     mins = max(10, min(int(b.minutes or 60), 240))
+    if u.get("plan") in (None, "", "gratis") or (P.get("price") or 0) == 0:
+        mins = min(mins, int(os.getenv("FREE_LIVE_MIN", "20")))  # teste grátis: no máximo 20 min de live
     return livefollow.start(u["id"], b.url, mins, ao, lambda uid: accounts.public(accounts._user(uid))["left"])
 
 
