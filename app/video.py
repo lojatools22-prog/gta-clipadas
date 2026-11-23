@@ -485,9 +485,21 @@ def friendly_error(msg: str) -> str:
     return "Não conseguimos baixar ou montar esse vídeo pelo link. O jeito mais garantido: baixe o vídeo (ou grave a tela do trecho) e envie o arquivo aqui."
 
 
+def _norm_proxy(px):
+    """Aceita o proxy em URL (http://user:senha@host:porta) ou no formato que os painéis copiam (host:porta:user:senha)."""
+    px = (px or "").strip()
+    if px and "://" not in px and px.count(":") >= 3 and "@" not in px:
+        host, port, user, pw = px.split(":", 3)
+        return f"http://{user}:{pw}@{host}:{port}"
+    if px and "://" not in px and "@" in px:
+        return "http://" + px
+    return px
+
+
 def _geo_proxy(px):
     """Força IP do Brasil no proxy (vídeo bloqueado por direitos em outro país, ex.: "claimed content by WMG").
     DataImpulse: o país vai no usuário como __cr.br. Muda só o usuário; a senha não é tocada."""
+    px = _norm_proxy(px)
     cc = os.getenv("YTDLP_PROXY_COUNTRY", "br").lower()
     if px and "geonode" in px and "-session-" not in px:
         from urllib.parse import urlsplit, urlunsplit
@@ -1025,7 +1037,7 @@ def _restore():
 def _selftest():
     try:  # diagnóstico do proxy sem mostrar a senha
         from urllib.parse import urlsplit
-        _raw = os.getenv("YTDLP_PROXY") or ""
+        _raw = _norm_proxy(os.getenv("YTDLP_PROXY") or "")
         _u = urlsplit(_raw.strip())
         log.info("Proxy do YouTube: %s", "NÃO CONFIGURADO (variável vazia)" if not _raw.strip() else
                  f"esquema={_u.scheme or '?'} host={_u.hostname or '?'} porta={_u.port or '?'} usuário={len(_u.username or '')} caracteres "
