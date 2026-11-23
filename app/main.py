@@ -526,7 +526,16 @@ def _start(request: Request, raw: dict, upload: Path | None = None, cam: Path | 
     return _start_for(current_user(request), raw, upload, cam)
 
 
+def _yt_guard(u, url):
+    if url and video._is_yt(url):
+        why = accounts.proxy_guard(u)
+        if why:
+            raise HTTPException(402, why)
+
+
 def _start_for(u, raw: dict, upload: Path | None = None, cam: Path | None = None):
+    if upload is None and not raw.get("analysis"):
+        _yt_guard(u, raw.get("url") or "")
     P = accounts.plan_info(u)
     segs = _segments(raw, P)
     base = _opts(raw, P)
@@ -584,6 +593,7 @@ def _refund_failed(jid: str):
 
 
 video.ON_FAIL = _refund_failed
+video.ON_PROXY = lambda kind, ref, uid, n: accounts.proxy_add(kind, ref, uid, n)
 
 AUTO_MAX = int(os.getenv("AUTO_CLIPS", "10"))
 LONG_CLIP = 60  # acima disso o corte manual custa 2
@@ -965,6 +975,8 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
         raise HTTPException(402, "Seus cortes grátis acabaram. Assine o Clipador pra a IA cortar mais vídeos.")
     if not video.GROQ_KEY:
         raise HTTPException(503, "O corte automático está em manutenção. Escolha o trecho na mão por enquanto.")
+    if url and not upload_id and not (file is not None and file.filename):
+        _yt_guard(u, url)
     busy = [s for s in moments.STATE.values() if s.get("user_id") == u["id"] and s.get("status") not in ("pronto", "erro")]
     if busy:
         return moments.public(busy[0])
@@ -1006,6 +1018,7 @@ def live_follow(b: FollowIn, request: Request):
         raise HTTPException(402, "Seus cortes acabaram. Assine um plano pra cortar ao vivo.")
     if not b.url.startswith(ALLOWED):
         raise HTTPException(400, "Cole o link de uma live da YouTube, Twitch ou Kick")
+    _yt_guard(u, b.url)
     if livefollow.active_for(u["id"]):
         return livefollow.public(livefollow.active_for(u["id"])[0])
     ao = _opts({"template": b.template, "caption": b.caption, "caption_color": "auto", "captions": True, "cover": True,
@@ -1212,6 +1225,12 @@ def api_hit(b: HitIn):
     except Exception:
         pass
     return {"ok": True}
+
+
+@app.get("/api/admin/custos")
+def admin_custos(request: Request):
+    admin_user(request)
+    return {k: accounts.cost_report(d) for k, d in (("24h", 1), ("7d", 7), ("30d", 30), ("total", None))}
 
 
 @app.get("/api/admin/origens")

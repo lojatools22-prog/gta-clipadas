@@ -489,6 +489,14 @@ def _geo_proxy(px):
     """Força IP do Brasil no proxy (vídeo bloqueado por direitos em outro país, ex.: "claimed content by WMG").
     DataImpulse: o país vai no usuário como __cr.br. Muda só o usuário; a senha não é tocada."""
     cc = os.getenv("YTDLP_PROXY_COUNTRY", "br").lower()
+    if px and "geonode" in px and "-session-" not in px:
+        from urllib.parse import urlsplit, urlunsplit
+        import random
+        u = urlsplit(px)
+        if u.username:
+            extra = (f"-country-{cc}" if cc and "-country-" not in u.username else "") + f"-session-{random.randint(10**6, 10**7)}-lifetime-30"
+            return urlunsplit(u._replace(netloc=u.netloc.replace(u.username, u.username + extra, 1)))
+        return px
     if not px or not cc or "dataimpulse" not in px or "__cr." in px:
         return px
     from urllib.parse import urlsplit, urlunsplit
@@ -520,6 +528,29 @@ def _px(px, args) -> list:
     return out
 
 
+CTX = threading.local()   # quem está usando o proxy agora: kind (corte/analise/live), ref, uid
+ON_PROXY = None            # main liga: ON_PROXY(kind, ref, uid, bytes)
+
+
+def _proxy_bytes(args, t0) -> int:
+    """Quanto passou pelo proxy: soma os arquivos que o yt-dlp gravou nesta chamada (o -o diz a pasta)."""
+    try:
+        o = args[args.index("-o") + 1]
+        d = Path(o).parent
+        return sum(f.stat().st_size for f in d.iterdir() if f.is_file() and f.stat().st_mtime >= t0 - 1)
+    except (ValueError, IndexError, OSError):
+        return 1_000_000  # só leitura de dados do vídeo (~1 MB)
+
+
+def _count_proxy(args, t0):
+    try:
+        n = _proxy_bytes(args, t0)
+        if ON_PROXY:
+            ON_PROXY(getattr(CTX, "kind", "outro"), getattr(CTX, "ref", ""), getattr(CTX, "uid", None), n)
+    except Exception as e:
+        log.warning("Custo do proxy: não consegui registrar (%s)", e)
+
+
 def ytdlp(args: list, url: str, timeout: int):
     """Roda o yt-dlp. No YouTube tenta primeiro direto (de graça); se o YouTube barrar, passa pelo proxy residencial
     (YTDLP_PROXY, pago por GB) e tenta outros clientes do player. Depois de um bloqueio, vai direto pro proxy por 30 min."""
@@ -545,17 +576,19 @@ def ytdlp(args: list, url: str, timeout: int):
         px, c = plan[i]
         i += 1
         extra = _px(px, args) + (["--extractor-args", f"youtube:player_client={c}"] if c else [])
+        t0 = time.time()
         try:
             out = _run(base + extra + args + [url], timeout=timeout)
             _YT_OK["client"] = c
             if px:
                 log.info("yt-dlp: YouTube via proxy residencial")
+                _count_proxy(args, t0)
             return out
         except Exception as e:
             last = e
             if px and any(k in str(e) for k in _PROXY_DEAD):
                 _YT_OK["proxy_dead_until"] = time.time() + 1200
-                log.error("PROXY SEM SALDO OU FORA DO AR (DataImpulse): indo direto pro YouTube por 20 min")
+                log.error("PROXY SEM SALDO OU FORA DO AR: indo direto pro YouTube por 20 min")
                 tried = set(plan[:i])
                 plan = plan[:i] + [(None, cc) for cc in YT_CLIENTS if (None, cc) not in tried]
                 continue
@@ -567,9 +600,12 @@ def ytdlp(args: list, url: str, timeout: int):
     if ck and last is not None and any(k in str(last) for k in ("recording is not available", "live stream")):
         # algumas lives não saem com a conta logada (cookies): tenta sem eles
         for px in ([_geo_proxy(os.getenv("YTDLP_PROXY"))] if os.getenv("YTDLP_PROXY") else []) + [None]:
+            t0 = time.time()
             try:
                 out = _run(["yt-dlp"] + _px(px, args) + args + [url], timeout=timeout)
                 log.info("yt-dlp: live saiu sem cookies%s", " (proxy)" if px else "")
+                if px:
+                    _count_proxy(args, t0)
                 return out
             except Exception as e:
                 last = e
@@ -867,6 +903,7 @@ def _boot_disk():
 
 def _work(jid: str):
     j = JOBS[jid]
+    CTX.kind, CTX.ref, CTX.uid = "corte", jid, None
     d = JOBS_DIR / jid
     try:
         o = j["opts"]

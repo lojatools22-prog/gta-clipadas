@@ -400,6 +400,7 @@ def _pick(segs: list[dict], peaks: list[float], dur: float, aid: str, chat=(), h
 
 def _work(aid: str):
     st = STATE[aid]
+    video.CTX.kind, video.CTX.ref, video.CTX.uid = "analise", aid, st.get("user_id")
     d = DIR / aid
     try:
         if not _groq_key():

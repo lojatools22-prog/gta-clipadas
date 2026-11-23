@@ -53,7 +53,7 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 <div class="kpis" id="kpis"></div>
 <div class="funnel" id="funnel"></div>
 <div class="wrap" id="orig" style="margin:0 0 18px"></div>
-<div class="tabs"><button data-t="crm" class="on">CRM de leads</button><button data-t="users">Usuários e planos</button><button data-t="pay">Pagamentos</button><button data-t="dest">Virais (TikTok)</button><button data-t="sup">Suporte</button><button data-t="err">Erros e respostas</button></div>
+<div class="tabs"><button data-t="crm" class="on">CRM de leads</button><button data-t="users">Usuários e planos</button><button data-t="pay">Pagamentos</button><button data-t="dest">Virais (TikTok)</button><button data-t="cus">Custos</button><button data-t="sup">Suporte</button><button data-t="err">Erros e respostas</button></div>
 <div id="tab"></div>
 </main><div class="toast" id="toast"></div>
 <script>
@@ -82,6 +82,16 @@ function funnel(){const lim=PER==='total'?0:Date.now()/1000-({'24h':1,'7d':7,'30
   $('#funnel').innerHTML=F2.map(([n,v])=>`<div class="fu"><span class="m" style="font-size:12px">${n}</span><br><b>${v}</b> <span class="d">${a?Math.round(v/a*100):0}%</span><div class="bar"><i style="width:${a?v/a*100:0}%"></i></div></div>`).join('')}
 
 async function origens(){try{const d=await api('/api/admin/origens?days=7');$('#orig').innerHTML=`<table><tr><th>De onde vieram (7 dias)</th><th>Visitas</th><th>Cadastros</th><th>Conversão</th><th>Pagaram</th></tr>${d.map(o=>`<tr><td>${esc(o.origem)}</td><td>${o.visitas}</td><td>${o.cadastros}</td><td>${o.visitas?Math.round(o.cadastros/o.visitas*100)+'%':'—'}</td><td>${o.pagaram}</td></tr>`).join('')||'<tr><td colspan=5 class="m">Ainda sem visitas registradas.</td></tr>'}</table>`}catch(e){}}
+async function custos(){const D=await api('/api/admin/custos'),d=D[PER]||D['7d'],c=d.cfg;
+  const pc=d.cortes?d.receita/d.cortes:0,mg=d.custo_por_corte?Math.round((pc/d.custo_por_corte-1)*100):null;
+  const row=(n,v,h='')=>`<div class="k"><b>${v}</b><span>${n}</span>${h?`<span style="display:block;font-size:11px;opacity:.7">${h}</span>`:''}</div>`;
+  $('#tab').innerHTML=`<p class="m" style="margin:0 0 12px">Período: <b>${PNAME[PER]}</b> (troque nos botões do topo). Proxy a US$ ${c.proxy_usd_gb}/GB, dólar R$ ${c.usd_brl}, taxa por venda R$ ${c.taxa_venda}${c.servidor_mes?`, servidor R$ ${c.servidor_mes}/mês`:''}. Medido corte a corte desde hoje.</p>
+  <div class="kpis">${row('Gasto de proxy',d.gb_proxy.toFixed(2).replace('.',',')+' GB',Object.entries(d.gb_por_tipo).map(([k,v])=>k+': '+v.toFixed(2).replace('.',',')+' GB').join(' · '))}
+  ${row('Custo do proxy',brl(d.custo_proxy))}${row('Taxas de venda',brl(d.taxas_venda),d.vendas+' venda(s)')}${row('Servidor',brl(d.servidor))}
+  ${row('Custo total',brl(d.custo_total))}${row('Cortes no período',d.cortes)}
+  ${row('Custo por corte',brl(d.custo_por_corte),'só proxy: '+brl(d.proxy_por_corte)+' · '+d.mb_por_corte+' MB por corte')}
+  ${row('Receita por corte',brl(pc))}${row('Margem por corte',mg===null?'—':mg+'%',mg!==null&&mg<100?'abaixo dos 100%':'')}${row('Lucro do período',brl(d.lucro))}</div>
+  <p class="m" style="margin-top:14px;font-size:13px">Trava ativa: o proxy de um cliente nunca passa de 50% do que ele pagou no plano (lucro mínimo de 100%). No teste grátis o teto é de ${brl(1.5)} de proxy por pessoa. Quem bate o limite continua podendo enviar arquivo ou usar Twitch e Kick, que não gastam proxy.</p>`}
 async function erros(){const d=await api('/api/admin/erros?horas=72');
   $('#tab').innerHTML=`<p class="m" style="margin:0 0 12px">Tudo que deu errado na tela dos clientes nas últimas 72 h (avisos, erros de corte e da IA) e as respostas de \"Você postaria esse corte?\" (tipo feedback). ${d.length} registros.</p><div class="wrap"><table><tr><th>Quando</th><th>Quem</th><th>Tipo</th><th>O que apareceu pra pessoa</th></tr>${d.map(e=>`<tr><td>${new Date(e.at*1000).toLocaleString('pt-BR')}</td><td>${esc(e.name||e.email||'visitante')}</td><td>${esc(e.kind)}</td><td>${esc(e.msg)}</td></tr>`).join('')||'<tr><td colspan=4 class="m">Nenhum erro registrado.</td></tr>'}</table></div>`}
 async function sup(){const d=await api('/api/admin/suporte');const pend=d.filter(t=>!t.reply).length;
@@ -128,7 +138,7 @@ async function users(q=''){const d=await api('/api/admin/users?q='+encodeURIComp
 async function dest(){const d=await api('/api/admin/destaques');$('#tab').innerHTML=`<div class="wrap" style="padding:16px"><p class="m">Links do TikTok que aparecem no topo da aba Virais, um por linha, na ordem.</p><textarea id="dl" style="width:100%;min-height:220px;background:#0f0a16;color:#fff;border:1px solid #333;border-radius:10px;padding:10px;font:14px monospace">${esc(d.urls.join('\n'))}</textarea><button class="btn" style="margin-top:10px" onclick="saveDest()">Salvar</button></div>`}
 async function saveDest(){try{await api('/api/admin/destaques',{method:'POST',body:JSON.stringify({urls:$('#dl').value.split('\n')})});toast('Salvo! Já aparece na aba Virais.')}catch(e){toast(e.message)}}
 async function pays(){const d=await api('/api/admin/payments');$('#tab').innerHTML=`<div class="wrap"><table><tr><th>Data</th><th>Usuário</th><th>Plano</th><th>Valor</th><th>Situação</th></tr>${d.map(p=>`<tr><td>${dt(p.created)}</td><td>${esc(p.email)}</td><td>${esc(p.plan)}</td><td>${brl(p.amount)}</td><td>${esc(p.status)}</td></tr>`).join('')||'<tr><td colspan=5 class="m">Nenhum pagamento ainda.</td></tr>'}</table></div>`}
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));({crm,users,pay:pays,dest,sup,err:erros})[b.dataset.t]()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));({crm,users,pay:pays,dest,sup,err:erros,cus:custos})[b.dataset.t]()});
 function sair(){LS.set('cgta_admin',null);location.reload()}
 $('#lf').onsubmit=async e=>{e.preventDefault();$('#lerr').textContent='';try{const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:$('#lu').value,password:$('#lp').value})});const j=await r.json();if(!r.ok)throw new Error(j.detail||'Erro');LS.set('cgta_admin',j.token);TOK=j.token;start(j.user)}catch(err){$('#lerr').textContent=err.message}};
 async function start(who){try{await kpis();$('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=who?'Entrou como '+who:'';await crm();setInterval(kpis,30000)}catch(e){$('#app').hidden=true;$('#login').hidden=false}}

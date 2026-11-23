@@ -45,6 +45,7 @@ with _conn() as c:
             c.execute(_sql)
         except sqlite3.OperationalError:
             pass
+    c.execute("CREATE TABLE IF NOT EXISTS proxy_use(id INTEGER PRIMARY KEY, kind TEXT, ref TEXT, user_id INTEGER, bytes INTEGER, at REAL)")
     c.execute("CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY, user_id INTEGER, kind TEXT, msg TEXT, src TEXT, at REAL)")
     c.execute("CREATE TABLE IF NOT EXISTS support(id INTEGER PRIMARY KEY, user_id INTEGER, email TEXT, msg TEXT, reply TEXT, created REAL, replied REAL, seen INTEGER DEFAULT 0)")
     c.execute("CREATE TABLE IF NOT EXISTS visits(day TEXT, src TEXT, n INTEGER DEFAULT 0, PRIMARY KEY(day, src))")
@@ -617,3 +618,80 @@ def events(hours: int = 48) -> list:
     with _conn() as c:
         return [dict(r) for r in c.execute("""SELECT e.*, u.name, u.email FROM events e LEFT JOIN users u ON u.id=e.user_id
                                               WHERE e.at>? ORDER BY e.at DESC LIMIT 300""", (time.time() - hours * 3600,))]
+
+
+# ---------------- custo do proxy e margem mínima ----------------
+def _f(name, default):
+    try:
+        return float(os.getenv(name, default))
+    except ValueError:
+        return float(default)
+
+
+def cost_cfg() -> dict:
+    return {"proxy_usd_gb": _f("PROXY_USD_GB", "0.79"), "usd_brl": _f("USD_BRL", "5.40"),
+            "taxa_venda": _f("TAXA_VENDA_BRL", "1.99"), "servidor_mes": _f("SERVIDOR_BRL_MES", "0")}
+
+
+def brl_per_byte() -> float:
+    c = cost_cfg()
+    return c["proxy_usd_gb"] * c["usd_brl"] / 1e9
+
+
+def proxy_add(kind, ref, uid, n):
+    if uid is None and kind == "corte" and ref:
+        with _conn() as c:
+            r = c.execute("SELECT user_id FROM jobs WHERE id=?", (ref,)).fetchone()
+            uid = r["user_id"] if r else None
+    with _lock, _conn() as c:
+        c.execute("INSERT INTO proxy_use(kind,ref,user_id,bytes,at) VALUES(?,?,?,?,?)", (kind, str(ref)[:40], uid, int(n), time.time()))
+
+
+def proxy_spent(uid, since=0.0) -> float:
+    """Quanto o proxy já custou (R$) pra essa pessoa desde 'since'."""
+    with _conn() as c:
+        b = c.execute("SELECT COALESCE(SUM(bytes),0) FROM proxy_use WHERE user_id=? AND at>?", (uid, since)).fetchone()[0]
+    return b * brl_per_byte()
+
+
+def proxy_guard(u) -> str | None:
+    """Trava de margem: o proxy nunca pode passar de metade do que a pessoa pagou (lucro mínimo de 100%).
+    No grátis, o teste tem um teto de gasto. Devolve a mensagem de bloqueio, ou None se pode usar."""
+    if not u or is_admin(u):
+        return None
+    plan = active_plan(u)
+    P = PLANS[plan]
+    if plan == "gratis":
+        teto, since = _f("TETO_TESTE_BRL", "1.50"), 0.0
+    else:
+        since = (u["plan_until"] or 0) - P["days"] * 86400
+        teto = P["price"] * _f("MARGEM_MAX_CUSTO", "0.5")
+    if proxy_spent(u["id"], since) >= teto:
+        if plan == "gratis":
+            return "Seu teste grátis com links do YouTube chegou no limite. Envie o arquivo do vídeo, use um link da Twitch ou Kick, ou assine um plano pra continuar com YouTube."
+        return "Você chegou no limite de vídeos do YouTube deste plano. Envie o arquivo do vídeo ou use link da Twitch ou Kick, ou passe pra um plano maior."
+    return None
+
+
+def cost_report(days):
+    now = time.time()
+    since = 0 if days is None else now - days * 86400
+    cfg = cost_cfg()
+    with _conn() as c:
+        q = lambda sql, *a: c.execute(sql, a).fetchone()[0]
+        by = {r["kind"]: r["b"] for r in c.execute("SELECT kind, SUM(bytes) AS b FROM proxy_use WHERE at>? GROUP BY kind", (since,))}
+        cortes = q("SELECT COUNT(*) FROM jobs WHERE created>?", since)
+        vendas = q("SELECT COUNT(*) FROM payments WHERE status='approved' AND created>?", since)
+        receita = q("SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='approved' AND created>?", since)
+        first = q("SELECT MIN(created) FROM users") or now
+    gb = sum(by.values()) / 1e9
+    proxy = gb * cfg["proxy_usd_gb"] * cfg["usd_brl"]
+    taxas = vendas * cfg["taxa_venda"]
+    dias = (now - max(since, first)) / 86400
+    servidor = cfg["servidor_mes"] * dias / 30
+    total = proxy + taxas + servidor
+    return {"gb_proxy": round(gb, 3), "gb_por_tipo": {k: round(v / 1e9, 3) for k, v in by.items()}, "custo_proxy": round(proxy, 2),
+            "taxas_venda": round(taxas, 2), "servidor": round(servidor, 2), "custo_total": round(total, 2), "cortes": cortes,
+            "custo_por_corte": round(total / cortes, 3) if cortes else 0, "proxy_por_corte": round(proxy / cortes, 3) if cortes else 0,
+            "mb_por_corte": round(sum(by.values()) / 1e6 / cortes, 1) if cortes else 0, "receita": round(receita, 2), "vendas": vendas,
+            "lucro": round(receita - total, 2), "cfg": cfg}

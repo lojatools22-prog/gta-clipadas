@@ -122,6 +122,7 @@ def _record(url: str, secs: int, dest: Path) -> Path:
 
 def _run(fid, left_fn):
     st = get(fid)
+    video.CTX.kind, video.CTX.ref, video.CTX.uid = "live", fid, st.get("user_id")
     try:
         info = video.probe_url(st["url"])
         if not info.get("live"):
