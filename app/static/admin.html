@@ -68,9 +68,16 @@ const wa=p=>{let d=String(p||'').replace(/\D/g,'');if(d.length===11)d='55'+d;ret
 const ST={novo:'Novo',contatado:'Contatado',negociando:'Negociando',cliente:'Cliente',perdido:'Perdido'};
 let LEADS=[],F={stage:'',q:'',tipo:''};
 
-async function kpis(){const d=await api('/api/admin/overview');const L=[['usuarios','Cadastros'],['novos_24h','Novos (24h)'],['assinantes_ativos','Assinantes ativos'],['cortes_24h','Cortes (24h)'],['cortes_total','Cortes no total'],['receita_30d','Receita (30 dias)'],['receita_total','Receita total'],['fila_agora','Na fila agora'],['visitas_hoje','Visitas hoje']];
-  $('#kpis').innerHTML=L.map(([k,n])=>`<div class="k"><b>${k.startsWith('receita')?brl(d[k]):d[k]}</b><span>${n}</span></div>`).join('')}
-function funnel(){const u=LEADS.filter(l=>l.tipo==='cadastro'),a=u.length,b=u.filter(l=>l.cortes>0).length,c=u.filter(l=>l.cortes>=3).length,p=u.filter(l=>l.pago>0).length;
+let PER=(()=>{try{return localStorage.getItem('adm_per')||'7d'}catch(e){return '7d'}})(),OV=null;
+const PNAME={'24h':'24 horas','7d':'7 dias','30d':'30 dias','total':'Total'};
+function setPer(p){PER=p;try{localStorage.setItem('adm_per',p)}catch(e){}drawKpis();funnel()}
+async function kpis(){OV=await api('/api/admin/overview');drawKpis()}
+function drawKpis(){const d=OV;if(!d)return;const P=(d.periodos||{})[PER]||{},sfx=PER==='total'?' (total)':` (${PNAME[PER]})`;
+  const L=[[P.visitas,'Visitas'+sfx],[P.cadastros,'Cadastros'+sfx],[P.cortes,'Cortes'+sfx],[P.checkouts,'Foram pro pagamento'+sfx],[P.vendas,'Vendas'+sfx],[brl(P.receita||0),'Receita'+sfx],
+    [P.visitas?(Math.round(P.cadastros/P.visitas*1000)/10).toString().replace('.',',')+'%':'—','Visita → cadastro'],[d.assinantes_ativos,'Assinantes ativos agora'],[d.fila_agora,'Na fila agora']];
+  $('#kpis').innerHTML=`<div style="grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap">${Object.keys(PNAME).map(k=>`<button class="btn sm${k===PER?' on':''}" style="${k===PER?'background:#ff1fa8;border-color:#ff1fa8;color:#fff':''}" onclick="setPer('${k}')">${PNAME[k]}</button>`).join('')}</div>`+
+    L.map(([v,n])=>`<div class="k"><b>${v??0}</b><span>${n}</span></div>`).join('')}
+function funnel(){const lim=PER==='total'?0:Date.now()/1000-({'24h':1,'7d':7,'30d':30}[PER]||7)*86400;const u=LEADS.filter(l=>l.tipo==='cadastro'&&(l.created||0)>=lim),a=u.length,b=u.filter(l=>l.cortes>0).length,c=u.filter(l=>l.cortes>=3).length,p=u.filter(l=>l.pago>0).length;
   const F2=[['Cadastraram',a],['Fizeram 1 corte',b],['Usaram os grátis',c],['Pagaram',p]];
   $('#funnel').innerHTML=F2.map(([n,v])=>`<div class="fu"><span class="m" style="font-size:12px">${n}</span><br><b>${v}</b> <span class="d">${a?Math.round(v/a*100):0}%</span><div class="bar"><i style="width:${a?v/a*100:0}%"></i></div></div>`).join('')}
 

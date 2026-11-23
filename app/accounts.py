@@ -482,6 +482,22 @@ def admin_stats():
                 "visitas_hoje": q("SELECT COALESCE(SUM(n),0) FROM visits WHERE day=?", time.strftime("%Y-%m-%d", time.localtime(now - 3 * 3600)))}
 
 
+def period_stats(days: float | None):
+    """Números de um período (None = desde o começo): cadastros, cortes, quem cortou, pagamentos e visitas."""
+    now = time.time()
+    since = 0 if days is None else now - days * 86400
+    day0 = "0000" if days is None else time.strftime("%Y-%m-%d", time.localtime(since - 3 * 3600))
+    with _conn() as c:
+        q = lambda s, *a: c.execute(s, a).fetchone()[0]
+        return {"cadastros": q("SELECT COUNT(*) FROM users WHERE created>?", since),
+                "cortes": q("SELECT COUNT(*) FROM jobs WHERE created>?", since),
+                "pessoas_que_cortaram": q("SELECT COUNT(DISTINCT user_id) FROM jobs WHERE created>?", since),
+                "vendas": q("SELECT COUNT(*) FROM payments WHERE status='approved' AND created>?", since),
+                "receita": round(q("SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='approved' AND created>?", since), 2),
+                "checkouts": q("SELECT COUNT(*) FROM payments WHERE created>?", since),
+                "visitas": q("SELECT COALESCE(SUM(n),0) FROM visits WHERE day>=?", day0)}
+
+
 def admin_users(search="", limit=100):
     with _conn() as c:
         rows = c.execute("""SELECT u.*, (SELECT COUNT(*) FROM jobs j WHERE j.user_id=u.id) AS cortes FROM users u

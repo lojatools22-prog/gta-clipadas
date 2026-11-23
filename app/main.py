@@ -1224,7 +1224,8 @@ def admin_origens(request: Request, days: int = 7):
 def admin_overview(request: Request):
     admin_user(request)
     wl = WAITLIST.read_text(encoding="utf-8").splitlines() if WAITLIST.exists() else []
-    return {**accounts.admin_stats(), "fila_agora": video.queue_size(), "lista_espera": len(wl)}
+    per = {"24h": accounts.period_stats(1), "7d": accounts.period_stats(7), "30d": accounts.period_stats(30), "total": accounts.period_stats(None)}
+    return {**accounts.admin_stats(), "fila_agora": video.queue_size(), "lista_espera": len(wl), "periodos": per}
 
 
 @app.get("/api/admin/crm")
