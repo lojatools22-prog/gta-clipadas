@@ -960,7 +960,7 @@ async def new_moments(request: Request, file: UploadFile | None = File(None), ur
                     "logo": logo not in ("false", "0")}, P)
         ao["n"] = max(1, min(int(n or 10), AUTO_MAX))
     if not P.get("auto_moments"):
-        raise HTTPException(402, "O corte automático com IA é dos planos Clipador e Pro.")
+        raise HTTPException(402, "O corte automático com IA está em todos os planos pagos, a partir do Passe de R$ 9,90.")
     if accounts.active_plan(u) == "gratis" and accounts.public(u)["left"] <= 0:  # degustação: a análise só roda enquanto houver corte grátis
         raise HTTPException(402, "Seus cortes grátis acabaram. Assine o Clipador pra a IA cortar mais vídeos.")
     if not video.GROQ_KEY:
