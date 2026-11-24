@@ -596,7 +596,11 @@ def ytdlp(args: list, url: str, timeout: int):
     while i < len(plan):
         px, c = plan[i]
         i += 1
-        extra = _px(px, args) + (["--extractor-args", f"youtube:player_client={c}"] if c else [])
+        tun = None
+        if px and "geonode" in px:  # ffmpeg não autentica direito no túnel da Geonode: passa por um repasse local
+            from .tunnel import Tunnel
+            tun = Tunnel(px)
+        extra = _px(tun.url if tun else px, args) + (["--extractor-args", f"youtube:player_client={c}"] if c else [])
         t0 = time.time()
         try:
             out = _run(base + extra + args + [url], timeout=timeout)
@@ -626,6 +630,9 @@ def ytdlp(args: list, url: str, timeout: int):
             if not px:
                 _YT_OK["blocked_until"] = time.time() + 1800
             log.warning("yt-dlp: %s cliente %s barrado, tentando o próximo", "proxy" if px else "direto", c or "padrão")
+        finally:
+            if tun:
+                tun.close()
     if ck and last is not None and any(k in str(last) for k in ("recording is not available", "live stream")):
         # algumas lives não saem com a conta logada (cookies): tenta sem eles
         for px in ([_geo_proxy(os.getenv("YTDLP_PROXY"))] if os.getenv("YTDLP_PROXY") else []) + [None]:
