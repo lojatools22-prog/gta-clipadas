@@ -858,15 +858,14 @@ function next1(){if(AN&&AN.status==='pronto'&&SELM.size)return step(2);if(SEGS.l
   step(2)}
 function locked(t){const n=t===1?'Iniciante':'Clipador',pr=t===1?'R$ 24,90':'R$ 49,90';sheet(`<h2 class="disp" style="margin:0 0 6px">Disponível no ${n}</h2><p class="lead">Esse visual faz parte do plano ${n} (${pr}/mês). Você pode continuar com outro visual agora e assinar depois, sem perder o seu corte.</p><button class="go" onclick="closeSheet();WIZ=true;view('planos')">Ver planos</button><button class="alt" onclick="closeSheet()">Continuar com outro visual</button>`)}
 function renderTpls(){if(!CAT)return;
-  $('#fams').innerHTML=[['basico','Básicos'],['efeitos','Com efeitos']].map(([id,n])=>`<button class="${fam===id?'on':''}" data-f="${id}">${n}</button>`).join('');
-  $('#famHint').textContent=fam==='basico'?'Corte limpo, só com a legenda. Sem arte por cima.':'Mesmo corte com arte de GTA por cima: bordas, cartelas, estrelas, celular.';
-  const effs=CAT.families.filter(f=>f.id!=='basico');
-  $('#subs').hidden=fam==='basico';
-  $('#subs').innerHTML=[{id:'todos',name:'Todos'},...effs].map(f=>`<button class="tab ${f.id===sub?'on':''}" data-s="${f.id}">${esc(f.name)}</button>`).join('');
-  const list=fam==='basico'?CAT.templates.filter(t=>t.family==='basico'):sub==='todos'?FEAT_T.map(id=>CAT.templates.find(t=>t.id===id)).filter(Boolean):CAT.templates.filter(t=>t.family===sub);
+  if(!['padrao','efeitos','fundo'].includes(fam))fam='padrao';
+  $('#fams').innerHTML=[['padrao','Padrão'],['efeitos','Com efeitos'],['fundo','Fundo de GTA']].map(([id,n])=>`<button class="${fam===id?'on':''}" data-f="${id}">${n}</button>`).join('');
+  $('#famHint').textContent=fam==='padrao'?'O formato que viraliza: rosto do streamer em cima e o jogo embaixo.':fam==='efeitos'?'Rosto em cima e jogo embaixo, com arte de GTA por cima: estrelas, missão, neon.':'Opcional: o jogo em cima de um fundo de GTA, celular, VHS e outros. Nem todos mostram o rosto.';
+  $('#subs').hidden=true;
+  const list=CAT.templates.filter(t=>(t.grupo||'fundo')===fam);
   $('#tpls').innerHTML=list.map(t=>`<button class="opt v ${t.id===sel.tpl?'on':''}" data-id="${t.id}"><img loading="lazy" src="/previews/tpl-${t.id}.jpg" alt="">${t.tier>myTier()?`<span class="p">${TIERN[t.tier]}</span>`:''}<span class="n">${esc(t.name)}</span></button>`).join('');
   const cur=CAT.templates.find(t=>t.id===sel.tpl);
-  if(cur){const fn=(CAT.families.find(f=>f.id===cur.family)||{}).name||'';$('#tdesc').innerHTML=`<small>${cur.family==='basico'?'Básico':'Com efeitos · '+esc(fn)}</small><b>${esc(cur.name)}</b><span>${esc(cur.desc||'')}</span>`}$('#camBox').hidden=!(cur&&cur.cam);slotAvail()}
+  if(cur){const G={padrao:'Padrão',efeitos:'Com efeitos',fundo:'Fundo de GTA'};$('#tdesc').innerHTML=`<small>${G[cur.grupo]||''}</small><b>${esc(cur.name)}</b><span>${esc(cur.desc||'')}</span>`}$('#camBox').hidden=!(cur&&cur.cam);slotAvail()}
 function renderCaps(){if(!CAT)return;
   const tabs=[{id:'destaques',name:'Destaques'},...CAT.caption_fonts];
   $('#fonts').innerHTML=tabs.map(f=>`<button class="tab ${f.id===font?'on':''}" data-f="${f.id}">${esc(f.name)}</button>`).join('');

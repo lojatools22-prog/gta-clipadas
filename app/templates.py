@@ -150,7 +150,9 @@ def public_catalog():
     return {
         "families": [{"id": f, "name": n} for f, n in FAMILIES],
         "templates": [{**{k: t[k] for k in ("id", "name", "family", "pro", "tier", "desc", "effects")},
-                       "cam": t["layout"]["kind"] in ("cam_top", "cam_bottom", "float", "split")} for t in TEMPLATES],
+                       "cam": t["layout"]["kind"] in ("cam_top", "cam_bottom", "float", "split"), "kind": t["layout"]["kind"],
+                       "grupo": ("padrao" if t["layout"]["kind"] == "viral" or t["id"] in ("basico-facecam", "vice-cam-cima")
+                                 else "efeitos" if t["layout"]["kind"] == "cam_top" else "fundo")} for t in TEMPLATES],
         "captions": [{k: c[k] for k in ("id", "name", "font_key", "anim", "pro", "tier")} for c in CAPTION_STYLES],
         "caption_fonts": [{"id": f[0], "name": f[1]} for f in FONTS],
         "caption_anims": [{"id": a[0], "name": a[1]} for a in ANIMS],

@@ -155,7 +155,7 @@ def cam_crop(face: tuple, slot_w: int, slot_h: int, src_aspect: float = 16 / 9, 
     fx, fy, fw, fh = face
     target = slot_w / slot_h  # formato do espaço (ex.: 1080x608)
     # largura do corte = ~3,2 rostos; altura sai do formato do espaço (em proporção do quadro)
-    cw = min(1.0, fw * faces)
+    cw = min(1.0, max(fw * faces, 0.2))  # nunca menos de 20% da largura: evita ampliar demais e pixelar a webcam
     ch = cw * src_aspect / target
     if ch > 1.0:
         ch = 1.0

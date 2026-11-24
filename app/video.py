@@ -410,8 +410,12 @@ def has_audio(path: Path) -> bool:
 
 
 def probe_duration(path: Path) -> float:
-    out = _run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)])
-    return float(json.loads(out)["format"]["duration"])
+    out = _run(["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=duration", "-of", "json", str(path)])
+    j = json.loads(out)
+    d = (j.get("format") or {}).get("duration") or next((s_["duration"] for s_ in j.get("streams") or [] if s_.get("duration")), None)
+    if d is None:
+        raise RuntimeError("O vídeo baixado veio incompleto. Tente de novo ou envie o arquivo do vídeo.")
+    return float(d)
 
 
 _PROBE: dict = {}
@@ -549,6 +553,7 @@ def _px(px, args) -> list:
     return out
 
 
+FACECAM = {}              # posição da facecam por vídeo (link): reaproveita entre os cortes do mesmo vídeo
 CTX = threading.local()   # quem está usando o proxy agora: kind (corte/analise/live), ref, uid
 ON_PROXY = None            # main liga: ON_PROXY(kind, ref, uid, bytes)
 
@@ -670,28 +675,64 @@ def probe_url(url: str) -> dict:
     return info
 
 
+def _vheight(f: Path) -> int:
+    try:
+        wh = _run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", str(f)]).strip()
+        return int(wh.split(",")[1]) if "," in wh else 0
+    except Exception:
+        return 0
+
+
+HD_CLIENTS = ["android_vr", "tv_simply", "tv", "web_safari", "mweb"]
+
+
 def download(url: str, start: float | None, end: float | None, dest: Path) -> Path:
-    # vídeo e áudio separados primeiro: no YouTube o "best" (já juntado) costuma ser só 360p e deixava a webcam borrada
-    cmd = ["--no-playlist", "-f", "bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
+    # pega a MAIOR resolução até 1080p (qualquer codec) e converte pra mp4; antes, sem o formato avc1 caía em 360p e a webcam
+    # ficava pixelada. No YouTube, alguns "clientes" do player só entregam 360p: se vier abaixo de 720p, tenta outros clientes.
+    cmd = ["--no-playlist", "-f", "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b", "-S", "res:1080,fps,vcodec:avc1,acodec:m4a",
            "--merge-output-format", "mp4", "-o", str(dest / "src.%(ext)s")]
     if start is not None and end is not None:
         cmd += ["--download-sections", f"*{start:.2f}-{end:.2f}"]
-    if True:
-        try:
-            if probe_url(url).get("live"):  # live ainda no ar: o YouTube guarda o que já passou (DVR); os tempos contam do início
-                cmd += ["--live-from-start"]
-        except Exception:
-            pass
-    ytdlp(cmd, url, timeout=900)
-    files = sorted(dest.glob("src.*"))
-    if not files:
-        raise RuntimeError("Download não gerou arquivo")
     try:
-        wh = _run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", str(files[0])]).strip()
-        log.info("Download: %s em %s", url[:60], wh)
+        if probe_url(url).get("live"):  # live ainda no ar: o YouTube guarda o que já passou (DVR); os tempos contam do início
+            cmd += ["--live-from-start"]
     except Exception:
         pass
-    return files[0]
+    best, best_h, last = None, -1, None
+    tries = [None] + (HD_CLIENTS if _is_yt(url) else [])
+    for cl in tries:
+        for f in dest.glob("src.*"):
+            f.unlink(missing_ok=True)
+        if cl:
+            _YT_OK["client"] = cl  # o ytdlp começa por esse cliente
+        try:
+            ytdlp(cmd, url, timeout=900)
+        except Exception as e:
+            last = e
+            log.warning("Download com cliente %s falhou: %s", cl or "padrão", _redact(str(e))[-160:])
+            if not _is_yt(url):
+                raise
+            continue
+        got = [f for f in sorted(dest.glob("src.*")) if f.stat().st_size > 10_000]
+        if not got:
+            continue
+        h = _vheight(got[0])
+        log.info("Download: %s em %sp (cliente %s)", url[:60], h, cl or _YT_OK.get("client") or "padrão")
+        if h > best_h:
+            if best:
+                best.unlink(missing_ok=True)
+            best = dest / ("best" + got[0].suffix)
+            got[0].rename(best)
+            best_h = h
+        if best_h >= 720:
+            break
+    if best is None and last is not None:
+        raise last
+    if best is None:
+        raise RuntimeError("O download do vídeo veio vazio. Tente de novo em alguns minutos ou envie o arquivo do vídeo.")
+    out = dest / ("src" + best.suffix)
+    best.rename(out)
+    return out
 
 
 _WM = None
@@ -801,7 +842,15 @@ def render(src: Path, job_dir: Path, opts: dict, trim: tuple | None, words: list
         opts["corner"] = "auto"
         try:  # enquadramento automático: acha a facecam e o ponto de ação
             a = trim[0] if trim else 0.0
-            opts["_frame"] = framing.analyze(src, a, a + dur)
+            fr = framing.analyze(src, a, a + dur)
+            key = opts.get("url") or opts.get("_src_key")
+            if key:
+                if fr.get("cam"):
+                    FACECAM[key] = fr["cam"]
+                elif FACECAM.get(key):  # neste trecho o rosto não apareceu bem: usa a posição da facecam achada nos outros cortes
+                    fr["cam"] = FACECAM[key]
+                    log.info("Enquadramento: usando a facecam já achada neste vídeo")
+            opts["_frame"] = fr
         except Exception as e:
             log.error("Enquadramento automático falhou: %s", e)
     if opts.get("punch", True):
