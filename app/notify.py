@@ -27,12 +27,12 @@ def send_sms(phone: str, text: str) -> bool:
     return True
 
 
-def send_email(to: str, subject: str, html: str) -> bool:
+def send_email(to: str, subject: str, html: str, text: str = "") -> bool:
     if not email_ready():
         log.warning("[E-mail modo teste] %s | %s | %s", to, subject, html)
         return False
     r = httpx.post("https://api.resend.com/emails", headers={"Authorization": f"Bearer {RESEND_KEY}"},
-                   json={"from": MAIL_FROM, "to": [to], "subject": subject, "html": html}, timeout=15)
+                   json={"from": MAIL_FROM, "to": [to], "subject": subject, "html": html, **({"text": text} if text else {})}, timeout=15)
     if r.status_code >= 300:
         log.error("Resend falhou %s: %s", r.status_code, r.text[:300])
         raise RuntimeError("Não deu pra enviar o e-mail agora. Tente de novo em instantes.")

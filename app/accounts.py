@@ -268,7 +268,14 @@ def forgot(email: str) -> dict:
         raise AuthError("Recuperação de senha indisponível agora. Tente de novo mais tarde.")
     _rate(email)
     oid, code = _new_otp(u["id"], "reset")
-    notify.send_email(email, "Seu código do GTA Clipadas", f"<p>Seu código para criar uma nova senha é <b>{code}</b>. Vale por 10 minutos.</p>")
+    notify.send_email(email, f"{code} é seu código do GTA Clipadas",
+        f"""<div style="font-family:Arial,sans-serif;max-width:460px;margin:auto;padding:24px;background:#120820;color:#fff;border-radius:16px">
+<h2 style="margin:0 0 12px;color:#ff4fc0">GTA Clipadas</h2>
+<p style="margin:0 0 16px">Use este código para criar uma senha nova:</p>
+<p style="font-size:34px;letter-spacing:8px;font-weight:bold;margin:0 0 16px">{code}</p>
+<p style="margin:0 0 8px;color:#cbb8e0">Vale por 10 minutos. Se não foi você que pediu, é só ignorar este e-mail.</p>
+<p style="margin:16px 0 0;color:#8f7aa8;font-size:12px">gta6clipadas.com</p></div>""",
+        text=f"Seu código do GTA Clipadas para criar uma senha nova: {code}. Vale por 10 minutos.")
     out = {"via": "email", "challenge": oid}
     if DEV_SHOW_CODES:
         out["dev_code"] = code
