@@ -106,7 +106,7 @@ def health():
 def status():
     return {"demo": twitch.demo_mode(), "captions": bool(video.GROQ_KEY or video.OPENAI_KEY),
             "corners": video.CAM_CORNERS, "max_len": video.MAX_LEN, "free_clips": plans.PLANS["gratis"]["quota"],
-            "plans": plans.public(), "checkout": payments.ready(), "provider": payments.PROVIDER, "sms": accounts.sms_on(),
+            "plans": plans.public(), "checkout": payments.ready(), "provider": payments.PROVIDER, "sms": accounts.sms_on(), "email": notify.email_ready(),
             "max_upload_mb": max(p["max_mb"] for p in plans.PLANS.values()), "mb_base": plans.MB_BASE, "mb_pro": plans.MB_PRO}
 
 
