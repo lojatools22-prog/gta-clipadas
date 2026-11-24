@@ -261,7 +261,7 @@ def forgot(email: str) -> dict:
     with _conn() as c:
         u = c.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
     if not u:  # não revela se o e-mail existe
-        return {"challenge": secrets.token_urlsafe(16), "via": "sms"}
+        return {"challenge": secrets.token_urlsafe(16), "via": "sms" if sms_on() else "email"}
     if u["phone_verified"] and sms_on():
         return {"via": "sms", **_send_sms_code(u["id"], u["phone"], "reset")}
     if not notify.email_ready() and not DEV_SHOW_CODES:
