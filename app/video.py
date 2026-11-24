@@ -502,13 +502,22 @@ def _geo_proxy(px):
     px = _norm_proxy(px)
     cc = os.getenv("YTDLP_PROXY_COUNTRY", "br").lower()
     if px and "geonode" in px and "-session-" not in px:
+        # Geonode: tenta formatos de sessão fixa em ordem; se um for recusado (407), o ytdlp passa pro próximo
         from urllib.parse import urlsplit, urlunsplit
         import random
         u = urlsplit(px)
-        if u.username:
-            extra = (f"-country-{cc}" if cc and "-country-" not in u.username else "") + f"-session-{random.randint(10**6, 10**7)}-lifetime-30"
-            return urlunsplit(u._replace(netloc=u.netloc.replace(u.username, u.username + extra, 1)))
-        return px
+        if not u.username:
+            return px
+        mode = _YT_OK.get("geo_mode", 0)
+        user, host, port = u.username, u.hostname, u.port or 9000
+        sticky = random.randint(10000, 10900)
+        if mode == 0:
+            user, port = f"{user}-country-{cc}-session-{random.randint(10**6, 10**7)}-lifetime-30", u.port or 9000
+        elif mode == 1:
+            user, port = f"{user}-country-{cc}", sticky
+        elif mode == 2:
+            port = sticky
+        return urlunsplit(u._replace(netloc=f"{user}:{u.password}@{host}:{port}"))
     if not px or not cc or "dataimpulse" not in px or "__cr." in px:
         return px
     from urllib.parse import urlsplit, urlunsplit
@@ -598,7 +607,15 @@ def ytdlp(args: list, url: str, timeout: int):
             return out
         except Exception as e:
             last = e
+            if px and any(k in str(e) for k in _PROXY_DEAD) and "geonode" in px and _YT_OK.get("geo_mode", 0) < 3:
+                _YT_OK["geo_mode"] = _YT_OK.get("geo_mode", 0) + 1
+                log.warning("Proxy Geonode recusou o formato %d (%s); tentando o formato %d", _YT_OK["geo_mode"] - 1,
+                            _redact(str(e))[-220:], _YT_OK["geo_mode"])
+                nxt = _geo_proxy(os.getenv("YTDLP_PROXY"))
+                plan = plan[:i] + [(nxt, c)] + [(nxt if p2 else None, c2) for p2, c2 in plan[i:]]
+                continue
             if px and any(k in str(e) for k in _PROXY_DEAD):
+                log.error("Proxy recusou: %s", _redact(str(e))[-260:])
                 _YT_OK["proxy_dead_until"] = time.time() + 1200
                 log.error("PROXY SEM SALDO OU FORA DO AR: indo direto pro YouTube por 20 min")
                 tried = set(plan[:i])
