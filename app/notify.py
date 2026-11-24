@@ -4,7 +4,11 @@ import httpx
 
 log = logging.getLogger("notify")
 TW_SID, TW_TOKEN, TW_FROM = os.getenv("TWILIO_ACCOUNT_SID", ""), os.getenv("TWILIO_AUTH_TOKEN", ""), os.getenv("TWILIO_FROM", "")
-RESEND_KEY, MAIL_FROM = os.getenv("RESEND_API_KEY", "").strip().strip("\"'"), os.getenv("MAIL_FROM", "GTA Clipadas <nao-responda@gta6clipadas.com>")
+RESEND_KEY = os.getenv("RESEND_API_KEY", "").strip().strip("\"'")
+# Só o domínio verificado no Resend pode enviar; um MAIL_FROM antigo de outro domínio é ignorado.
+MAIL_FROM = os.getenv("MAIL_FROM", "").strip()
+if "@gta6clipadas.com" not in MAIL_FROM:
+    MAIL_FROM = "GTA Clipadas <nao-responda@gta6clipadas.com>"
 
 
 def sms_ready() -> bool:

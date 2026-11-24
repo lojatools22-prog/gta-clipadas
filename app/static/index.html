@@ -1177,7 +1177,7 @@ function openAuth(mode='signup',msg='',then){if(then!==undefined)afterAuth=then;
       openCode(r, r.step==='phone'?'/api/auth/verify-phone':'/api/auth/verify-login', r.step==='phone'?'Confirme seu celular':'Confirme que é você')}
     catch(err){toast(err.message);btn.disabled=false}}}
 function openCode(r,endpoint,title,onOk){
-  sheet(`<h2 class="disp" style="margin:0 0 6px">${title}</h2><p class="lead">Mandamos um código de 6 números por SMS pro ${esc(r.phone_hint||'seu celular')}.</p>
+  sheet(`<h2 class="disp" style="margin:0 0 6px">${title}</h2><p class="lead">Mandamos um código de 6 números ${r.via==='email'?'pro seu e-mail. Olhe também a caixa de spam':'por SMS pro '+esc(r.phone_hint||'seu celular')}.</p>
   ${r.dev_code?`<p class="note">Modo teste: o código é <b>${r.dev_code}</b></p>`:''}
   <form id="codeF"><label class="field"><input id="cCode" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required placeholder="••••••"></label>
   <button class="go" type="submit">Confirmar</button></form>
