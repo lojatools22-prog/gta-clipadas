@@ -508,7 +508,7 @@ def _geo_proxy(px):
         u = urlsplit(px)
         if not u.username:
             return px
-        mode = _YT_OK.get("geo_mode", 0)
+        mode = _YT_OK.get("geo_mode", 1)  # formato 1 (país + porta fixa) foi o que funcionou
         user, host, port = u.username, u.hostname, u.port or 9000
         sticky = random.randint(10000, 10900)
         if mode == 0:
@@ -611,8 +611,8 @@ def ytdlp(args: list, url: str, timeout: int):
             return out
         except Exception as e:
             last = e
-            if px and any(k in str(e) for k in _PROXY_DEAD) and "geonode" in px and _YT_OK.get("geo_mode", 0) < 3:
-                _YT_OK["geo_mode"] = _YT_OK.get("geo_mode", 0) + 1
+            if px and any(k in str(e) for k in _PROXY_DEAD) and "geonode" in px and _YT_OK.get("geo_mode", 1) < 3:
+                _YT_OK["geo_mode"] = _YT_OK.get("geo_mode", 1) + 1
                 log.warning("Proxy Geonode recusou o formato %d (%s); tentando o formato %d", _YT_OK["geo_mode"] - 1,
                             _redact(str(e))[-220:], _YT_OK["geo_mode"])
                 nxt = _geo_proxy(os.getenv("YTDLP_PROXY"))
