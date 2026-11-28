@@ -1222,9 +1222,9 @@ function clearReact(){CAMF=null;$('#camFile').value='';$('#camBtn').textContent=
 /* conta */
 const PREFS=()=>LS.get('cgta_prefs',{captions:true,cover:true});
 /* de onde a pessoa veio (anúncio, Instagram, TikTok…): guardado no 1º acesso e enviado no cadastro */
-const ORIGEM=(()=>{try{const q=new URLSearchParams(location.search);const us=(q.get('utm_source')||'').toLowerCase(),um=(q.get('utm_medium')||'').toLowerCase(),uc=(q.get('utm_content')||'').toLowerCase(),camp=q.get('utm_campaign')||'';
+const ORIGEM=(()=>{try{const q=new URLSearchParams(location.search);const us=(q.get('utm_source')||'').toLowerCase(),um=(q.get('utm_medium')||'').toLowerCase(),uc=(q.get('utm_content')||'').toLowerCase(),camp=q.get('utm_campaign')||q.get('utm_id')||q.get('campaign_id')||'',adid=(q.get('h_ad_id')||q.get('ad_id')||(/^\d{6,}$/.test(uc)?uc:'')||'');
   const meta=/^(ig|instagram|fb|facebook|an|msg|threads)$/.test(us),rede=/^(fb|facebook)$/.test(us)?'facebook':'instagram';
-  let s=!us?'':meta?(/paid|cpc|ads?$/.test(um)||camp||q.get('fbclid')?`${rede} anuncio${camp?' '+camp.slice(-6):''}`:/link_in_bio|bio/.test(uc)?`${rede} bio`:/stor/.test(uc+um)?`${rede} stories`:`${rede} organico`):(us+(camp?'/'+camp:''));
+  let s=!us?'':meta?(/paid|cpc|ads?$/.test(um)||camp||q.get('fbclid')?`${rede} anuncio${camp?' '+camp.slice(-6):''}${adid?' ad '+adid.slice(-6):''}`:/link_in_bio|bio/.test(uc)?`${rede} bio`:/stor/.test(uc+um)?`${rede} stories`:`${rede} organico`):(us+(camp?'/'+camp:''));
   const r=document.referrer||'';
   if(!s&&q.get('fbclid'))s=/instagram/i.test(r)||/Instagram/.test(navigator.userAgent)?'instagram anuncio':'facebook anuncio';
   if(!s&&/Instagram/.test(navigator.userAgent))s=/l\.instagram\.com/i.test(document.referrer||'')?'instagram bio':'instagram (sem codigo)';
